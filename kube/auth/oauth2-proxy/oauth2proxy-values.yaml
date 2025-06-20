@@ -1,0 +1,49 @@
+config:
+  configFile: |-
+    provider = "keycloak-oidc"
+    oidc_issuer_url = "https://study.muci.sh/auth/realms/spezistudyplatform"
+    email_domains = ["*"]
+    upstreams = ["static://200"]
+    scope = "openid profile email groups"
+    redirect_url = "https://study.muci.sh/oauth2/callback"
+    cookie_domains = ["study.muci.sh"]
+
+# self-managed ingress
+ingress:
+  enabled: false
+
+extraArgs:
+  - --skip-provider-button=true
+  - --whitelist-domain=*.muci.sh
+  - --allowed-role=spezistudyplatform-authorized-users
+  - --pass-access-token=true
+  - --cookie-csrf-expire=60m
+  - --pass-authorization-header=true
+  - --set-xauthrequest=true
+  - --code-challenge-method=S256
+
+# needed to avoid 400 Bad Req - Cookie Too Large
+redis:
+  enabled: true
+  architecture: standalone
+sessionStorage:
+  type: redis
+
+extraEnv:
+  - name: OAUTH2_PROXY_REVERSE_PROXY
+    value: "true"
+  - name: OAUTH2_PROXY_CLIENT_ID
+    valueFrom:
+      secretKeyRef:
+        name: oauth2-proxy-secret
+        key: client-id
+  - name: OAUTH2_PROXY_CLIENT_SECRET
+    valueFrom:
+      secretKeyRef:
+        name: oauth2-proxy-secret
+        key: client-secret
+  - name: OAUTH2_PROXY_COOKIE_SECRET
+    valueFrom:
+      secretKeyRef:
+        name: oauth2-proxy-secret
+        key: cookie-secret

@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spezistudyplatform-backend
+  namespace: spezistudyplatform
+  labels:
+    app: spezistudyplatform-backend
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: spezistudyplatform-backend
+  template:
+    metadata:
+      labels:
+        app: spezistudyplatform-backend
+    spec:
+      containers:
+        - name: spezistudyplatform-backend-container
+          image: "gcr.io/spezistudyplatform-dev/spezi-web-service-template-backend:latest"
+          imagePullPolicy: Always
+          resources:
+            limits:
+              memory: 2Gi
+              cpu: 1
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: spezistudyplatform-backend-config
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: spezistudyplatform-postgres-credentials
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: spezistudyplatform-postgres-credentials
+                  key: password

@@ -1,0 +1,78 @@
+# Enable a LoadBalancer with a static IP, if we are using GCP
+# TODO: need to actually template if we are using GCP/cloud or not, and if not, omit this.
+service:
+  enabled: true
+  type: LoadBalancer
+  spec:
+    loadBalancerIP: "34.168.131.83"
+
+logs:
+  general:
+    # -- Set [logs format](https://doc.traefik.io/traefik/observability/logs/#format)
+    # @default common
+    format:
+    # By default, the level is set to ERROR.
+    # -- Alternative logging levels are DEBUG, PANIC, FATAL, ERROR, WARN, and INFO.
+    level: DEBUG
+  access:
+    enabled: true
+    # filePath: "/var/log/traefik/access.log"
+    fields:
+      headers: 
+        defaultmode: keep
+
+# need persistence for letsencrypt / acme.json
+# per https://github.com/traefik/traefik-helm-chart/issues/396
+persistence:
+  # -- Enable persistence using Persistent Volume Claims
+  # ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
+  # It can be used to store TLS certificates, see `storage` in certResolvers
+  enabled: true
+  name: traefik-data
+  #  existingClaim: ""
+  accessMode: ReadWriteOnce
+  size: 1Gi
+  storageClass: standard-rwo
+  # volumeName: ""
+  path: /data
+  annotations: {}
+  # -- Only mount a subpath of the Volume into the pod
+  # subPath: ""
+
+deployment:
+  initContainers:
+    - name: volume-permissions
+      image: traefik:v2.10.4
+      command:
+        [
+          "sh",
+          "-c",
+          "touch /data/acme.json; chown 65532:65532 /data/acme.json; chmod -v 600 /data/acme.json",
+        ]
+      securityContext:
+        runAsNonRoot: false
+        runAsGroup: 0
+        runAsUser: 0
+      volumeMounts:
+        - name: traefik-data
+          mountPath: /data
+          readOnly: false
+          
+podSecurityContext:
+  # /!\ When setting fsGroup, Kubernetes will recursively change ownership and
+  # permissions for the contents of each volume to match the fsGroup. This can
+  # be an issue when storing sensitive content like TLS Certificates /!\
+  # fsGroup: 65532
+  # -- Specifies the policy for changing ownership and permissions of volume contents to match the fsGroup.
+  fsGroupChangePolicy: "OnRootMismatch"
+  # -- The ID of the group for all containers in the pod to run as.
+  runAsGroup: 65532
+  # -- Specifies whether the containers should run as a non-root user.
+  runAsNonRoot: true
+  # -- The ID of the user for all containers in the pod to run as.
+  runAsUser: 65532
+
+# Enable the Traefik dashboard for debugging.
+ingressRoute:
+  dashboard:
+    enabled: true

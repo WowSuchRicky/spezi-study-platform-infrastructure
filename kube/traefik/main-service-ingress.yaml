@@ -1,0 +1,63 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: oauth2-proxy
+  namespace: spezistudyplatform
+spec:
+  forwardAuth:
+    address: http://oauth2-proxy.spezistudyplatform.svc.cluster.local/oauth2/auth_or_start
+    trustForwardHeader: true
+    authResponseHeaders:
+      - X-Auth-Request-User
+      - X-Auth-Request-Email
+      - X-Auth-Request-Groups
+      - X-Auth-Request-Access-Token
+    authRequestHeaders: []
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: oauth2-errors
+  namespace: spezistudyplatform
+spec:
+  errors:
+    status:
+      - 401-403
+    service:
+      name: oauth2-proxy
+      port: 80
+    query: "/oauth2/sign_in?rd={url}"
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: spezistudyplatform-ingress
+  namespace: spezistudyplatform
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    ingress.kubernetes.io/proxy-buffer-size: "128k"
+    ingress.kubernetes.io/auth-response-headers: X-Auth-Request-User, X-Auth-Request-Email, X-Auth-Request-Groups  
+spec:
+  entryPoints:
+    - websecure
+  routes:
+  - match: Host(`study.muci.sh`) && PathPrefix(`/`)
+    priority: 1
+    kind: Rule
+    services:
+    - name: spezistudyplatform-frontend-service
+      port: 80
+    middlewares:
+    - name: oauth2-proxy
+    - name: oauth2-errors
+  - match: Host(`study.muci.sh`) && PathPrefix(`/backend`)
+    priority: 2
+    kind: Rule
+    services:
+    - name: spezistudyplatform-backend-service
+      port: 3000
+    middlewares:
+    - name: oauth2-proxy
+    - name: oauth2-errors
+  tls:
+    secretName: spezistudyplatform-main-tls-secret

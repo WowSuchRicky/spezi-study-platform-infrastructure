@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: spezistudyplatform
+  namespace: spezistudyplatform
+spec:
+  project: default
+  source:
+    repoURL: github.com/example-org/example-repo
+    path: .
+    targetRevision: main
+    directory:
+      recurse: true
+      jsonnet: {}
+      exclude: '*.json'
+  destination:
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    syncOptions:
+      - RespectIgnoreDifferences=true
+      - ServerSideApply=true
+    retry:
+      limit: 2
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m0s

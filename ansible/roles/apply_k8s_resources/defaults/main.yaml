@@ -1,0 +1,6 @@
+---
+# Directory containing all Kubernetes YAML files and Helm charts (recursive)
+k8s_resource_dir: ""
+
+# Namespace to use (optional, override per resource if needed)
+k8s_namespace: default

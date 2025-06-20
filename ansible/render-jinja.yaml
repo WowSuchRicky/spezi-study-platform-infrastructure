@@ -1,0 +1,65 @@
+---
+- name: Render Jinja2 templates to create a starting point for a web service infra deployment
+  # This playbook finds .j2 files, ensures destination directories exist,
+  # and renders templates, correctly removing the .j2 suffix from output filenames.
+  hosts: 127.0.0.1
+  connection: local
+  gather_facts: false
+
+  vars:
+    # Define the source directory containing .j2 files
+    source_dir_relpath: "{{ playbook_dir }}/../infra" 
+    source_dir: "{{ source_dir_relpath | realpath }}"
+    # Define the target directory for the rendered output files
+    dest_dir: "{{ output_directory | realpath }}"
+
+
+
+  tasks:
+    - name: Find all .j2 template files recursively
+      find:
+        paths: "{{ source_dir }}"
+        patterns: "*.j2"
+        file_type: file
+        recurse: true
+      register: j2_files
+      # Optional: Fail if find runs but finds nothing (indicates possible path error)
+      # failed_when: j2_files.examined > 0 and j2_files.matched == 0
+
+    # - name: Print the dest dir
+    #   ansible.builtin.debug:
+    #     msg: "Dest dir: {{ dest_dir }} path: {{ (source_dir | replace(source_dir, dest_dir) | regex_replace('\\.j2$', '')) | dirname }}"
+    #   when: dest_dir is defined
+
+    - name: Ensure base destination directory exists
+      # Creates the top-level output directory if it doesn't exist.
+      file:
+        path: "{{ dest_dir }}"
+        state: directory
+        mode: '0755'
+
+    # --- Ensure all required directories exist (Loop 1) ---
+    - name: Ensure all parent directories for destination files exist
+      # For each template found, calculate its destination directory and ensure it exists.
+      ansible.builtin.file:
+        path: "{{ (item.path | replace(source_dir, dest_dir) | regex_replace('\\.j2$', '')) | dirname }}" # Calculate dest dir path inside loop
+        state: directory
+        mode: '0755'
+      loop: "{{ j2_files.files }}" # Loop over the found template files
+      loop_control:
+        label: "{{ (item.path | replace(source_dir, dest_dir) | regex_replace('\\.j2$', '')) | dirname }}" # Show the directory being processed
+      # Run only if files were found
+      when: j2_files.files is defined and j2_files.files | length > 0
+
+    # --- Render templates (Loop 2) ---
+    - name: Render each .j2 template into the destination directory
+      # This loop runs *after* all necessary directories have been created by the previous loop.
+      ansible.builtin.template:
+        src: "{{ item.path }}"      # The original .j2 template file
+        dest: "{{ item.path | replace(source_dir, dest_dir) | regex_replace('\\.j2$', '') }}" # Calculate destination file path inside loop
+        # mode: '0644'              # Optional: Set file permissions
+      loop: "{{ j2_files.files }}" # Loop over the found template files again
+      loop_control:
+        label: "{{ item.path | replace(source_dir, dest_dir) | regex_replace('\\.j2$', '') }}" # Show the destination file being rendered
+      # Run only if files were found
+      when: j2_files.files is defined and j2_files.files | length > 0

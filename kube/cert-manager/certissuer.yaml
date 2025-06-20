@@ -1,0 +1,16 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: spam@muci.sh
+    privateKeySecretRef:
+      # TODO: we want to use -dev/staging here most likely at first, to avoid rate limiting. Then when the user promotes their 
+      # service to "prod", we change this to prod. Template this later.
+      name: letsencrypt-prod
+    solvers:
+    - http01:
+        ingress:
+          class: traefik
