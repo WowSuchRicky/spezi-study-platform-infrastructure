@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spezistudyplatform-frontend
+  namespace: spezistudyplatform
+  labels:
+    app: spezistudyplatform-frontend
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: spezistudyplatform-frontend
+  template:
+    metadata:
+      labels:
+        app: spezistudyplatform-frontend
+    spec:
+      containers:
+        - name: spezistudyplatform-frontend-container
+          image: "traefik/whoami:latest" # TODO: this should obviously be a frontend container once we have one
+          imagePullPolicy: Always
+          resources:
+            limits:
+              memory: 1Gi
+              cpu: 100m
+          ports:
+            - containerPort: 80
+          envFrom:
+            - configMapRef:
+                name: spezistudyplatform-frontend-config

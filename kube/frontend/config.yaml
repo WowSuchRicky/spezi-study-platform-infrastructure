@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spezistudyplatform-frontend-config
+  namespace: spezistudyplatform
+data:
+  VITE_API_BASE: "https://study.muci.sh/"
+  OAUTH_AUTHORITY: "https://study.muci.sh/auth/realms/spezistudyplatform"
+  OAUTH_REDIRECT_URI: "https://study.muci.sh"
+  OAUTH_CLIENT_ID: "spezistudyplatform"

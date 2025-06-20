@@ -1,0 +1,15 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: dashboard
+  namespace: spezistudyplatform
+  annotations:
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  entryPoints:
+    - web
+  routes:
+  - match: PathPrefix('/dashboard')
+    kind: Rule
+    services:
+    - name: api@internal

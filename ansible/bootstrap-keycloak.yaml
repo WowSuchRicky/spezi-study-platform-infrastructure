@@ -1,0 +1,112 @@
+# bootstrap-keycloak.yaml
+---
+- name: Apply OpenTofu Configuration for Keycloak Realm with K8s Secret
+  hosts: localhost # Assuming run from where tofu & kubectl are configured
+  gather_facts: false
+  vars:
+    keycloak_tofu_directory: "./kube/auth/keycloak/tf"
+
+    # These two fields should match what is in kubernetes, as this playbook will retrieve it from there
+    keycloak_secret_name: "keycloak"
+    keycloak_secret_namespace: "spezistudyplatform"
+    # This should match the variable name expected in your Keycloak provider block
+    tofu_password_var_name: "keycloak_password"
+
+    # Do not edit any of the variables below:
+    keycloak_tofu_dir: "{{ keycloak_tofu_directory | realpath }}"
+
+
+  tasks:
+    # --- Directory and .tf File Checks ---
+    - name: Check if Keycloak OpenTofu directory exists
+      ansible.builtin.stat:
+        path: "{{ keycloak_tofu_dir }}"
+      register: tofu_dir_stat
+
+    - name: Fail if Keycloak Tofu directory not found
+      when: not tofu_dir_stat.stat.exists or not tofu_dir_stat.stat.isdir
+      ansible.builtin.fail:
+        msg: "OpenTofu directory {{ keycloak_tofu_dir }} not found. Skipping Keycloak Tofu configuration."
+
+    - name: Check if {{ keycloak_tofu_dir }} contains .tf files
+      when: tofu_dir_stat.stat.exists and tofu_dir_stat.stat.isdir
+      ansible.builtin.find:
+        paths: "{{ keycloak_tofu_dir }}"
+        patterns: "*.tf"
+        recurse: no # Check only in the immediate directory
+      register: tf_files_check
+
+    - name: Fail if no .tf files found in {{ keycloak_tofu_dir }}
+      when: tf_files_check.matched == 0
+      ansible.builtin.fail:
+        msg: "No .tf files found in {{ keycloak_tofu_dir }}. Skipping Keycloak Tofu configuration."
+
+    # --- Fetch Keycloak Admin Password from Kubernetes ---
+    - name: Get Keycloak admin secret from Kubernetes
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Secret
+        name: "{{ keycloak_secret_name }}"
+        namespace: "{{ keycloak_secret_namespace }}"
+      register: keycloak_secret_result
+      failed_when: keycloak_secret_result.resources | length == 0
+      retries: 3 # Add retries in case secret is not immediately available after Helm deploy
+      delay: 10 # Wait 10 seconds between retries
+
+    - name: Extract and decode Keycloak admin password
+      ansible.builtin.set_fact:
+        # Extract the base64 encoded password and decode it
+        keycloak_admin_password: "{{ keycloak_secret_result.resources[0].data['admin-password'] | b64decode }}"
+      when:
+        - keycloak_secret_result.resources | length > 0
+        - "'admin-password' in keycloak_secret_result.resources[0].data"
+      no_log: true # Prevent password from being logged in Ansible output
+
+    - name: Fail if admin password could not be extracted
+      ansible.builtin.fail:
+        msg: "Could not find 'admin-password' key in secret {{ keycloak_secret_name }} in namespace {{ keycloak_secret_namespace }}."
+      when: keycloak_admin_password is not defined
+
+    # --- Prepare Tofu Environment ---
+    - name: Build Tofu environment dictionary with password
+      ansible.builtin.set_fact:
+        # Construct the dictionary correctly: {'TF_VAR_keycloak_password': <admin_password>}
+        tofu_environment: "{{ {'TF_VAR_' + tofu_password_var_name : keycloak_admin_password} }}"
+      no_log: true # Keep this step quiet too
+
+    # --- Run OpenTofu ---
+    - name: Run OpenTofu init in {{ keycloak_tofu_dir }}
+      when: tofu_dir_stat.stat.exists and tofu_dir_stat.stat.isdir and tf_files_check.matched > 0
+      ansible.builtin.command: "tofu init"
+      args:
+        chdir: "{{ keycloak_tofu_dir }}"
+      changed_when: "'OpenTofu has been successfully initialized!' in init_result.stdout or 'successfully initialized!' in init_result.stdout" # Adjusted for Tofu output
+      register: init_result
+
+    - name: Run OpenTofu apply in {{ keycloak_tofu_dir }}
+      when: tofu_dir_stat.stat.exists and tofu_dir_stat.stat.isdir and tf_files_check.matched > 0
+      ansible.builtin.command: "tofu apply -auto-approve"
+      args:
+        chdir: "{{ keycloak_tofu_dir }}"
+      # Pass the pre-built dictionary containing the env var to the command
+      environment: 
+        TF_VAR_keycloak_client_id: "admin-cli"
+        TF_VAR_keycloak_username: "user"
+        TF_VAR_keycloak_password: "{{ keycloak_admin_password }}"
+        TF_VAR_keycloak_url: "https://study.muci.sh/auth"
+      changed_when: "'Apply complete!' in apply_result.stdout"
+      register: apply_result # Register the result correctly
+      no_log: true # Prevent environment variables (incl. password) from being logged
+
+    # --- Display Tofu Apply output, for sanity ---
+    - name: Display Tofu Apply Standard Output
+      ansible.builtin.debug:
+        # Use 'msg' to print multiline stdout nicely
+        msg: "{{ apply_result.stdout.splitlines() }}"
+      when: apply_result.stdout is defined and apply_result.stdout | length > 0
+
+    - name: Display Tofu Apply Standard Error (if any)
+      ansible.builtin.debug:
+        # Use 'msg' to print multiline stderr nicely
+        msg: "{{ apply_result.stderr.splitlines() }}"
+      when: apply_result.stderr is defined and apply_result.stderr | length > 0

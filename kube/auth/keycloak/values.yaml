@@ -1,0 +1,59 @@
+extraEnvVars:
+  - name: KC_PROXY_HEADERS
+    value: "xforwarded"
+
+  # run at /auth subpath, to avoid DNS setup/mgmt
+  - name: KC_HTTP_RELATIVE_PATH
+    value: "/auth"
+
+# we need to override the readiness probe due to a bug in keycloak where these
+# don't get auto-templated when you change the relative path like above.
+customReadinessProbe:
+  failureThreshold: 3
+  httpGet:
+    path: /auth/realms/master
+    port: http
+
+  
+# configuration:
+#   realm1.json: |
+#     {
+#       "id": spezistudyplatform,
+#       "realm": "spezistudyplatform",
+#       "displayName": "spezistudyplatform Realm"
+#       "clients": []
+#     }
+
+resources: 
+  limits: 
+    cpu: "500m"
+    memory: "1024Mi"
+  
+
+  
+# initContainer to add custom theme
+# TODO: s3 bucket is a workaround while we
+# figure out how to host in Stanford GCP or similar.
+initContainers: |
+  - name: realm-ext-provider
+    image: curlimages/curl
+    imagePullPolicy: IfNotPresent
+    command:
+      - sh
+    args:
+      - -c
+      - |
+        curl -L -o /extensions/keycloakify-spezistudyplatform3-theme.jar https://s3.us-west-2.amazonaws.com/ngusav.es/Keycloak+theme+25%2B.jar
+
+    volumeMounts:
+      - name: extensions
+        mountPath: /extensions
+
+extraVolumeMounts: |
+  - name: extensions
+    mountPath: /opt/bitnami/keycloak/providers
+
+extraVolumes: |
+  - name: extensions
+    emptyDir: {}
+# end config for custom theme

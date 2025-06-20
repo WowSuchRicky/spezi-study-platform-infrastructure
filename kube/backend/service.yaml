@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: spezistudyplatform-backend-service
+  namespace: spezistudyplatform
+spec:
+  selector:
+    app: spezistudyplatform-backend
+  ports:
+  - protocol: TCP
+    port: 3000 
+    targetPort: 3000

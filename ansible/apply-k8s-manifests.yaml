@@ -1,0 +1,28 @@
+- name: Apply all k8s resources
+  hosts: localhost
+  gather_facts: false
+  roles:
+    - role: apply_k8s_resources
+      vars:
+        k8s_relative_dir: "rendered_infra/kube"
+        k8s_resource_dir: "{{ k8s_relative_dir | realpath }}"
+        k8s_namespace: "default"
+
+        # All helm charts to install as part of this bootstrap process
+        helm_charts:
+        - name: cert-manager
+          chart: jetstack/cert-manager
+          repo: https://charts.jetstack.io
+          namespace: cert-manager
+          values_file: "{{ k8s_resource_dir }}/cert-manager/values.yaml"
+        - name: traefik
+          chart: traefik/traefik
+          repo: https://traefik.github.io/charts
+          namespace: default
+          values_file: "{{ k8s_resource_dir }}/traefik/values.yaml"
+        - name: keycloak
+          chart: oci://registry-1.docker.io/bitnamicharts/keycloak
+          repo: https://traefik.github.io/charts # placeholder value, OCI charts do not use this field.
+          namespace: default
+          values_file: "{{ k8s_resource_dir }}/auth/keycloak/values.yaml"
+

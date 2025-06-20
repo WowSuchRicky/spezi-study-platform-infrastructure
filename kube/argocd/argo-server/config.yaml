@@ -1,0 +1,25 @@
+# TODO: configure here someday: https://github.com/argoproj/argo-helm/blob/main/charts/argo-cd/values.yaml#L211 
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  namespace: spezistudyplatform
+data:
+  url: study.muci.sh
+  statusbadge.enabled: "true"
+  oidc.config: |
+    name: Keycloak
+    issuer: study.muci.sh/auth/realms/spezistudyplatform-secret
+    clientID: argocd
+    clientSecret: $oidc-secret:oidc.keycloak.clientSecret
+    requestedScopes: ["openid", "profile", "email", "groups"]
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-rbac-cm
+  namespace: spezistudyplatform
+data:
+  policy.default: role:''
+  policy.csv: |
+    g, ArgoCDAdmins, role:admin

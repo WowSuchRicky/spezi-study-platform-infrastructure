@@ -1,0 +1,32 @@
+---
+- name: Add helm repos
+  community.kubernetes.helm_repository:
+    name: "{{ item.chart.split('/')[0] }}"
+    repo_url: "{{ item.repo }}"
+  loop: "{{ helm_charts }}"
+
+- name: Install remote helm charts
+  community.kubernetes.helm:
+    name: "{{ item.name }}"
+    chart_ref: "{{ item.chart }}"
+    release_namespace: "{{ item.namespace }}"
+    create_namespace: true
+    values_files:
+      - "{{ item.values_file }}"
+    state: present
+  loop: "{{ helm_charts }}"
+
+- name: Find all manifest YAML files recursively
+  find:
+    paths: "{{ k8s_resource_dir }}"
+    patterns: "{{ manifest_file_patterns }}"
+    recurse: yes
+  register: manifest_files
+
+- name: Apply Kubernetes YAML manifests
+  kubernetes.core.k8s:
+    state: present
+    namespace: "{{ k8s_namespace }}"
+    src: "{{ item.path }}"
+  loop: "{{ manifest_files.files }}"
+  when: (item.path is search("Chart.yaml") == false) and (item.path is search("values.yaml") == false)  # skip Helm charts, as these need special processing

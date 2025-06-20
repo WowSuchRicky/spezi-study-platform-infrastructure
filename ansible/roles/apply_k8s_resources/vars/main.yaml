@@ -1,0 +1,5 @@
+---
+# Filter files and subdirectories
+manifest_file_patterns:
+  - "*.yaml"
+  - "*.yml"

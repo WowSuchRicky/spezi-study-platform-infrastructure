@@ -1,0 +1,10 @@
+global:
+  domain: study.muci.sh
+
+configs:
+  params:
+    # TODO: We may want it to be secure, but may not need it to be depending on how the networking rules are set up. 
+    # if we are keeping it as an internal service only and not externally routable, TLS is more tricky to set up. 
+    server.insecure: true
+    server.basehref: "/argo"
+    server.rootpath: "/argo"
