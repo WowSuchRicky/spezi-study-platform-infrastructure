@@ -8,7 +8,7 @@ gcp_credentials_file: "/Users/r/Development/SpeziStudyPlatformDev.json"
 spezi_service_gcp_project_id: spezistudyplatform-dev
 
 # Fully Qualified Domain Name that the service will be deployed to
-spezi_service_fqdn: study.muci.sh
+spezi_service_fqdn: platform.spezi.stanford.edu
 
 # Static IP (if it already exists) for the service:
 # for now, get this from GCP after the terraform steps and insert it here manually before doing the kube provisioning. 

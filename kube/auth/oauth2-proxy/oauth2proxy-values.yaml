@@ -1,12 +1,12 @@
 config:
   configFile: |-
     provider = "keycloak-oidc"
-    oidc_issuer_url = "https://study.muci.sh/auth/realms/spezistudyplatform"
+    oidc_issuer_url = "https://platform.spezi.stanford.edu/auth/realms/spezistudyplatform"
     email_domains = ["*"]
     upstreams = ["static://200"]
     scope = "openid profile email groups"
-    redirect_url = "https://study.muci.sh/oauth2/callback"
-    cookie_domains = ["study.muci.sh"]
+    redirect_url = "https://platform.spezi.stanford.edu/oauth2/callback"
+    cookie_domains = ["platform.spezi.stanford.edu"]
 
 # self-managed ingress
 ingress:
@@ -14,7 +14,7 @@ ingress:
 
 extraArgs:
   - --skip-provider-button=true
-  - --whitelist-domain=*.muci.sh
+  - --whitelist-domain=*.spezi.stanford.edu
   - --allowed-role=spezistudyplatform-authorized-users
   - --pass-access-token=true
   - --cookie-csrf-expire=60m

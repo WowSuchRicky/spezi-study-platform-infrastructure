@@ -12,14 +12,14 @@ spec:
   entryPoints:
     - websecure
   routes:
-  - match: Host(`study.muci.sh`) && PathPrefix(`/oauth2`)
+  - match: Host(`platform.spezi.stanford.edu`) && PathPrefix(`/oauth2`)
     priority: 99
     kind: Rule
     services:
     - name: oauth2-proxy
       port: 80
     middlewares: []
-  - match: Host(`study.muci.sh`) && PathPrefix(`/auth`)
+  - match: Host(`platform.spezi.stanford.edu`) && PathPrefix(`/auth`)
     priority: 99
     kind: Rule
     services:

@@ -19,5 +19,5 @@ variable "keycloak_password" {
 variable "keycloak_url" {
   description = "Keycloak base URL"
   type        = string
-  default     = "https://study.muci.sh/auth"
+  default     = "https://platform.spezi.stanford.edu/auth"
 }

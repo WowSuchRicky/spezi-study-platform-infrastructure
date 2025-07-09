@@ -1,0 +1,48 @@
+
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16
+    restart: always
+    ports:
+      - "5432:5432"
+    env_file:
+      - docker-compose.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+
+  backend:
+    image: gcr.io/spezistudyplatform-dev/spezi-web-service-template-backend:latest
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - docker-compose.env
+    environment:
+      - PORT=3000
+      - MODE=DEV
+      - ALLOWED_ORIGINS=('https://platform.spezi.stanford.edu', 'http://platform.spezi.stanford.edu'),http://127.0.0.1,http://localhost:5173
+      - AUTH_URL=http://localhost:8080/auth
+      - OAUTH_REALM=spezistudyplatform
+      - OAUTH_CLIENT_ID=spezistudyplatform
+      - DB_HOST=db
+      - DB_NAME=spezistudyplatform
+    depends_on:
+      - db
+
+  frontend:
+    image: traefik/whoami:latest
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      - VITE_API_BASE=http://localhost:3000/
+      - OAUTH_AUTHORITY=http://localhost:8080/auth/realms/spezistudyplatform
+      - OAUTH_REDIRECT_URI=http://localhost:8080
+      - OAUTH_CLIENT_ID=spezistudyplatform
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
