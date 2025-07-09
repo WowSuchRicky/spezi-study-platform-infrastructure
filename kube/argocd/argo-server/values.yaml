@@ -1,5 +1,5 @@
 global:
-  domain: study.muci.sh
+  domain: platform.spezi.stanford.edu
 
 configs:
   params:

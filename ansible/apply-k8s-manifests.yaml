@@ -4,7 +4,7 @@
   roles:
     - role: apply_k8s_resources
       vars:
-        k8s_relative_dir: "rendered_infra/kube"
+        k8s_relative_dir: "kube"
         k8s_resource_dir: "{{ k8s_relative_dir | realpath }}"
         k8s_namespace: "default"
 

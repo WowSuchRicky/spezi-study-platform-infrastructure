@@ -14,7 +14,7 @@ resource "keycloak_openid_client" "oauth2_proxy_client" {
 
   access_type         = "CONFIDENTIAL"
   valid_redirect_uris = [
-    "https://study.muci.sh/oauth2/callback"
+    "https://platform.spezi.stanford.edu/oauth2/callback"
   ]
 
   direct_access_grants_enabled = false 

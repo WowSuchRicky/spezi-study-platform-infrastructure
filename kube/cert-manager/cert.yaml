@@ -5,10 +5,11 @@ metadata:
   name: spezistudyplatform-main-tls-cert
   namespace: spezistudyplatform
 spec:
-  commonName: study.muci.sh
+  commonName: platform.spezi.stanford.edu
   secretName: spezistudyplatform-main-tls-secret
   issuerRef:
     name: letsencrypt-prod
     kind: ClusterIssuer
   dnsNames:
+    - "platform.spezi.stanford.edu"
     - "study.muci.sh"
