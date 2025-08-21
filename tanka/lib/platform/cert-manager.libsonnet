@@ -1,7 +1,7 @@
 
 function(config) 
   // Parse YAML documents separated by ---
-  local yamlContent = importstr "https://github.com/cert-manager/cert-manager/releases/download/v1.18.2/cert-manager.yaml";
+  local yamlContent = importstr "cert-manager/cert-manager.yaml";
   local docs = std.split(yamlContent, '\n---');
   local validDocs = [
     std.parseYaml(doc)
