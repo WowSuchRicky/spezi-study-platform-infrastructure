@@ -8,9 +8,11 @@ baseConfig.default {
     displayName: 'Spezi Study Platform',
   },
 
+  local_ip: '127.0.0.1',  // Default value, override with --ext-str LOCAL_IP=<ip>
+
   domains: {
-    primary: std.extVar('LOCAL_IP') + '.nip.io',
-    auth: std.extVar('LOCAL_IP') + '.nip.io/auth',
+    primary: $.local_ip + '.nip.io',
+    auth: $.local_ip + '.nip.io/auth',
   },
 
   environment: {

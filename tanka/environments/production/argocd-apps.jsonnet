@@ -14,7 +14,7 @@ local appOfApps = {
   spec: {
     project: 'default',
     source: {
-      repoURL: 'https://github.com/StanfordSpezi/spezi-study-platform-infrastructure.git',
+      repoURL: 'https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git',
       targetRevision: 'HEAD',
       path: 'tanka/environments/' + config.environment.name,
       directory: {

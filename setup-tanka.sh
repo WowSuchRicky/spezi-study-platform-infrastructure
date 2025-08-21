@@ -153,7 +153,7 @@ info "Running post-deployment configuration..."
 
 # Wait for Keycloak to be ready before configuring it
 info "Waiting for Keycloak to be fully ready..."
-wait_for_pods "app.kubernetes.io/name=keycloak" "spezistudyplatform" "300s"
+wait_for_pods "app.kubernetes.io/component=keycloak" "spezistudyplatform" "300s"
 
 # Bootstrap Keycloak realm and clients
 info "Bootstrapping Keycloak realm and clients..."
