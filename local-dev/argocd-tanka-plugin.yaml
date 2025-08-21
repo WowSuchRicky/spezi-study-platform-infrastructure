@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-tanka-plugin
+  namespace: argocd
+data:
+  plugin.yaml: |
+    apiVersion: argoproj.io/v1alpha1
+    kind: ConfigManagementPlugin
+    metadata:
+      name: tanka
+    spec:
+      version: v1.0
+      init:
+        command: ["sh", "-c", "jb install"]
+      generate:
+        command: ["sh", "-c", "tk show environments/${ARGOCD_ENV_TK_ENV} --dangerous-allow-redirect"]
+      discover:
+        fileName: "spec.json"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: argocd-repo-server-tanka
+  namespace: argocd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: argocd-repo-server
+      app.kubernetes.io/component: tanka-plugin
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: argocd-repo-server
+        app.kubernetes.io/component: tanka-plugin
+    spec:
+      containers:
+      - name: tanka-plugin
+        image: grafana/tanka:latest
+        command: ["/var/run/argocd/argocd-cmp-server"]
+        env:
+        - name: ARGOCD_ENV_TK_ENV
+          value: "local-dev"
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 999
+        volumeMounts:
+        - mountPath: /var/run/argocd
+          name: var-files
+        - mountPath: /home/argocd/cmp-server/plugins
+          name: plugins
+        - mountPath: /tmp
+          name: tmp
+        - mountPath: /home/argocd/cmp-server/config/plugin.yaml
+          subPath: plugin.yaml
+          name: argocd-tanka-plugin
+      volumes:
+      - emptyDir: {}
+        name: var-files
+      - emptyDir: {}
+        name: tmp
+      - emptyDir: {}
+        name: plugins
+      - configMap:
+          name: argocd-tanka-plugin
+        name: argocd-tanka-plugin

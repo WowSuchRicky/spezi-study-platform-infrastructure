@@ -16,6 +16,8 @@ spec:
         extVars:
           - name: LOCAL_IP
             value: ""  # Will be set by setup script
+        libs:
+          - ../../vendor
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
