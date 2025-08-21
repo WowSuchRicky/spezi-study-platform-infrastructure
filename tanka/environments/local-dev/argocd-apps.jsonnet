@@ -41,5 +41,7 @@ local appOfApps = {
 local componentApps = argocdApps(config);
 
 {
-  "app-of-apps": appOfApps,
-} + componentApps
+  apiVersion: 'v1',
+  kind: 'List',
+  items: [appOfApps] + std.objectValues(componentApps)
+}
