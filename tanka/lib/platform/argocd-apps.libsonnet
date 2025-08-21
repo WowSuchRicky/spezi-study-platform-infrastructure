@@ -36,20 +36,20 @@ function(config)
         source: {
           repoURL: 'https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git',
           targetRevision: 'main',
-          path: 'tanka',
+          path: 'tanka/environments/' + config.environment.name,
           directory: {
             jsonnet: {
               extVars: [
                 {
                   name: 'LOCAL_IP',
-                  value: config.domains.primary,
+                  value: config.local_ip,
                 },
               ],
               libs: [
-                'vendor',
+                '../../vendor',
               ],
             },
-            include: 'environments/' + config.environment.name + '/' + component + '.jsonnet',
+            include: component + '.jsonnet',
           },
         },
         destination: {
