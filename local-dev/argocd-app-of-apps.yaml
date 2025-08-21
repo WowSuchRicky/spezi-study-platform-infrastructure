@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git
-    path: tanka/environments/local-dev
+    path: tanka
     targetRevision: main
     directory:
       jsonnet:
@@ -17,7 +17,8 @@ spec:
           - name: LOCAL_IP
             value: ""  # Will be set by setup script
         libs:
-          - ../../vendor
+          - vendor
+      include: environments/local-dev/main.jsonnet
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
