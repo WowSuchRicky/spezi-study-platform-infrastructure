@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dummy-frontend
+  namespace: spezistudyplatform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dummy-frontend
+  template:
+    metadata:
+      labels:
+        app: dummy-frontend
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spezistudyplatform-frontend-service
+  namespace: spezistudyplatform
+spec:
+  selector:
+    app: dummy-frontend
+  ports:
+  - port: 80
+    targetPort: 80
