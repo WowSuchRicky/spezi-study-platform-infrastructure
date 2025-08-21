@@ -35,7 +35,7 @@ function(config)
         project: 'default',
         source: {
           repoURL: 'https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git',
-          targetRevision: 'HEAD',
+          targetRevision: 'main',
           path: 'tanka/environments/' + config.environment.name + '/' + component + '.jsonnet',
           plugin: {
             name: 'jsonnet',

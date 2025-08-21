@@ -15,8 +15,8 @@ local argocdApps = import '../../lib/platform/argocd-apps.libsonnet';
     spec: {
       project: 'default',
       source: {
-        repoURL: 'https://github.com/StanfordSpezi/spezi-study-platform-infrastructure.git',
-        targetRevision: 'HEAD',
+        repoURL: 'https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git',
+        targetRevision: 'main',
         path: 'tanka/environments/' + config.environment.name,
         directory: {
           jsonnet: {},
@@ -38,4 +38,4 @@ local argocdApps = import '../../lib/platform/argocd-apps.libsonnet';
       },
     },
   }
-} + argocdApps.new(config)
+} + argocdApps(config)

@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git
     path: tanka/environments/local-dev
-    targetRevision: HEAD
+    targetRevision: main
     directory:
       jsonnet:
         extVars:
