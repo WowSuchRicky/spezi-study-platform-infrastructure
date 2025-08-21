@@ -1,4 +1,13 @@
-local config = import './config.jsonnet';
-local certManager = import '../../lib/platform/cert-manager.libsonnet';
-
-std.objectValues(certManager(config))
+// Simple cert-manager namespace for now (ArgoCD can't import remote URLs)
+[
+  {
+    apiVersion: 'v1',
+    kind: 'Namespace',
+    metadata: {
+      name: 'cert-manager',
+      annotations: {
+        'argocd.argoproj.io/sync-wave': '1',
+      },
+    },
+  },
+]
