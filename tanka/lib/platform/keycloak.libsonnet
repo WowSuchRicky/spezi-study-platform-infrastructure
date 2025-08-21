@@ -56,7 +56,7 @@ function(config)
     new(config)::
       local helm = (import 'github.com/grafana/jsonnet-libs/tanka-util/helm.libsonnet').new(std.thisFile);
 
-      helm.template('keycloak', '../../charts/keycloak', {
+      helm.template('keycloak', 'charts/keycloak', {
         values: $.helmValues(config),
         namespace: config.project.namespace,
       }),
