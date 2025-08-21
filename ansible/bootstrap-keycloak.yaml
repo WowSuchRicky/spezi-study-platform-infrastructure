@@ -2,9 +2,10 @@
 ---
 - name: Apply OpenTofu Configuration for Keycloak Realm with K8s Secret
   hosts: localhost # Assuming run from where tofu & kubectl are configured
-  gather_facts: false
+  gather_facts: true
   vars:
-    keycloak_tofu_directory: "./kube/auth/keycloak/tf"
+    # Use local-dev version when LOCAL_DEV_MODE is set, otherwise use source version
+    keycloak_tofu_directory: "{{ './local-dev/kube/auth/keycloak/tf' if ansible_env.LOCAL_DEV_MODE is defined else './kube/auth/keycloak/tf' }}"
 
     # These two fields should match what is in kubernetes, as this playbook will retrieve it from there
     keycloak_secret_name: "keycloak"
@@ -74,10 +75,39 @@
         tofu_environment: "{{ {'TF_VAR_' + tofu_password_var_name : keycloak_admin_password} }}"
       no_log: true # Keep this step quiet too
 
+    # --- Detect Environment ---
+    - name: Get local machine IP for local development
+      ansible.builtin.shell: |
+        ifconfig | grep "inet " | grep -v 127.0.0.1 | head -1 | awk '{print $2}'
+      register: local_ip_result
+      failed_when: false
+
+    - name: Set keycloak domain for local development
+      ansible.builtin.set_fact:
+        keycloak_domain: "{{ local_ip_result.stdout }}.nip.io"
+      when: local_ip_result.stdout is defined and local_ip_result.stdout != ""
+
+    - name: Set default domain if KIND container not found
+      ansible.builtin.set_fact:
+        keycloak_domain: "platform.spezi.stanford.edu"
+      when: keycloak_domain is not defined
+
+    - name: Debug detected domain
+      ansible.builtin.debug:
+        msg: "Detected keycloak_domain: {{ keycloak_domain | default('NOT SET') }}"
+
+    - name: Set Keycloak URL based on detected domain
+      ansible.builtin.set_fact:
+        keycloak_url: "https://{{ keycloak_domain }}/auth"
+
+    - name: Debug final Keycloak URL
+      ansible.builtin.debug:
+        msg: "Using keycloak_url: {{ keycloak_url }}"
+
     # --- Run OpenTofu ---
     - name: Run OpenTofu init in {{ keycloak_tofu_dir }}
       when: tofu_dir_stat.stat.exists and tofu_dir_stat.stat.isdir and tf_files_check.matched > 0
-      ansible.builtin.command: "tofu init"
+      ansible.builtin.command: "tofu init -reconfigure"
       args:
         chdir: "{{ keycloak_tofu_dir }}"
       changed_when: "'OpenTofu has been successfully initialized!' in init_result.stdout or 'successfully initialized!' in init_result.stdout" # Adjusted for Tofu output
@@ -93,10 +123,11 @@
         TF_VAR_keycloak_client_id: "admin-cli"
         TF_VAR_keycloak_username: "user"
         TF_VAR_keycloak_password: "{{ keycloak_admin_password }}"
-        TF_VAR_keycloak_url: "https://study.muci.sh/auth"
+        TF_VAR_keycloak_url: "{{ keycloak_url }}"
       changed_when: "'Apply complete!' in apply_result.stdout"
       register: apply_result # Register the result correctly
-      no_log: true # Prevent environment variables (incl. password) from being logged
+      # Temporarily disable no_log to see the error
+      # no_log: true # Prevent environment variables (incl. password) from being logged
 
     # --- Display Tofu Apply output, for sanity ---
     - name: Display Tofu Apply Standard Output

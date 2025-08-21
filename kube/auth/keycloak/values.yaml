@@ -12,7 +12,8 @@ customReadinessProbe:
   failureThreshold: 3
   httpGet:
     path: /auth/realms/master
-    port: http
+    port: 8080
+  initialDelaySeconds: 120
 
   
 # configuration:
@@ -26,6 +27,9 @@ customReadinessProbe:
 
 resources: 
   limits: 
+    cpu: "1000m"
+    memory: "2048Mi"
+  requests:
     cpu: "500m"
     memory: "1024Mi"
   
@@ -43,17 +47,9 @@ initContainers: |
     args:
       - -c
       - |
-        curl -L -o /extensions/keycloakify-spezistudyplatform3-theme.jar https://s3.us-west-2.amazonaws.com/ngusav.es/Keycloak+theme+25%2B.jar
+        curl -L -o /emptydir/app-providers-dir/keycloakify-spezistudyplatform3-theme.jar https://s3.us-west-2.amazonaws.com/ngusav.es/Keycloak+theme+25%2B.jar
 
     volumeMounts:
-      - name: extensions
-        mountPath: /extensions
-
-extraVolumeMounts: |
-  - name: extensions
-    mountPath: /opt/bitnami/keycloak/providers
-
-extraVolumes: |
-  - name: extensions
-    emptyDir: {}
+      - name: empty-dir
+        mountPath: /emptydir
 # end config for custom theme

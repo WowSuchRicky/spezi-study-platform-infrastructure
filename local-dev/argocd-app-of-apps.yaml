@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: spezistudyplatform-local-dev
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git
+    path: tanka/environments/local-dev
+    targetRevision: HEAD
+    directory:
+      jsonnet:
+        extVars:
+          - name: LOCAL_IP
+            value: ""  # Will be set by setup script
+      include: argocd-apps.jsonnet
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

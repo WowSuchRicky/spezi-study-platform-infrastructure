@@ -1,27 +1,25 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: spezistudyplatform
-  namespace: spezistudyplatform
+  name: spezistudyplatform-apps
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
-    repoURL: github.com/example-org/example-repo
-    path: .
-    targetRevision: main
+    repoURL: https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git
+    path: tanka/environments/production
+    targetRevision: HEAD
     directory:
-      recurse: true
       jsonnet: {}
-      exclude: '*.json'
+      include: argocd-apps.jsonnet
   destination:
     server: https://kubernetes.default.svc
+    namespace: argocd
   syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
     syncOptions:
-      - RespectIgnoreDifferences=true
-      - ServerSideApply=true
-    retry:
-      limit: 2
-      backoff:
-        duration: 5s
-        factor: 2
-        maxDuration: 3m0s
+      - CreateNamespace=true
