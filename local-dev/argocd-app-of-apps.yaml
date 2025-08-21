@@ -16,7 +16,6 @@ spec:
         extVars:
           - name: LOCAL_IP
             value: ""  # Will be set by setup script
-      include: argocd-apps.jsonnet
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd

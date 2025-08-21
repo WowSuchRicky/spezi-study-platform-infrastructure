@@ -40,9 +40,5 @@ local appOfApps = {
 
 local componentApps = argocdApps(config);
 
-// Return as a List since ArgoCD can't handle named object keys
-{
-  apiVersion: 'v1',
-  kind: 'List',
-  items: [appOfApps] + std.objectValues(componentApps)
-}
+// Return apps directly without List wrapper
+[appOfApps] + std.objectValues(componentApps)
