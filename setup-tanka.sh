@@ -135,10 +135,16 @@ wait_for_argocd_app "spezistudyplatform-local-dev" "argocd" 600
 
 # Wait for individual component apps to be healthy  
 info "Waiting for individual components to be deployed..."
+FAILED_COMPONENTS=0
 for component in namespace cert-manager cloudnative-pg traefik keycloak oauth2-proxy backend frontend; do
     info "Checking component: $component"
-    if ! wait_for_argocd_app "spezistudyplatform-$component" "argocd" 300; then
+    if ! wait_for_argocd_app "spezistudyplatform-$component" "argocd" 120; then
         info "Warning: Component $component did not become healthy within timeout"
+        FAILED_COMPONENTS=$((FAILED_COMPONENTS + 1))
+        if [ $FAILED_COMPONENTS -ge 3 ]; then
+            info "Too many component failures, skipping remaining checks..."
+            break
+        fi
     fi
 done
 
