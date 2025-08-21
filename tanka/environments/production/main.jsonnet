@@ -1,8 +1,6 @@
-local config = import './config.jsonnet';
-local argocdApps = import '../../lib/platform/argocd-apps.libsonnet';
+local appOfApps = import './argocd-apps.jsonnet';
 
-// Production deployment
-argocdApps(config)
+appOfApps
 
 
 

@@ -5,7 +5,7 @@
     "name": "local-dev"
   },
   "spec": {
-    "apiServer": "https://127.0.0.1:6443",
+    "apiServer": "https://127.0.0.1:46323",
     "namespace": "spezistudyplatform",
     "resourceDefaults": {
       "labels": {
@@ -16,8 +16,8 @@
       "kubernetes": "1.29"
     },
     "injectLabels": true,
-    "diffStrategy": "server-side",
-    "applyStrategy": "server-side",
+    "diffStrategy": "server",
+    "applyStrategy": "server",
     "garbageCollection": true
   }
 }
