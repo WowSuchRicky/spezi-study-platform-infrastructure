@@ -45,6 +45,9 @@ function(config)
                   value: config.domains.primary,
                 },
               ],
+              libs: [
+                '../vendor',
+              ],
             },
             include: component + '.jsonnet',
           },
