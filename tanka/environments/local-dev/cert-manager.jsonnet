@@ -9,9 +9,9 @@ local parsedDocs = [
   if std.length(std.stripChars(doc, ' \t\n')) > 0 && !std.startsWith(std.stripChars(doc, ' \t\n'), '#')
 ];
 
-// Convert to individual named resources for ArgoCD (not a List)
-{
-  [std.strReplace(std.strReplace(doc.metadata.name, '-', '_'), '.', '_')]: doc {
+// Convert to array of resources for ArgoCD
+[
+  doc {
     metadata+: {
       annotations+: {
         "argocd.argoproj.io/sync-wave": "1",
@@ -20,4 +20,4 @@ local parsedDocs = [
   }
   for doc in parsedDocs
   if std.objectHas(doc, 'metadata') && std.objectHas(doc.metadata, 'name')
-}
+]
