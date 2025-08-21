@@ -8,7 +8,7 @@ function(config)
         "argocd.argoproj.io/sync-wave": "2",
       },
     },
-    items: std.parseYaml(importstr 'https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.17/releases/cnpg-1.17.5.yaml'),
+    items: std.parseYaml(importstr 'cloudnative-pg/cnpg-1.17.5.yaml'),
   },
 
   'postgres-cluster': {
