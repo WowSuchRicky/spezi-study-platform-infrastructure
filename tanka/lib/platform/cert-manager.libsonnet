@@ -8,7 +8,7 @@ function(config) {
         "argocd.argoproj.io/sync-wave": "1",
       },
     },
-    items: std.parseYaml(importstr "../../../vendor/cert-manager/cert-manager.yaml"),
+    items: std.parseYaml(importstr "cert-manager/cert-manager.yaml"),
   },
 
   "cert-manager-config": {
