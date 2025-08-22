@@ -21,8 +21,6 @@ spec:
         emptyDir: {}
       - name: plugins
         emptyDir: {}
-      - name: tmp
-        emptyDir: {}
       - name: argocd-tanka-plugin
         configMap:
           name: argocd-tanka-plugin
