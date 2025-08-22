@@ -129,6 +129,7 @@ info "ArgoCD will now deploy all components using Tanka/Jsonnet..."
 sed "s/value: \"\"/value: \"$LOCAL_IP\"/" "$LOCAL_DEV_DIR/argocd-app-of-apps.yaml" > /tmp/argocd-app-of-apps-local.yaml
 kubectl apply -f /tmp/argocd-app-of-apps-local.yaml
 
+
 # 6. Wait for ArgoCD to deploy everything
 info "Waiting for ArgoCD to deploy all applications via Tanka..."
 wait_for_argocd_app "spezistudyplatform-local-dev" "argocd" 600
