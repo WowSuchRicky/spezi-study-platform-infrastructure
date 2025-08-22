@@ -16,7 +16,7 @@ local k = import 'k.libsonnet';
 
     backend_config: k.core.v1.configMap.new('spezistudyplatform-backend-config', {
       PORT: '3003',
-      MODE: 'DEV', 
+      MODE: config.mode, 
       ALLOWED_ORIGINS: "('https://" + config.domain + "', 'http://" + config.domain + "'),http://127.0.0.1,http://localhost:5173",
       AUTH_URL: 'https://' + config.domain + '/auth',
       OAUTH_REALM: 'spezistudyplatform',
