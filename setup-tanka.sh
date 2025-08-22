@@ -30,6 +30,8 @@ info "KIND cluster is ready."
 info "Installing Argo CD..."
 kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+info "Giving resources a moment to be created..."
+sleep 5
 info "Waiting for Argo CD pods to be ready..."
 kubectl wait --for=condition=ready pod --all -n argocd --timeout=300s
 info "Argo CD is ready."
@@ -39,6 +41,8 @@ info "Installing Tanka plugin..."
 kubectl apply -f "$SCRIPT_DIR/local-dev/argocd-tanka-plugin.yaml"
 info "Patching Argo CD repo server to enable Tanka plugin..."
 kubectl patch deployment argocd-repo-server -n argocd --patch-file "$SCRIPT_DIR/local-dev/argocd-tanka-plugin-patch.yaml"
+info "Giving resources a moment to be created..."
+sleep 5
 info "Waiting for patched repo server to be ready..."
 kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=argocd-repo-server -n argocd --timeout=120s
 info "Tanka plugin is ready."
