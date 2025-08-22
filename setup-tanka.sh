@@ -1,192 +1,74 @@
 #!/bin/bash
-
 set -e
 
 # --- Configuration ---
-LOCAL_DEV_DIR="./local-dev"
 KIND_CLUSTER_NAME="spezi-study-platform"
-# Get the local IP address dynamically
-LOCAL_IP=$(ifconfig | grep "inet " | grep -v 127.0.0.1 | head -1 | awk '{print $2}')
-LOCAL_DOMAIN="${LOCAL_IP}.nip.io"
+# Get the directory of this script
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+BOOTSTRAP_DIR="$SCRIPT_DIR/local-dev/bootstrap"
+BOOTSTRAP_ENV="environments/argocd-bootstrap"
 
 # --- Helper Functions ---
 info() {
     echo "INFO: $1"
 }
 
-wait_for_pods() {
-    local label="$1"
-    local namespace="$2"
-    local timeout="${3:-120s}"
-    
-    info "Waiting for pods with label '$label' in namespace '$namespace' to be ready..."
-    kubectl wait --for=condition=ready pod -l "$label" -n "$namespace" --timeout="$timeout"
-}
-
-wait_for_argocd_app() {
-    local app_name="$1"
-    local namespace="${2:-argocd}"
-    local timeout="${3:-300}"
-    
-    info "Waiting for ArgoCD application '$app_name' to be synced and healthy..."
-    local count=0
-    while [ $count -lt $timeout ]; do
-        local health=$(kubectl get application "$app_name" -n "$namespace" -o jsonpath='{.status.health.status}' 2>/dev/null || echo "Unknown")
-        local sync=$(kubectl get application "$app_name" -n "$namespace" -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "Unknown")
-        
-        if [ "$health" = "Healthy" ] && [ "$sync" = "Synced" ]; then
-            info "Application '$app_name' is healthy and synced!"
-            return 0
-        fi
-        
-        echo "Application status: Health=$health, Sync=$sync (waiting...)"
-        sleep 5
-        count=$((count + 5))
-    done
-    
-    echo "ERROR: Timeout waiting for application '$app_name' to be ready"
-    return 1
-}
-
-# --- Main Logic ---
-
-info "Setting up Spezi Study Platform local development environment with Tanka + ArgoCD"
-info "Local domain will be: https://$LOCAL_DOMAIN"
-
-# 1. Create KIND cluster  
+# 1. Create KIND cluster
 info "Creating KIND cluster '$KIND_CLUSTER_NAME'..."
+if ! command -v kind &> /dev/null; then
+    info "kind is not installed. Please install it first."
+    exit 1
+fi
 if ! kind get clusters | grep -q "$KIND_CLUSTER_NAME"; then
-  kind create cluster --name "$KIND_CLUSTER_NAME" --config="$LOCAL_DEV_DIR/kind-config.yaml"
+  kind create cluster --name "$KIND_CLUSTER_NAME" --config="$SCRIPT_DIR/local-dev/kind-config.yaml"
 else
   info "KIND cluster '$KIND_CLUSTER_NAME' already exists."
 fi
+info "KIND cluster is ready."
 
-# 2. Install local-path-provisioner (needed for storage)
-info "Installing local-path-provisioner..."
-kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.26/deploy/local-path-storage.yaml
-sleep 5  # Wait for deployment to create pods
-wait_for_pods "app=local-path-provisioner" "local-path-storage"
-
-# 3. Install ArgoCD
-info "Installing ArgoCD..."
+# 2. Install Argo CD
+info "Installing Argo CD..."
 kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-sleep 10  # Wait for ArgoCD deployments to create pods
-wait_for_pods "app.kubernetes.io/name=argocd-server" "argocd" "300s"
+info "Waiting for Argo CD pods to be ready..."
+kubectl wait --for=condition=ready pod --all -n argocd --timeout=300s
+info "Argo CD is ready."
 
-# Configure ArgoCD for local access
-info "Configuring ArgoCD for local access..."
-kubectl patch svc argocd-server -n argocd -p '{"spec":{"type":"NodePort","ports":[{"port":80,"targetPort":8080,"nodePort":30080}]}}'
+# 3. Install Tanka plugin for Argo CD
+info "Installing Tanka plugin..."
+kubectl apply -f "$SCRIPT_DIR/local-dev/argocd-tanka-plugin.yaml"
+info "Patching Argo CD repo server to enable Tanka plugin..."
+kubectl patch deployment argocd-repo-server -n argocd --patch-file "$SCRIPT_DIR/local-dev/argocd-tanka-plugin-patch.yaml"
+info "Waiting for patched repo server to be ready..."
+kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=argocd-repo-server -n argocd --timeout=120s
+info "Tanka plugin is ready."
 
-# Disable ArgoCD TLS for local development
-kubectl patch configmap argocd-cmd-params-cm -n argocd --type merge -p '{"data":{"server.insecure":"true"}}'
-kubectl rollout restart deployment argocd-server -n argocd
-wait_for_pods "app.kubernetes.io/name=argocd-server" "argocd"
+# 4. Bootstrap Argo CD Applications
+info "Bootstrapping Argo CD applications..."
+if ! command -v tk &> /dev/null; then
+    info "Tanka (tk) is not installed. Please install it to continue."
+    exit 1
+fi
+if ! command -v jb &> /dev/null; then
+    info "Jsonnet Bundler (jb) is not installed. Please install it to continue."
+    exit 1
+fi
 
-# Get ArgoCD admin password
-info "Getting ArgoCD admin password..."
-ARGOCD_PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
+info "Installing Jsonnet dependencies..."
+jb install
 
-# 4. Generate local development secrets (these can't be generated by ArgoCD)
-info "Pre-creating secrets that ArgoCD applications will reference..."
+info "Exporting Argo CD application manifests from Tanka..."
+rm -rf "$BOOTSTRAP_DIR"
+tk export "$BOOTSTRAP_DIR" "$BOOTSTRAP_ENV"
 
-# Create spezistudyplatform namespace
-kubectl create namespace spezistudyplatform --dry-run=client -o yaml | kubectl apply -f -
+info "Applying Argo CD application manifests..."
+kubectl apply -f "$BOOTSTRAP_DIR"
 
-# OAuth2-proxy secret
-OAUTH2_PROXY_CLIENT_SECRET=$(openssl rand -hex 32)
-COOKIE_SECRET=$(dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64 | tr -d -- '\n' | tr -- '+/' '-_')
-
-kubectl create secret generic spezistudyplatform-oauth2proxy-secret \
-  --from-literal=CLIENT_SECRET="$OAUTH2_PROXY_CLIENT_SECRET" \
-  --from-literal=COOKIE_SECRET="$COOKIE_SECRET" \
-  --namespace=spezistudyplatform \
-  --dry-run=client -o yaml | kubectl apply -f -
-
-# Database password secret
-DB_PASSWORD=$(openssl rand -hex 32)
-DB_USER="spezistudyplatform"
-
-kubectl create secret generic spezistudyplatform-postgres-credentials \
-  --from-literal=username="$DB_USER" \
-  --from-literal=password="$DB_PASSWORD" \
-  --namespace=spezistudyplatform \
-  --dry-run=client -o yaml | kubectl apply -f -
-
-# Backend secret
-BACKEND_OAUTH_CLIENT_SECRET=$(openssl rand -base64 32 | tr -d '\n')
-
-kubectl create secret generic spezistudyplatform-backend-secret \
-  --from-literal=OAUTH_CLIENT_SECRET="$BACKEND_OAUTH_CLIENT_SECRET" \
-  --namespace=spezistudyplatform \
-  --dry-run=client -o yaml | kubectl apply -f -
-
-# 5. Apply ArgoCD app-of-apps - this will deploy everything via Tanka/Jsonnet
-info "Applying ArgoCD app-of-apps manifest..."
-info "ArgoCD will now deploy all components using Tanka/Jsonnet..."
-
-# Update app-of-apps manifest with local IP and apply it
-sed "s/value: \"\"/value: \"$LOCAL_IP\"/" "$LOCAL_DEV_DIR/argocd-app-of-apps.yaml" > /tmp/argocd-app-of-apps-local.yaml
-kubectl apply -f /tmp/argocd-app-of-apps-local.yaml
-
-
-# 6. Wait for ArgoCD to deploy everything
-info "Waiting for ArgoCD to deploy all applications via Tanka..."
-wait_for_argocd_app "spezistudyplatform-local-dev" "argocd" 600
-
-# Wait for individual component apps to be healthy  
-info "Waiting for individual components to be deployed..."
-FAILED_COMPONENTS=0
-for component in namespace cert-manager cloudnative-pg traefik keycloak oauth2-proxy backend frontend; do
-    info "Checking component: $component"
-    if ! wait_for_argocd_app "spezistudyplatform-$component" "argocd" 120; then
-        info "Warning: Component $component did not become healthy within timeout"
-        FAILED_COMPONENTS=$((FAILED_COMPONENTS + 1))
-        if [ $FAILED_COMPONENTS -ge 3 ]; then
-            info "Too many component failures, skipping remaining checks..."
-            break
-        fi
-    fi
-done
-
-# 7. Post-deployment configuration (things that can't be done declaratively)
-info "Running post-deployment configuration..."
-
-# Wait for Keycloak to be ready before configuring it
-info "Waiting for Keycloak to be fully ready..."
-wait_for_pods "app.kubernetes.io/component=keycloak" "spezistudyplatform" "300s"
-
-# Bootstrap Keycloak realm and clients
-info "Bootstrapping Keycloak realm and clients..."
-export LOCAL_DEV_MODE=1
-export LOCAL_IP="$LOCAL_IP"
-ansible-playbook ansible/bootstrap-keycloak.yaml
-
-# Extract certificate for local testing
-info "Extracting TLS certificate for local testing..."
-kubectl wait --for=condition=ready certificate/spezistudyplatform-main-tls-cert -n spezistudyplatform --timeout=300s || true
-kubectl get secret spezistudyplatform-main-tls-secret -n spezistudyplatform -o jsonpath='{.data.tls\.crt}' | base64 -d > "$LOCAL_DEV_DIR/local-dev.crt" 2>/dev/null || info "Certificate not yet available"
-
-# 8. Final status
-info ""
-info "=========================================="
-info "Local environment setup complete!"
-info "=========================================="
-info "All components deployed via ArgoCD + Tanka/Jsonnet"
-info ""
-info "Services:"
-info "  Main application: https://$LOCAL_DOMAIN"
-info "  ArgoCD UI: http://localhost:30080"
-info "    Username: admin" 
-info "    Password: $ARGOCD_PASSWORD"
-info ""
-info "To manage the deployment:"
-info "  - View apps: kubectl get applications -n argocd"
-info "  - ArgoCD UI: http://localhost:30080"
-info "  - Sync manually: argocd app sync <app-name> --server localhost:30080 --insecure"
-info ""
-info "All infrastructure is now managed declaratively via Tanka/Jsonnet!"
-info "=========================================="
-
-# Cleanup
-rm -f /tmp/argocd-app-of-apps-local.yaml
+info "Setup complete!"
+info "Argo CD is now configured to manage the local-dev environment."
+info "Applications will be deployed in waves. Monitor progress in the Argo CD UI."
+info "To access the Argo CD UI:"
+info "1. Get the admin password:"
+info "   kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d; echo"
+info "2. Port-forward the UI:"
+info "   kubectl port-forward svc/argocd-server -n argocd 8080:443"

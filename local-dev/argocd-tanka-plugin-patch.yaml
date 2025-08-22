@@ -1,0 +1,28 @@
+spec:
+  template:
+    spec:
+      containers:
+      - name: tanka
+        image: ghcr.io/grafana/tanka/tanka:v0.25.1
+        command:
+        - /var/run/argocd/argocd-cmp-server
+        volumeMounts:
+        - name: var-files
+          mountPath: /var/run/argocd
+        - name: plugins
+          mountPath: /home/argocd/cmp-server/plugins
+        - name: tmp
+          mountPath: /tmp
+        - name: argocd-tanka-plugin
+          mountPath: /home/argocd/cmp-server/config/plugin.yaml
+          subPath: plugin.yaml
+      volumes:
+      - name: var-files
+        emptyDir: {}
+      - name: plugins
+        emptyDir: {}
+      - name: tmp
+        emptyDir: {}
+      - name: argocd-tanka-plugin
+        configMap:
+          name: argocd-tanka-plugin
