@@ -1,5 +1,5 @@
-// Production environment configuration
-local config = (import '../../lib/platform/config.libsonnet').prod;
+// Local development environment configuration
+local config = (import '../../lib/platform/config.libsonnet').localDev;
 local namespace = import '../../lib/platform/namespace.libsonnet';
 local certManager = import '../../lib/platform/cert-manager.libsonnet';
 local cloudnativePgCrds = import '../../lib/platform/cloudnative-pg-crds.libsonnet';
@@ -13,4 +13,6 @@ local traefik = import '../../lib/platform/traefik.libsonnet';
 namespace.withConfig(config) +
 backend.withConfig(config) +
 frontend.withConfig(config) +
+keycloak.withConfig(config) +
+oauth2Proxy.withConfig(config) +
 traefik.withConfig(config)
