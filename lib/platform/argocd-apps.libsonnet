@@ -17,10 +17,12 @@
             repoURL: 'https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git',
             path: 'environments/local-dev',
             targetRevision: 'jsonnet-working',
-            plugin: {
-              name: 'tanka',
-              env: [
-                { name: 'TANKA_JSONNET_TLA_STR_component', value: name },
+            jsonnet: {
+              tlas: [
+                {
+                  name: 'component',
+                  value: name,
+                },
               ],
             },
           },

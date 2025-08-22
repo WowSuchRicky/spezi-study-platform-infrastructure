@@ -5,8 +5,6 @@ set -e
 KIND_CLUSTER_NAME="spezi-study-platform"
 # Get the directory of this script
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-BOOTSTRAP_DIR="$SCRIPT_DIR/local-dev/bootstrap"
-BOOTSTRAP_ENV="environments/argocd-bootstrap"
 
 # --- Helper Functions ---
 info() {
@@ -36,48 +34,28 @@ info "Waiting for Argo CD pods to be ready..."
 kubectl wait --for=condition=ready pod --all -n argocd --timeout=300s
 info "Argo CD is ready."
 
-# 3. Install and Register Standalone Tanka plugin
-info "Installing Standalone Tanka plugin..."
-kubectl apply -f "$SCRIPT_DIR/local-dev/argocd-tanka-plugin.yaml"
-info "Waiting for Tanka plugin deployment to be ready..."
-kubectl wait --for=condition=available deployment/argocd-tanka-plugin -n argocd --timeout=120s
-
-info "Registering Tanka plugin with Argo CD..."
+# 3. Bootstrap Argo CD Root Application
+info "Bootstrapping Argo CD Root Application..."
 cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: ConfigMap
+apiVersion: argoproj.io/v1alpha1
+kind: Application
 metadata:
-  name: argocd-cmd-params-cm
+  name: root
   namespace: argocd
-  labels:
-    app.kubernetes.io/part-of: argocd
-data:
-  reposerver.flags: |
-    --cmp-server-address argocd-tanka-plugin:8081
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git
+    path: environments/argocd-bootstrap
+    targetRevision: jsonnet-working
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
 EOF
-
-info "Tanka plugin is ready."
-
-# 4. Bootstrap Argo CD Applications
-info "Bootstrapping Argo CD applications..."
-if ! command -v tk &> /dev/null; then
-    info "Tanka (tk) is not installed. Please install it to continue."
-    exit 1
-fi
-if ! command -v jb &> /dev/null; then
-    info "Jsonnet Bundler (jb) is not installed. Please install it to continue."
-    exit 1
-fi
-
-info "Installing Jsonnet dependencies..."
-jb install
-
-info "Exporting Argo CD application manifests from Tanka..."
-rm -rf "$BOOTSTRAP_DIR"
-tk export "$BOOTSTRAP_DIR" "$BOOTSTRAP_ENV"
-
-info "Applying Argo CD application manifests..."
-find "$BOOTSTRAP_DIR" -type f -name "*.yaml" -exec kubectl apply -f {} \;
 
 info "Setup complete!"
 info "Argo CD is now configured to manage the local-dev environment."
