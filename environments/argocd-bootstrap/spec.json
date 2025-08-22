@@ -1,0 +1,9 @@
+{
+  "apiVersion": "tanka.dev/v1alpha1",
+  "kind": "Environment",
+  "metadata": { "name": "argocd-bootstrap" },
+  "spec": {
+    "apiServer": "https://kubernetes.default.svc",
+    "namespace": "argocd"
+  }
+}
