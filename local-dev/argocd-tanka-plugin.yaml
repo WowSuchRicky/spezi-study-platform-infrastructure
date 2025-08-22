@@ -11,8 +11,6 @@ data:
       name: tanka
     spec:
       version: v1.0
-      init:
-        command: ["sh", "-c", "jb install"]
       generate:
         command: ["tk", "show", "."]
       discover:
