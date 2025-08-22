@@ -15,3 +15,5 @@ data:
         command: ["sh", "-c", "jb install"]
       generate:
         command: ["tk", "show", "."]
+      discover:
+        fileName: "spec.json"
