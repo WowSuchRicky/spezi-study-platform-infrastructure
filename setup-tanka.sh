@@ -66,7 +66,7 @@ rm -rf "$BOOTSTRAP_DIR"
 tk export "$BOOTSTRAP_DIR" "$BOOTSTRAP_ENV"
 
 info "Applying Argo CD application manifests..."
-kubectl apply -f "$BOOTSTRAP_DIR"
+find "$BOOTSTRAP_DIR" -type f -name "*.yaml" -exec kubectl apply -f {} \;
 
 info "Setup complete!"
 info "Argo CD is now configured to manage the local-dev environment."
