@@ -17,10 +17,6 @@ spec:
           mountPath: /home/argocd/cmp-server/config/plugin.yaml
           subPath: plugin.yaml
       volumes:
-      - name: var-files
-        emptyDir: {}
-      - name: plugins
-        emptyDir: {}
       - name: argocd-tanka-plugin
         configMap:
           name: argocd-tanka-plugin
