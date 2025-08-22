@@ -33,6 +33,17 @@ spec:
       labels:
         app.kubernetes.io/name: argocd-tanka-plugin
     spec:
+      initContainers:
+      - name: copy-cmp-server
+        image: quay.io/argoproj/argocd:v2.11.1
+        command:
+        - /bin/cp
+        - -n
+        - /usr/local/bin/argocd-cmp-server
+        - /var/run/argocd/
+        volumeMounts:
+        - name: var-files
+          mountPath: /var/run/argocd
       containers:
       - name: tanka-plugin
         image: grafana/tanka:0.33.0
