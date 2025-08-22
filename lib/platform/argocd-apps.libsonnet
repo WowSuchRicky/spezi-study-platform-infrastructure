@@ -1,7 +1,7 @@
 {
-  withConfig(config):: {
-    'argocd-apps': {
-      local app(name, wave) = {
+  withConfig(config)::
+    let
+      app(name, wave) = {
         apiVersion: 'argoproj.io/v1alpha1',
         kind: 'Application',
         metadata: {
@@ -41,23 +41,24 @@
           },
         },
       },
+      apps = {
+        // Wave 0
+        'namespace-app': app('namespace', 0),
+        'cnpg-crds-app': app('cloudnative-pg-crds', 0),
 
-      // Wave 0
-      'namespace-app': app('namespace', 0),
-      'cnpg-crds-app': app('cloudnative-pg-crds', 0),
+        // Wave 1
+        'traefik-app': app('traefik', 1),
+        'cert-manager-app': app('cert-manager', 1),
 
-      // Wave 1
-      'traefik-app': app('traefik', 1),
-      'cert-manager-app': app('cert-manager', 1),
+        // Wave 2
+        'oauth2-proxy-app': app('oauth2-proxy', 2),
+        'keycloak-app': app('keycloak', 2),
+        'cnpg-app': app('cloudnative-pg', 2),
 
-      // Wave 2
-      'oauth2-proxy-app': app('oauth2-proxy', 2),
-      'keycloak-app': app('keycloak', 2),
-      'cnpg-app': app('cloudnative-pg', 2),
-
-      // Wave 3
-      'backend-app': app('backend', 3),
-      'frontend-app': app('frontend', 3),
-    },
-  },
+        // Wave 3
+        'backend-app': app('backend', 3),
+        'frontend-app': app('frontend', 3),
+      }
+    in
+      std.objectValues(apps),
 }
