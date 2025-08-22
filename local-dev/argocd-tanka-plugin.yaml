@@ -15,3 +15,62 @@ data:
         command: ["tk", "show", "."]
       discover:
         fileName: "spec.json"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: argocd-tanka-plugin
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-tanka-plugin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: argocd-tanka-plugin
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: argocd-tanka-plugin
+    spec:
+      containers:
+      - name: tanka-plugin
+        image: grafana/tanka:0.33.0
+        command:
+        - /var/run/argocd/argocd-cmp-server
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 999
+        volumeMounts:
+        - name: var-files
+          mountPath: /var/run/argocd
+        - name: plugins
+          mountPath: /home/argocd/cmp-server/plugins
+        - name: tmp
+          mountPath: /tmp
+        - name: argocd-tanka-plugin-config
+          mountPath: /home/argocd/cmp-server/config/plugin.yaml
+          subPath: plugin.yaml
+      volumes:
+      - name: var-files
+        emptyDir: {}
+      - name: plugins
+        emptyDir: {}
+      - name: tmp
+        emptyDir: {}
+      - name: argocd-tanka-plugin-config
+        configMap:
+          name: argocd-tanka-plugin
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: argocd-tanka-plugin
+  namespace: argocd
+spec:
+  selector:
+    app.kubernetes.io/name: argocd-tanka-plugin
+  ports:
+  - name: plugin
+    port: 8081
+    protocol: TCP
