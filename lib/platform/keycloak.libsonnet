@@ -1,6 +1,6 @@
+local helm = (import '../../vendor/github.com/grafana/jsonnet-libs/tanka-util/helm.libsonnet').new(std.thisFile),
+
 {
-  local tanka = import '../../vendor/github.com/grafana/jsonnet-libs/tanka-util/main.libsonnet',
-  local helm = tanka.helm.new(std.thisFile),
   withConfig(config)::
     std.objectValues({
       keycloak: helm.template('keycloak', '../../charts/keycloak', {
@@ -76,5 +76,5 @@
           |||,
         },
       }),
-    }),
+  }),
 }

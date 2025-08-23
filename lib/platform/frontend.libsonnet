@@ -1,5 +1,6 @@
+local k = import 'k.libsonnet',
+
 {
-  local k = import 'k.libsonnet',
   withConfig(config)::
     std.objectValues({
       // Frontend ConfigMap

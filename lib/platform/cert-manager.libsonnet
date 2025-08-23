@@ -1,11 +1,9 @@
 {
   local k = import 'k.libsonnet',
   withConfig(config)::
-    std.objectValues(
-      let
-        certManagerManifests = std.native('parseYaml')(importstr '../../vendor/cert-manager/cert-manager.yaml')
-      in
-      {
+    let
+      certManagerManifests = std.native('parseYaml')(importstr '../../vendor/cert-manager/cert-manager.yaml'),
+      obj = {
         [std.strReplace(resource.kind + '-' + resource.metadata.name, '/', '-')]:
           if resource.kind == 'Deployment' && resource.metadata.name == 'cert-manager' then
             resource + {
@@ -26,6 +24,7 @@
             }
           else resource
         for resource in certManagerManifests
-      })
-    ),
+      }
+    in
+      std.objectValues(obj),
 }
