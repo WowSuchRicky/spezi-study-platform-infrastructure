@@ -48,9 +48,8 @@ spec:
     repoURL: https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git
     path: environments/argocd-bootstrap
     targetRevision: jsonnet-working
-    jsonnet:
-      exclude:
-      - spec.json
+    directory:
+      exclude: spec.json
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd

@@ -14,15 +14,15 @@ local app(name, wave, config) = {
       repoURL: 'https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git',
       path: 'environments/local-dev',
       targetRevision: 'jsonnet-working',
+      directory: {
+        exclude: 'spec.json',
+      },
       jsonnet: {
         tlas: [
           {
             name: 'component',
             value: name,
           },
-        ],
-        exclude: [
-          'spec.json',
         ],
       },
     },
