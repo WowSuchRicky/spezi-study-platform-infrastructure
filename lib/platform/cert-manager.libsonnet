@@ -2,7 +2,7 @@
   local k = import 'k.libsonnet',
   withConfig(config)::
     std.objectValues(
-      (let
+      let
         certManagerManifests = std.native('parseYaml')(importstr '../../vendor/cert-manager/cert-manager.yaml')
       in
       {
