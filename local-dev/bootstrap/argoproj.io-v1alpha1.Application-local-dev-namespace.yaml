@@ -20,8 +20,5 @@ spec:
     repoURL: https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git
     targetRevision: jsonnet-working
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
     syncOptions:
     - CreateNamespace=true
