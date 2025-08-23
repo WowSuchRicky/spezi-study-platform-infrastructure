@@ -14,7 +14,7 @@ spec:
     path: environments/local-dev
     plugin:
       env:
-      - name: ARGOCD_ENV_COMPONENT
+      - name: COMPONENT
         value: namespace
       name: tanka
     repoURL: https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git
