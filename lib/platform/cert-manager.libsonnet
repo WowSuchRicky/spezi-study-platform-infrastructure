@@ -1,7 +1,8 @@
 {
+  local tanka = import '../../vendor/github.com/grafana/jsonnet-libs/tanka-util/main.libsonnet',
+  local kustomize = tanka.kustomize.new(std.thisFile),
   withConfig(config)::
-    local certManagerUrl = 'https://github.com/cert-manager/cert-manager/releases/download/v1.18.2/cert-manager.yaml';
-    local certManagerManifests = std.native('manifestYamlFromUrl')(certManagerUrl);
+    local certManagerManifests = kustomize.build('../../vendor/cert-manager/');
     // Convert to array if it's an object, otherwise use as is
     local manifestArray = if std.isArray(certManagerManifests) then certManagerManifests else std.objectValues(certManagerManifests);
     local processedManifests = [
