@@ -5,6 +5,10 @@ set -e
 KIND_CLUSTER_NAME="spezi-study-platform"
 # Get the directory of this script
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+BOOTSTRAP_DIR="$SCRIPT_DIR/local-dev/bootstrap"
+# We need a Tanka env to generate the apps. Let's reuse the one I made before.
+# I need to recreate it.
+BOOTSTRAP_ENV="environments/argocd-bootstrap"
 
 # --- Helper Functions ---
 info() {
@@ -34,30 +38,62 @@ info "Waiting for Argo CD pods to be ready..."
 kubectl wait --for=condition=ready pod --all -n argocd --timeout=300s
 info "Argo CD is ready."
 
-# 3. Bootstrap Argo CD Root Application
-info "Bootstrapping Argo CD Root Application..."
-cat <<EOF | kubectl apply -f -
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: root
-  namespace: argocd
-spec:
-  project: default
-  source:
-    repoURL: https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git
-    path: environments/argocd-bootstrap
-    targetRevision: jsonnet-working
-    directory:
-      exclude: spec.json
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: argocd
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
+# 3. Install and Register Tanka Custom Tool Plugin
+info "Installing Tanka custom tools..."
+kubectl patch deployment argocd-repo-server -n argocd --patch-file "$SCRIPT_DIR/local-dev/argocd-tool-patch.yaml"
+info "Waiting for repo-server to be patched with custom tools..."
+kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=argocd-repo-server -n argocd --timeout=120s
+
+info "Registering Tanka plugin..."
+kubectl apply -f "$SCRIPT_DIR/local-dev/argocd-plugin-cm.yaml"
+# We need to restart the repo-server for it to pick up the new plugin config
+info "Restarting repo-server to apply plugin..."
+kubectl rollout restart deployment argocd-repo-server -n argocd
+kubectl wait --for=condition=available deployment/argocd-repo-server -n argocd --timeout=120s
+info "Tanka plugin is ready."
+
+# 4. Bootstrap Argo CD Applications
+info "Bootstrapping Argo CD applications..."
+if ! command -v tk &> /dev/null; then
+    info "Tanka (tk) is not installed. Please install it to continue."
+    exit 1
+fi
+if ! command -v jb &> /dev/null; then
+    info "Jsonnet Bundler (jb) is not installed. Please install it to continue."
+    exit 1
+fi
+
+info "Installing Jsonnet dependencies..."
+jb install
+
+info "Exporting Argo CD application manifests from Tanka..."
+# I deleted the bootstrap env before. I need to recreate it to use tk export.
+# Or, I can just apply the argocd-apps.libsonnet directly if I construct a valid entrypoint.
+# The user wants to use Tanka. So I need the bootstrap env.
+# I will create it again. It was deleted in a cleanup step.
+mkdir -p "$SCRIPT_DIR/environments/argocd-bootstrap"
+cat <<EOF > "$SCRIPT_DIR/environments/argocd-bootstrap/spec.json"
+{
+  "apiVersion": "tanka.dev/v1alpha1",
+  "kind": "Environment",
+  "metadata": { "name": "argocd-bootstrap" },
+  "spec": {
+    "apiServer": "https://kubernetes.default.svc",
+    "namespace": "argocd"
+  }
+}
 EOF
+cat <<EOF > "$SCRIPT_DIR/environments/argocd-bootstrap/main.jsonnet"
+local argocdApps = import '../../lib/platform/argocd-apps.libsonnet';
+local config = { namespace: 'argocd' };
+argocdApps.withConfig(config)
+EOF
+
+rm -rf "$BOOTSTRAP_DIR"
+tk export "$BOOTSTRAP_DIR" "$BOOTSTRAP_ENV"
+
+info "Applying Argo CD application manifests..."
+find "$BOOTSTRAP_DIR" -type f -name "*.yaml" -exec kubectl apply -f {} \;
 
 info "Setup complete!"
 info "Argo CD is now configured to manage the local-dev environment."

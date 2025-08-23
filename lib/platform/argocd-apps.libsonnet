@@ -14,13 +14,11 @@ local app(name, wave, config) = {
       repoURL: 'https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git',
       path: 'environments/local-dev',
       targetRevision: 'jsonnet-working',
-      directory: {
-        exclude: 'spec.json',
-      },
-      jsonnet: {
-        tlas: [
+      plugin: {
+        name: 'tanka',
+        env: [
           {
-            name: 'component',
+            name: 'ARGOCD_ENV_COMPONENT',
             value: name,
           },
         ],

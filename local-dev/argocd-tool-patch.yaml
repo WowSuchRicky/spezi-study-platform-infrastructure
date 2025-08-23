@@ -1,0 +1,25 @@
+spec:
+  template:
+    spec:
+      initContainers:
+      - name: download-tanka-tools
+        image: alpine:3.11
+        command: [sh, -c]
+        args:
+        - |
+          apk add curl
+          echo "Downloading Tanka and Jsonnet-Bundler..."
+          curl -Lo /custom-tools/tk https://github.com/grafana/tanka/releases/download/v0.33.0/tk-linux-amd64
+          curl -Lo /custom-tools/jb https://github.com/jsonnet-bundler/jsonnet-bundler/releases/download/v0.5.1/jb-linux-amd64
+          chmod +x /custom-tools/*
+        volumeMounts:
+        - name: custom-tools
+          mountPath: /custom-tools
+      containers:
+      - name: argocd-repo-server
+        volumeMounts:
+        - name: custom-tools
+          mountPath: /usr/local/bin
+      volumes:
+      - name: custom-tools
+        emptyDir: {}
