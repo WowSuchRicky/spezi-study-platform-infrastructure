@@ -1,6 +1,5 @@
-local k = import 'k.libsonnet',
-
 {
+  local k = import 'k.libsonnet',
   withConfig(config)::
     std.objectValues({
       postgres_credentials: k.core.v1.secret.new('spezistudyplatform-postgres-credentials', {
@@ -17,7 +16,7 @@ local k = import 'k.libsonnet',
 
       backend_config: k.core.v1.configMap.new('spezistudyplatform-backend-config', {
         PORT: '3003',
-        MODE: config.mode, 
+        MODE: config.mode,
         ALLOWED_ORIGINS: "('https://" + config.domain + "', 'http://" + config.domain + "'),http://127.0.0.1,http://localhost:5173",
         AUTH_URL: 'https://' + config.domain + '/auth',
         OAUTH_REALM: 'spezistudyplatform',
@@ -39,12 +38,12 @@ local k = import 'k.libsonnet',
             cpu: '1',
           })
           + k.core.v1.container.withEnvFrom([
-            k.core.v1.envFromSource.configMapRef.withName('spezistudyplatform-backend-config')
+            k.core.v1.envFromSource.configMapRef.withName('spezistudyplatform-backend-config'),
           ])
           + k.core.v1.container.withEnv([
             k.core.v1.envVar.fromSecretRef('DB_USER', 'spezistudyplatform-postgres-credentials', 'username'),
             k.core.v1.envVar.fromSecretRef('DB_PASSWORD', 'spezistudyplatform-postgres-credentials', 'password'),
-          ])
+          ]),
         ]
       )
       + k.apps.v1.deployment.metadata.withNamespace(config.namespace)
@@ -59,5 +58,5 @@ local k = import 'k.libsonnet',
         [k.core.v1.servicePort.new(3000, 3000)]
       )
       + k.core.v1.service.metadata.withNamespace(config.namespace),
-  }),
+    }),
 }

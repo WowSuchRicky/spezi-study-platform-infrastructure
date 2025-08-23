@@ -1,6 +1,5 @@
-local helm = (import '../../vendor/github.com/grafana/jsonnet-libs/tanka-util/helm.libsonnet').new(std.thisFile),
-
 {
+  local helm = (import '../../vendor/github.com/grafana/jsonnet-libs/tanka-util/helm.libsonnet').new(std.thisFile),
   withConfig(config)::
     std.objectValues({
       oauth2_proxy: helm.template('oauth2-proxy', '../../charts/oauth2-proxy', {
@@ -72,5 +71,5 @@ local helm = (import '../../vendor/github.com/grafana/jsonnet-libs/tanka-util/he
           ],
         },
       }),
-  }),
+    }),
 }

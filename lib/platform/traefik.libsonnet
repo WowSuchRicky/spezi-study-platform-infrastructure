@@ -1,6 +1,5 @@
-local helm = (import '../../vendor/github.com/grafana/jsonnet-libs/tanka-util/helm.libsonnet').new(std.thisFile),
-
 {
+  local helm = (import '../../vendor/github.com/grafana/jsonnet-libs/tanka-util/helm.libsonnet').new(std.thisFile),
   withConfig(config)::
     std.objectValues({
       traefik: helm.template('traefik', '../../charts/traefik', {
@@ -73,5 +72,5 @@ local helm = (import '../../vendor/github.com/grafana/jsonnet-libs/tanka-util/he
           },
         },
       }),
-  }),
+    }),
 }
