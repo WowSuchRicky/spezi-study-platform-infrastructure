@@ -21,3 +21,9 @@ data:
         fileName: "./jsonnetfile.json"
       allowConcurrency: true
       lockRepo: false
+      parameters:
+        static:
+        - name: "server-side-apply"
+          value: "true"
+        - name: "force-apply"
+          value: "true"
