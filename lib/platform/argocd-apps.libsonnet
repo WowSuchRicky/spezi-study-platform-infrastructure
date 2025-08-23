@@ -21,6 +21,9 @@ local app(name, wave, config) = {
             value: name,
           },
         ],
+        exclude: [
+          'spec.json',
+        ],
       },
     },
     destination: {
