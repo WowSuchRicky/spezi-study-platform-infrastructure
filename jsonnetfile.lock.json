@@ -5,16 +5,6 @@
       "source": {
         "git": {
           "remote": "https://github.com/grafana/jsonnet-libs.git",
-          "subdir": "helm-util"
-        }
-      },
-      "version": "da2e332f4ad19bc0e808fb70fcde951b0d9041e1",
-      "sum": "6zGmRSfej5c/NsdDdL24RXXifLnljSjf3Ff8Fu1WOYw="
-    },
-    {
-      "source": {
-        "git": {
-          "remote": "https://github.com/grafana/jsonnet-libs.git",
           "subdir": "ksonnet-util"
         }
       },
