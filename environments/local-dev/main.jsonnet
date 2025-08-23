@@ -25,7 +25,10 @@ function(component=null)
   };
 
   if component != null then
-    components[component]
+    if std.objectHas(components, component) then
+      components[component]
+    else
+      error 'Component "' + component + '" not found. Available components: ' + std.join(', ', std.objectFields(components))
   else
     // If no component is specified, render all of them.
     std.foldl(function(a, b) a + b, std.objectValues(components), {})
