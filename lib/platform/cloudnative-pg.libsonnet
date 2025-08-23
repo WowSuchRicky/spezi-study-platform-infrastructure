@@ -1,15 +1,15 @@
-local k = import 'k.libsonnet',
-
 {
+  local k = import 'k.libsonnet',
   withConfig(config)::
     std.objectValues(
+      (let
+        cnpgOperator = std.native('parseYaml')(importstr '../../vendor/cloudnative-pg/cnpg-1.27.0.yaml')
+      in
       {
-        local cnpgOperator = std.native('parseYaml')(importstr '../../vendor/cloudnative-pg/cnpg-1.27.0.yaml');
-
         [std.strReplace(resource.kind + '-' + resource.metadata.name, '/', '-')]: resource
         for resource in cnpgOperator
         if resource.kind != 'CustomResourceDefinition'
-      } + {
+      }) + {
         postgres_cluster: {
           apiVersion: 'postgresql.cnpg.io/v1',
           kind: 'Cluster',
