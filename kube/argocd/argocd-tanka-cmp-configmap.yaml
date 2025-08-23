@@ -16,7 +16,7 @@ data:
         command: [jb, install]
       generate:
         command: [sh, -c]
-        args: ["/usr/local/bin/tk show --dangerous-allow-redirect ."]
+        args: ["/usr/local/bin/tk show --dangerous-allow-redirect . --tla-str component=$ARGOCD_ENV_COMPONENT"]
       discover:
         fileName: "./jsonnetfile.json"
       allowConcurrency: true
