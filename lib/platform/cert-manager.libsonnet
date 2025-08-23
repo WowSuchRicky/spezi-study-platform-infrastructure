@@ -3,7 +3,7 @@
   local kustomize = tanka.kustomize.new(std.thisFile),
   withConfig(config)::
     local certManagerManifests = kustomize.build('../../vendor/cert-manager/');
-    [
+    local processedManifests = [
       if resource.kind == 'Deployment' && resource.metadata.name == 'cert-manager' then
         resource + {
           spec+: {
@@ -23,5 +23,9 @@
         }
       else resource
       for resource in certManagerManifests
-    ],
+    ];
+    {
+      [std.strReplace(resource.kind + '-' + resource.metadata.name, '/', '-')]: resource
+      for resource in processedManifests
+    },
 }

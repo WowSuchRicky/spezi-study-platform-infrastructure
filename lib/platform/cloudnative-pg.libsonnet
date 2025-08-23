@@ -8,7 +8,7 @@
       for resource in cnpgManifests
       if resource.kind != 'CustomResourceDefinition'
     ];
-    filtered + [
+    local allManifests = filtered + [
       {
         apiVersion: 'postgresql.cnpg.io/v1',
         kind: 'Cluster',
@@ -37,5 +37,9 @@
           },
         },
       },
-    ],
+    ];
+    {
+      [std.strReplace(resource.kind + '-' + resource.metadata.name, '/', '-')]: resource
+      for resource in allManifests
+    },
 }
