@@ -32,6 +32,7 @@
       syncPolicy: {
         syncOptions: [
           'CreateNamespace=true',
+          'ServerSideApply=true',
         ],
       },
     },
