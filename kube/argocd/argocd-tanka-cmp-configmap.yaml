@@ -12,12 +12,11 @@ data:
     metadata:
       name: tanka
     spec:
-      version: v1.0
       init:
         command: [jb, install]
       generate:
         command: [sh, -c]
-        args: ["/usr/local/bin/tk show --dangerous-allow-redirect $TANKA_PATH"]
+        args: ["/usr/local/bin/tk show --dangerous-allow-redirect ."]
       discover:
         fileName: "./jsonnetfile.json"
       allowConcurrency: true

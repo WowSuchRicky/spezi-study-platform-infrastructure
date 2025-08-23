@@ -1,43 +1,41 @@
 {
-  local k = import 'k.libsonnet',
+  local tanka = import '../../vendor/github.com/grafana/jsonnet-libs/tanka-util/main.libsonnet',
+  local kustomize = tanka.kustomize.new(std.thisFile),
   withConfig(config)::
-    let
-      cnpgOperator = std.native('parseYaml')(importstr '../../vendor/cloudnative-pg/cnpg-1.27.0.yaml'),
-      obj =
-        ({
-          [std.strReplace(resource.kind + '-' + resource.metadata.name, '/', '-')]: resource
-          for resource in cnpgOperator
-          if resource.kind != 'CustomResourceDefinition'
-        }) + {
-          postgres_cluster: {
-            apiVersion: 'postgresql.cnpg.io/v1',
-            kind: 'Cluster',
-            metadata: {
-              name: 'spezistudyplatform-db',
-              namespace: config.namespace,
-            },
-            spec: {
-              imageName: 'ghcr.io/cloudnative-pg/postgresql:17-bullseye',
-              instances: 1,
-              storage: {
-                size: '1Gi',
-              },
-              monitoring: {
-                enablePodMonitor: true,
-              },
-              enableSuperuserAccess: true,
-              bootstrap: {
-                initdb: {
-                  database: 'spezistudyplatform',
-                  owner: 'spezistudyplatform',
-                  secret: {
-                    name: 'spezistudyplatform-postgres-credentials',
-                  },
-                },
+    local cnpgManifests = kustomize.build('../../vendor/cloudnative-pg/');
+    local filtered = [
+      resource
+      for resource in cnpgManifests
+      if resource.kind != 'CustomResourceDefinition'
+    ];
+    filtered + [
+      {
+        apiVersion: 'postgresql.cnpg.io/v1',
+        kind: 'Cluster',
+        metadata: {
+          name: 'spezistudyplatform-db',
+          namespace: config.namespace,
+        },
+        spec: {
+          imageName: 'ghcr.io/cloudnative-pg/postgresql:17-bullseye',
+          instances: 1,
+          storage: {
+            size: '1Gi',
+          },
+          monitoring: {
+            enablePodMonitor: true,
+          },
+          enableSuperuserAccess: true,
+          bootstrap: {
+            initdb: {
+              database: 'spezistudyplatform',
+              owner: 'spezistudyplatform',
+              secret: {
+                name: 'spezistudyplatform-postgres-credentials',
               },
             },
           },
-        }
-    in
-      std.objectValues(obj),
+        },
+      },
+    ],
 }

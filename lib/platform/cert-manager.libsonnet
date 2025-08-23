@@ -1,30 +1,27 @@
 {
-  local k = import 'k.libsonnet',
+  local tanka = import '../../vendor/github.com/grafana/jsonnet-libs/tanka-util/main.libsonnet',
+  local kustomize = tanka.kustomize.new(std.thisFile),
   withConfig(config)::
-    let
-      certManagerManifests = std.native('parseYaml')(importstr '../../vendor/cert-manager/cert-manager.yaml'),
-      obj = {
-        [std.strReplace(resource.kind + '-' + resource.metadata.name, '/', '-')]:
-          if resource.kind == 'Deployment' && resource.metadata.name == 'cert-manager' then
-            resource + {
+    local certManagerManifests = kustomize.build('../../vendor/cert-manager/');
+    [
+      if resource.kind == 'Deployment' && resource.metadata.name == 'cert-manager' then
+        resource + {
+          spec+: {
+            template+: {
               spec+: {
-                template+: {
-                  spec+: {
-                    containers: [
-                      if container.name == 'cert-manager' then
-                        container + {
-                          args: container.args + ['--leader-election-namespace=cert-manager'],
-                        }
-                      else container
-                      for container in resource.spec.template.spec.containers
-                    ],
-                  },
-                },
+                containers: [
+                  if container.name == 'cert-manager' then
+                    container + {
+                      args: container.args + ['--leader-election-namespace=cert-manager'],
+                    }
+                  else container
+                  for container in resource.spec.template.spec.containers
+                ],
               },
-            }
-          else resource
-        for resource in certManagerManifests
-      }
-    in
-      std.objectValues(obj),
+            },
+          },
+        }
+      else resource
+      for resource in certManagerManifests
+    ],
 }

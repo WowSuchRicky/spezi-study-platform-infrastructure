@@ -1,13 +1,11 @@
 {
-  local k = import 'k.libsonnet',
+  local tanka = import '../../vendor/github.com/grafana/jsonnet-libs/tanka-util/main.libsonnet',
+  local kustomize = tanka.kustomize.new(std.thisFile),
   withConfig(config)::
-    let
-      cnpgManifests = std.native('parseYaml')(importstr '../../vendor/cloudnative-pg/cnpg-1.27.0.yaml'),
-      obj = {
-        [std.strReplace(resource.kind + '-' + resource.metadata.name, '/', '-')]: resource
-        for resource in cnpgManifests
-        if resource.kind == 'CustomResourceDefinition'
-      }
-    in
-      std.objectValues(obj),
+    local cnpgManifests = kustomize.build('../../vendor/cloudnative-pg/');
+    [
+      resource
+      for resource in cnpgManifests
+      if resource.kind == 'CustomResourceDefinition'
+    ],
 }
