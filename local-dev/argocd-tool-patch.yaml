@@ -17,9 +17,12 @@ spec:
           mountPath: /custom-tools
       containers:
       - name: argocd-repo-server
+        env:
+        - name: PATH
+          value: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/custom-tools
         volumeMounts:
         - name: custom-tools
-          mountPath: /usr/local/bin
+          mountPath: /custom-tools
       volumes:
       - name: custom-tools
         emptyDir: {}
