@@ -29,6 +29,7 @@ local app(name, path) = {
       },
       syncOptions: [
         'CreateNamespace=true',
+        'ServerSideApply=true',
       ],
     },
   },

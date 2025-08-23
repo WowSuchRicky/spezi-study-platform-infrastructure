@@ -40,7 +40,7 @@ local app(name, wave, config) = {
       ],
     },
   },
-};
+},
 
 {
   withConfig(config)::
