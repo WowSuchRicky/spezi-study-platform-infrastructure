@@ -15,16 +15,14 @@
         repoURL: 'https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git',
         path: 'environments/local-dev',
         targetRevision: 'jsonnet-working',
-        directory: {
-          exclude: 'spec.json',
-          jsonnet: {
-            tlas: [
-              {
-                name: 'component',
-                value: name,
-              },
-            ],
-          },
+        plugin: {
+          name: 'tanka',
+          env: [
+            {
+              name: 'COMPONENT',
+              value: name,
+            },
+          ],
         },
       },
       destination: {
@@ -32,10 +30,6 @@
         namespace: config.namespace,
       },
       syncPolicy: {
-        automated: {
-          prune: true,
-          selfHeal: true,
-        },
         syncOptions: [
           'CreateNamespace=true',
         ],
