@@ -25,7 +25,7 @@
   localDev:: self.base {
     domain: 'spezi.127.0.0.1.nip.io',
     loadBalancerIP: null, // No static IP for local dev
-    storageClass: 'local-path',
+    storageClass: 'standard',
     mode: 'DEV',
   },
 }
