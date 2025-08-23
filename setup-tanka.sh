@@ -58,6 +58,8 @@ spec:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+    - ServerSideApply=true
 EOF
 
 info "Setup complete!"
