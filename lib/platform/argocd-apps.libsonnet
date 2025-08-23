@@ -1,47 +1,48 @@
-{
-  local app(name, wave, config) = {
-    apiVersion: 'argoproj.io/v1alpha1',
-    kind: 'Application',
-    metadata: {
-      name: 'local-dev-' + name,
-      namespace: 'argocd',
-      annotations: {
-        'argocd.argoproj.io/sync-wave': std.toString(wave),
-      },
-    },
-    spec: {
-      project: 'default',
-      source: {
-        repoURL: 'https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git',
-        path: 'environments/local-dev',
-        targetRevision: 'jsonnet-working',
-        directory: {
-          exclude: 'spec.json',
-          jsonnet: {
-            tlas: [
-              {
-                name: 'component',
-                value: name,
-              },
-            ],
-          },
-        },
-      },
-      destination: {
-        server: 'https://kubernetes.default.svc',
-        namespace: config.namespace,
-      },
-      syncPolicy: {
-        automated: {
-          prune: true,
-          selfHeal: true,
-        },
-        syncOptions: [
-          'CreateNamespace=true',
-        ],
-      },
+local app(name, wave, config) = {
+  apiVersion: 'argoproj.io/v1alpha1',
+  kind: 'Application',
+  metadata: {
+    name: 'local-dev-' + name,
+    namespace: 'argocd',
+    annotations: {
+      'argocd.argoproj.io/sync-wave': std.toString(wave),
     },
   },
+  spec: {
+    project: 'default',
+    source: {
+      repoURL: 'https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git',
+      path: 'environments/local-dev',
+      targetRevision: 'jsonnet-working',
+      directory: {
+        exclude: 'spec.json',
+        jsonnet: {
+          tlas: [
+            {
+              name: 'component',
+              value: name,
+            },
+          ],
+        },
+      },
+    },
+    destination: {
+      server: 'https://kubernetes.default.svc',
+      namespace: config.namespace,
+    },
+    syncPolicy: {
+      automated: {
+        prune: true,
+        selfHeal: true,
+      },
+      syncOptions: [
+        'CreateNamespace=true',
+      ],
+    },
+  },
+},
+
+{
   withConfig(config)::
     std.objectValues({
       // Wave 0

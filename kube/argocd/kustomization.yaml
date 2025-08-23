@@ -6,11 +6,7 @@ namespace: argocd
 # in this directory. If not, they will need to provide the correct path.
 resources:
   - upstream.yaml
-
-configMapGenerator:
-  - name: cmp-tanka
-    files:
-      - plugin.yaml
+  - argocd-tanka-cmp-configmap.yaml
 
 patches:
   - path: argocd-repo-server-patch.yaml

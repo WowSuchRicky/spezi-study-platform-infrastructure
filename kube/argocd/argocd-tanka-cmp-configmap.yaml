@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-tanka-cmp
+  namespace: argocd
+  annotations:
+    app.kubernetes.io/part-of: argocd
+data:
+  plugin.yaml: |
+    apiVersion: argoproj.io/v1alpha1
+    kind: ConfigManagementPlugin
+    metadata:
+      name: tanka
+    spec:
+      version: v1.0
+      init:
+        command: [jb, install]
+      generate:
+        command: [sh, -c]
+        args: ["/usr/local/bin/tk show --dangerous-allow-redirect $TANKA_PATH"]
+      discover:
+        fileName: "./jsonnetfile.json"
+      allowConcurrency: true
+      lockRepo: false
