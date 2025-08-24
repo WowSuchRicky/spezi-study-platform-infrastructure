@@ -1,9 +1,9 @@
 {
-  local app(name, wave, config) = {
+  local app(name, wave, config, envPath, envPrefix) = {
     apiVersion: 'argoproj.io/v1alpha1',
     kind: 'Application',
     metadata: {
-      name: 'local-dev-' + name,
+      name: envPrefix + '-' + name,
       namespace: 'argocd',
       annotations: {
         'argocd.argoproj.io/sync-wave': std.toString(wave),
@@ -13,7 +13,7 @@
       project: 'default',
       source: {
         repoURL: 'https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git',
-        path: 'environments/local-dev',
+        path: envPath,
         targetRevision: 'jsonnet-working',
         plugin: {
           name: 'tanka',
@@ -26,7 +26,7 @@
         },
       },
       destination: {
-        server: 'https://kubernetes.default.svc',
+        server: if config.mode == 'PRODUCTION' then 'https://34.168.131.83' else 'https://kubernetes.default.svc',
         namespace: config.namespace,
       },
       syncPolicy: {
@@ -42,22 +42,23 @@
     },
   },
   withConfig(config)::
+    local envPath = if config.mode == 'PRODUCTION' then 'environments/default' else 'environments/local-dev';
+    local envPrefix = if config.mode == 'PRODUCTION' then 'prod' else 'local-dev';
     std.objectValues({
       // Wave 0
-      'namespace-app': app('namespace', 0, config),
-      'cnpg-crds-app': app('cloudnative-pg-crds', 0, config),
+      'namespace-app': app('namespace', 0, config, envPath, envPrefix),
+      'cnpg-crds-app': app('cloudnative-pg-crds', 0, config, envPath, envPrefix),
 
       // Wave 1
-      'traefik-app': app('traefik', 1, config),
-      'cert-manager-app': app('cert-manager', 1, config),
+      'traefik-app': app('traefik', 1, config, envPath, envPrefix),
+      'cert-manager-app': app('cert-manager', 1, config, envPath, envPrefix),
 
       // Wave 2
-      'oauth2-proxy-app': app('oauth2-proxy', 2, config),
-      'keycloak-app': app('keycloak', 2, config),
-      'cnpg-app': app('cloudnative-pg', 2, config),
+      'cnpg-app': app('cloudnative-pg', 2, config, envPath, envPrefix),
+      'auth-app': app('auth', 2, config, envPath, envPrefix),
 
       // Wave 3
-      'backend-app': app('backend', 3, config),
-      'frontend-app': app('frontend', 3, config),
+      'backend-app': app('backend', 3, config, envPath, envPrefix),
+      'frontend-app': app('frontend', 3, config, envPath, envPrefix),
     }),
 }

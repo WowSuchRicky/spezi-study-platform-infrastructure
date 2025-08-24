@@ -24,9 +24,8 @@ function(component=null) {
     local cloudnativePg = import '../../lib/platform/cloudnative-pg.libsonnet';
     local backend = import '../../lib/platform/backend.libsonnet';
     local frontend = import '../../lib/platform/frontend.libsonnet';
-    local keycloak = import '../../lib/platform/keycloak.libsonnet';
-    local oauth2Proxy = import '../../lib/platform/oauth2-proxy.libsonnet';
     local traefik = import '../../lib/platform/traefik.libsonnet';
+    local auth = import '../../lib/platform/auth.libsonnet';
     // Note: argocd-apps is not included here, it's used to generate the apps that point to this env.
 
     local components = {
@@ -37,9 +36,8 @@ function(component=null) {
       'sealed-secrets': kustomize.build(path='sealed-secrets'),
       backend: backend.withConfig(config),
       frontend: frontend.withConfig(config),
-      keycloak: keycloak.withConfig(config),
-      'oauth2-proxy': oauth2Proxy.withConfig(config),
       traefik: traefik.withConfig(config),
+      auth: auth.withConfig(config),
     };
 
     if component != null then

@@ -29,5 +29,53 @@
     {
       [std.strReplace(resource.kind + '-' + resource.metadata.name, '/', '-')]: resource
       for resource in processedManifests
+    } + {
+      // Let's Encrypt ClusterIssuer
+      'letsencrypt-prod-clusterissuer': {
+        apiVersion: 'cert-manager.io/v1',
+        kind: 'ClusterIssuer',
+        metadata: {
+          name: 'letsencrypt-prod',
+        },
+        spec: {
+          acme: {
+            server: 'https://acme-v02.api.letsencrypt.org/directory',
+            email: 'spam@muci.sh',
+            privateKeySecretRef: {
+              name: 'letsencrypt-prod',
+            },
+            solvers: [
+              {
+                http01: {
+                  ingress: {
+                    class: 'traefik',
+                  },
+                },
+              },
+            ],
+          },
+        },
+      },
+      
+      // Main TLS Certificate
+      'main-tls-certificate': {
+        apiVersion: 'cert-manager.io/v1',
+        kind: 'Certificate',
+        metadata: {
+          name: config.namespace + '-main-tls-cert',
+          namespace: config.namespace,
+        },
+        spec: {
+          commonName: config.domain,
+          secretName: config.namespace + '-main-tls-secret',
+          issuerRef: {
+            name: 'letsencrypt-prod',
+            kind: 'ClusterIssuer',
+          },
+          dnsNames: [
+            config.domain,
+          ] + (if config.mode == 'PRODUCTION' then ['study.muci.sh'] else []),
+        },
+      },
     },
 }

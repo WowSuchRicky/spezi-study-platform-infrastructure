@@ -5,7 +5,7 @@
   gather_facts: true
   vars:
     # Use local-dev version when LOCAL_DEV_MODE is set, otherwise use source version
-    keycloak_tofu_directory: "{{ './local-dev/kube/auth/keycloak/tf' if ansible_env.LOCAL_DEV_MODE is defined else './kube/auth/keycloak/tf' }}"
+    keycloak_tofu_directory: "{{ './tofu/keycloak-bootstrap/tf' if ansible_env.LOCAL_DEV_MODE is not defined else './tofu/keycloak-bootstrap/tf' }}"
 
     # These two fields should match what is in kubernetes, as this playbook will retrieve it from there
     keycloak_secret_name: "keycloak"

@@ -36,8 +36,8 @@ info "Argo CD is ready."
 
 # 3. Install Tanka CMP Plugin
 info "Installing Tanka Config Management Plugin..."
-kubectl apply -f "$SCRIPT_DIR/kube/argocd/argocd-tanka-cmp-configmap.yaml"
-kubectl patch deployment argocd-repo-server -n argocd --patch-file "$SCRIPT_DIR/kube/argocd/repo-server-patch.yaml"
+kubectl apply -f "$SCRIPT_DIR/config/argocd/argocd-tanka-cmp-configmap.yaml"
+kubectl patch deployment argocd-repo-server -n argocd --patch-file "$SCRIPT_DIR/config/argocd/repo-server-patch.yaml"
 info "Waiting for ArgoCD repo server to restart with Tanka plugin..."
 kubectl rollout status deployment argocd-repo-server -n argocd
 info "Tanka CMP plugin is ready."

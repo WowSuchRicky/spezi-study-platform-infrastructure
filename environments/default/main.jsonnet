@@ -1,4 +1,4 @@
-{
+function(component=null) {
   apiVersion: 'tanka.dev/v1alpha1',
   kind: 'Environment',
   metadata: {
@@ -6,7 +6,7 @@
   },
   spec: {
     namespace: 'default',
-    contextNames: ['kind-spezi-study-platform'],
+    contextNames: ['prod-cluster'], // Update for prod context
     resourceDefaults: {},
     expectVersions: {},
     applyStrategy: 'server',
@@ -24,13 +24,28 @@
     local cloudnativePg = import '../../lib/platform/cloudnative-pg.libsonnet';
     local backend = import '../../lib/platform/backend.libsonnet';
     local frontend = import '../../lib/platform/frontend.libsonnet';
-    local keycloak = import '../../lib/platform/keycloak.libsonnet';
-    local oauth2Proxy = import '../../lib/platform/oauth2-proxy.libsonnet';
     local traefik = import '../../lib/platform/traefik.libsonnet';
+    local auth = import '../../lib/platform/auth.libsonnet';
+    // Note: argocd-apps is not included here, it's used to generate the apps that point to this env.
 
-    namespace.withConfig(config) +
-    kustomize.build(path='sealed-secrets') +
-    backend.withConfig(config) +
-    frontend.withConfig(config) +
-    traefik.withConfig(config),
+    local components = {
+      namespace: namespace.withConfig(config),
+      'cert-manager': certManager.withConfig(config),
+      'cloudnative-pg-crds': cloudnativePgCrds.withConfig(config),
+      'cloudnative-pg': cloudnativePg.withConfig(config),
+      'sealed-secrets': kustomize.build(path='sealed-secrets'),
+      backend: backend.withConfig(config),
+      frontend: frontend.withConfig(config),
+      traefik: traefik.withConfig(config),
+      auth: auth.withConfig(config),
+    };
+
+    if component != null then
+      if std.objectHas(components, component) then
+        components[component]
+      else
+        error 'Component "' + component + '" not found. Available components: ' + std.join(', ', std.objectFields(components))
+    else
+      // If no component is specified, render all of them.
+      std.foldl(function(a, b) a + b, std.objectValues(components), {}),
 }
