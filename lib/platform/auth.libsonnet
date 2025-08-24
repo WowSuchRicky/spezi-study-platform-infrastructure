@@ -5,7 +5,11 @@
     local authIngress = import './auth-ingress.libsonnet';
     
     // Combine all auth-related components
-    keycloak.withConfig(config) +
-    oauth2Proxy.withConfig(config) +
-    authIngress.withConfig(config),
+    // keycloak and oauth2Proxy return arrays, authIngress returns object
+    local keycloakResources = keycloak.withConfig(config);
+    local oauth2ProxyResources = oauth2Proxy.withConfig(config);
+    local authIngressResources = std.objectValues(authIngress.withConfig(config));
+    
+    // Return combined array of all resources
+    keycloakResources + oauth2ProxyResources + authIngressResources,
 }
