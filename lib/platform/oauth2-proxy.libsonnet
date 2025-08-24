@@ -61,6 +61,9 @@
               cookie_domains = ["%(domain)s"]
             ||| % { domain: config.domain },
           },
+          configuration: {
+            existingSecret: 'oauth2-proxy-secret',
+          },
           ingress: {
             enabled: false,
           },
@@ -84,33 +87,6 @@
             {
               name: 'OAUTH2_PROXY_REVERSE_PROXY',
               value: 'true',
-            },
-            {
-              name: 'OAUTH2_PROXY_CLIENT_ID',
-              valueFrom: {
-                secretKeyRef: {
-                  name: 'oauth2-proxy-secret',
-                  key: 'client-id',
-                },
-              },
-            },
-            {
-              name: 'OAUTH2_PROXY_CLIENT_SECRET',
-              valueFrom: {
-                secretKeyRef: {
-                  name: 'oauth2-proxy-secret',
-                  key: 'client-secret',
-                },
-              },
-            },
-            {
-              name: 'OAUTH2_PROXY_COOKIE_SECRET',
-              valueFrom: {
-                secretKeyRef: {
-                  name: 'oauth2-proxy-secret',
-                  key: 'cookie-secret',
-                },
-              },
             },
           ],
         },
