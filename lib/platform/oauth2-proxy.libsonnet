@@ -50,17 +50,15 @@
       oauth2_proxy: helm.template('oauth2-proxy', '../../charts/oauth2-proxy', {
         namespace: config.namespace,
         values: {
-          config: {
-            configFile: |||
-              provider = "keycloak-oidc"
-              oidc_issuer_url = "https://%(domain)s/auth/realms/spezistudyplatform"
-              email_domains = ["*"]
-              upstreams = ["static://200"]
-              scope = "openid profile email groups"
-              redirect_url = "https://%(domain)s/oauth2/callback"
-              cookie_domains = ["%(domain)s"]
-            ||| % { domain: config.domain },
-          },
+          configFile: |||
+            provider = "keycloak-oidc"
+            oidc_issuer_url = "https://%(domain)s/auth/realms/spezistudyplatform"
+            email_domains = ["*"]
+            upstreams = ["static://200"]
+            scope = "openid profile email groups"
+            redirect_url = "https://%(domain)s/oauth2/callback"
+            cookie_domains = ["%(domain)s"]
+          ||| % { domain: config.domain },
           configuration: {
             existingSecret: 'oauth2-proxy-secret',
           },
