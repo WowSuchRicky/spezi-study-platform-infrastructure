@@ -31,14 +31,10 @@
             '--code-challenge-method=S256',
           ],
           redis: {
-            enabled: true,
-            architecture: 'standalone',
-            auth: {
-              enabled: false,
-            },
+            enabled: false,
           },
           sessionStorage: {
-            type: 'redis',
+            type: 'cookie',
           },
           extraEnv: [
             {
