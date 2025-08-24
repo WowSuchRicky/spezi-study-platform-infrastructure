@@ -33,6 +33,9 @@
           redis: {
             enabled: true,
             architecture: 'standalone',
+            auth: {
+              enabled: false,
+            },
           },
           sessionStorage: {
             type: 'redis',
