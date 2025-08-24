@@ -37,6 +37,7 @@
           },
           deployment: {
             hostNetwork: std.get(config, 'mode', 'DEV') == 'DEV',
+            dnsPolicy: if std.get(config, 'mode', 'DEV') == 'DEV' then 'ClusterFirstWithHostNet' else null,
             initContainers: [
               {
                 name: 'volume-permissions',
@@ -102,7 +103,7 @@
         },
         spec: {
           forwardAuth: {
-            address: 'http://oauth2-proxy.' + config.namespace + '.svc.cluster.local/oauth2/auth_or_start',
+            address: 'http://oauth2-proxy.' + config.namespace + '.svc.cluster.local/oauth2/auth',
             trustForwardHeader: true,
             authResponseHeaders: [
               'X-Auth-Request-User',

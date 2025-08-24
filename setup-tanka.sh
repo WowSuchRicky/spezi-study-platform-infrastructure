@@ -42,7 +42,56 @@ info "Waiting for ArgoCD repo server to restart with Tanka plugin..."
 kubectl rollout status deployment argocd-repo-server -n argocd
 info "Tanka CMP plugin is ready."
 
-# 4. Bootstrap Argo CD Root Application
+# 4. Wait for Keycloak to be available and bootstrap realm
+info "Waiting for initial applications to be deployed..."
+sleep 30
+info "Checking if Keycloak is available for bootstrapping..."
+
+# Wait for Keycloak to be running before bootstrapping
+max_attempts=20
+attempt=0
+while [ $attempt -lt $max_attempts ]; do
+    if kubectl get pods -n spezistudyplatform -l app.kubernetes.io/name=keycloak --no-headers 2>/dev/null | grep -q "Running"; then
+        info "Keycloak is running. Starting bootstrap..."
+        break
+    fi
+    info "Waiting for Keycloak to be running... (attempt $((attempt+1))/$max_attempts)"
+    sleep 15
+    ((attempt++))
+done
+
+if [ $attempt -eq $max_attempts ]; then
+    info "Warning: Keycloak not found running after waiting. Proceeding without bootstrap."
+    info "You may need to run the bootstrap manually later:"
+    info "cd tofu/keycloak-bootstrap/tf && tofu init && tofu apply"
+else
+    # Bootstrap Keycloak realm and OAuth2 proxy client
+    info "Bootstrapping Keycloak realm and OAuth2 proxy configuration..."
+    
+    # Port forward to access Keycloak
+    kubectl port-forward -n spezistudyplatform svc/keycloak 8081:80 &
+    PORT_FORWARD_PID=$!
+    sleep 5
+    
+    # Run Tofu bootstrap
+    cd "$SCRIPT_DIR/tofu/keycloak-bootstrap/tf"
+    if ! command -v tofu &> /dev/null; then
+        info "Warning: tofu is not installed. Skipping Keycloak bootstrap."
+        info "Please install tofu and run manually:"
+        info "cd tofu/keycloak-bootstrap/tf && tofu init && tofu apply"
+    else
+        info "Running Keycloak bootstrap with Tofu..."
+        tofu init
+        tofu apply -var="keycloak_url=http://localhost:8081/auth" -var="keycloak_password=admin123!" -auto-approve
+        info "Keycloak bootstrap completed successfully!"
+    fi
+    
+    # Kill port forward
+    kill $PORT_FORWARD_PID 2>/dev/null || true
+    cd "$SCRIPT_DIR"
+fi
+
+# 5. Bootstrap Argo CD Root Application
 info "Bootstrapping Argo CD Root Application..."
 cat <<EOF | kubectl apply -f -
 apiVersion: argoproj.io/v1alpha1
