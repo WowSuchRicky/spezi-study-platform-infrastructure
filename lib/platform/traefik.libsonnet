@@ -127,7 +127,7 @@
           name: config.namespace + '-ingress',
           namespace: config.namespace,
           annotations: {
-            'cert-manager.io/cluster-issuer': 'letsencrypt-prod',
+            'cert-manager.io/cluster-issuer': if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'letsencrypt-prod' else 'selfsigned-issuer',
             'ingress.kubernetes.io/proxy-buffer-size': '128k',
             'ingress.kubernetes.io/auth-response-headers': 'X-Auth-Request-User, X-Auth-Request-Email, X-Auth-Request-Groups',
           },

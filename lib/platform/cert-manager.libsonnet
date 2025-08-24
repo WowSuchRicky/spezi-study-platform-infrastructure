@@ -29,53 +29,89 @@
     {
       [std.strReplace(resource.kind + '-' + resource.metadata.name, '/', '-')]: resource
       for resource in processedManifests
-    } + {
-      // Let's Encrypt ClusterIssuer
-      'letsencrypt-prod-clusterissuer': {
-        apiVersion: 'cert-manager.io/v1',
-        kind: 'ClusterIssuer',
-        metadata: {
-          name: 'letsencrypt-prod',
-        },
-        spec: {
-          acme: {
-            server: 'https://acme-v02.api.letsencrypt.org/directory',
-            email: 'spam@muci.sh',
-            privateKeySecretRef: {
-              name: 'letsencrypt-prod',
-            },
-            solvers: [
-              {
-                http01: {
-                  ingress: {
-                    class: 'traefik',
+    } + (
+      if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then {
+        // Production: Let's Encrypt ClusterIssuer
+        'letsencrypt-prod-clusterissuer': {
+          apiVersion: 'cert-manager.io/v1',
+          kind: 'ClusterIssuer',
+          metadata: {
+            name: 'letsencrypt-prod',
+          },
+          spec: {
+            acme: {
+              server: 'https://acme-v02.api.letsencrypt.org/directory',
+              email: 'spam@muci.sh',
+              privateKeySecretRef: {
+                name: 'letsencrypt-prod',
+              },
+              solvers: [
+                {
+                  http01: {
+                    ingress: {
+                      class: 'traefik',
+                    },
                   },
                 },
-              },
+              ],
+            },
+          },
+        },
+        
+        // Production TLS Certificate
+        'main-tls-certificate': {
+          apiVersion: 'cert-manager.io/v1',
+          kind: 'Certificate',
+          metadata: {
+            name: config.namespace + '-main-tls-cert',
+            namespace: config.namespace,
+          },
+          spec: {
+            commonName: config.domain,
+            secretName: config.namespace + '-main-tls-secret',
+            issuerRef: {
+              name: 'letsencrypt-prod',
+              kind: 'ClusterIssuer',
+            },
+            dnsNames: [
+              config.domain,
+              'study.muci.sh',
             ],
           },
         },
-      },
-      
-      // Main TLS Certificate
-      'main-tls-certificate': {
-        apiVersion: 'cert-manager.io/v1',
-        kind: 'Certificate',
-        metadata: {
-          name: config.namespace + '-main-tls-cert',
-          namespace: config.namespace,
-        },
-        spec: {
-          commonName: config.domain,
-          secretName: config.namespace + '-main-tls-secret',
-          issuerRef: {
-            name: 'letsencrypt-prod',
-            kind: 'ClusterIssuer',
+      } else {
+        // Local Dev: Self-signed ClusterIssuer
+        'selfsigned-clusterissuer': {
+          apiVersion: 'cert-manager.io/v1',
+          kind: 'ClusterIssuer',
+          metadata: {
+            name: 'selfsigned-issuer',
           },
-          dnsNames: [
-            config.domain,
-          ] + (if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then ['study.muci.sh'] else []),
+          spec: {
+            selfSigned: {},
+          },
         },
-      },
-    },
+        
+        // Local Dev TLS Certificate
+        'main-tls-certificate': {
+          apiVersion: 'cert-manager.io/v1',
+          kind: 'Certificate',
+          metadata: {
+            name: config.namespace + '-main-tls-cert',
+            namespace: config.namespace,
+          },
+          spec: {
+            commonName: config.domain,
+            secretName: config.namespace + '-main-tls-secret',
+            issuerRef: {
+              name: 'selfsigned-issuer',
+              kind: 'ClusterIssuer',
+            },
+            dnsNames: [
+              config.domain,
+            ],
+          },
+        },
+      }
+    ),
 }
