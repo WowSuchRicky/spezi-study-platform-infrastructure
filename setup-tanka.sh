@@ -34,7 +34,15 @@ info "Waiting for Argo CD pods to be ready..."
 kubectl wait --for=condition=ready pod --all -n argocd --timeout=300s
 info "Argo CD is ready."
 
-# 3. Bootstrap Argo CD Root Application
+# 3. Install Tanka CMP Plugin
+info "Installing Tanka Config Management Plugin..."
+kubectl apply -f "$SCRIPT_DIR/kube/argocd/argocd-tanka-cmp-configmap.yaml"
+kubectl patch deployment argocd-repo-server -n argocd --patch-file "$SCRIPT_DIR/kube/argocd/repo-server-patch.yaml"
+info "Waiting for ArgoCD repo server to restart with Tanka plugin..."
+kubectl rollout status deployment argocd-repo-server -n argocd
+info "Tanka CMP plugin is ready."
+
+# 4. Bootstrap Argo CD Root Application
 info "Bootstrapping Argo CD Root Application..."
 cat <<EOF | kubectl apply -f -
 apiVersion: argoproj.io/v1alpha1
