@@ -11,7 +11,7 @@ function(component=null) {
     expectVersions: {},
     applyStrategy: 'server',
     diffStrategy: 'server',
-    injectLabels: true,
+    injectLabels: false,
   },
   data:
     // Local development environment configuration

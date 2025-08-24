@@ -11,7 +11,7 @@
     expectVersions: {},
     applyStrategy: 'server',
     diffStrategy: 'server',
-    injectLabels: true,
+    injectLabels: false,
   },
   data:
     // Production environment configuration

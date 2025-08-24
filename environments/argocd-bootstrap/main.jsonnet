@@ -9,7 +9,7 @@
     namespace: 'argocd',
     applyStrategy: 'server',
     diffStrategy: 'server',
-    injectLabels: true,
+    injectLabels: false,
   },
   data:
     local argocdApps = import '../../lib/platform/argocd-apps.libsonnet';
