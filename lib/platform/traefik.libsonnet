@@ -36,6 +36,7 @@
             annotations: {},
           },
           deployment: {
+            hostNetwork: std.get(config, 'mode', 'DEV') == 'DEV',
             initContainers: [
               {
                 name: 'volume-permissions',
@@ -66,6 +67,23 @@
             runAsNonRoot: true,
             runAsUser: 65532,
           },
+          ports: if std.get(config, 'mode', 'DEV') == 'DEV' then {
+            web: {
+              port: 80,
+              expose: {
+                default: true,
+              },
+            },
+            websecure: {
+              port: 443,
+              expose: {
+                default: true,
+              },
+              tls: {
+                enabled: true,
+              },
+            },
+          } else {},
           ingressRoute: {
             dashboard: {
               enabled: true,
