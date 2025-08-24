@@ -1,48 +1,46 @@
 # Local Development Setup with KIND
 
-This guide explains how to set up a local development environment using KIND (Kubernetes in Docker).
+This guide explains how to set up a local development environment using KIND (Kubernetes in Docker) with ArgoCD and Tanka.
 
 ## Prerequisites
 
 *   [Docker](https://docs.docker.com/get-docker/)
 *   [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 *   [kind](https://kind.sigs.k8s.io/docs/user/quick-start/#installation)
-*   [helm](httpss://helm.sh/docs/intro/install/)
 
 ## Setup
 
-1.  **Make the scripts executable:**
+1.  **Start the local Kubernetes cluster:**
 
     ```bash
-    chmod +x local-dev/setup.sh local-dev/cleanup.sh
-    ```
-
-2.  **Start the local Kubernetes cluster:**
-
-    ```bash
-    ./local-dev/setup.sh
+    ./setup-tanka.sh
     ```
 
     This script will:
     *   Create a KIND cluster.
-    *   Prepare the Kubernetes manifests for local use.
-    *   Install Traefik as an ingress controller.
-    *   Deploy the application to the cluster.
+    *   Install ArgoCD with Tanka Config Management Plugin.
+    *   Bootstrap ArgoCD applications that will deploy the platform components automatically.
+    *   Deploy all services using GitOps approach.
 
-3.  **Access the services:**
+2.  **Access the services:**
 
-    The services will be available at `http://local.127.0.0.1.nip.io`.
+    The services will be available at `http://spezi.127.0.0.1.nip.io`.
 
-    *   Frontend: `http://local.127.0.0.1.nip.io`
-    *   Backend: `http://local.127.0.0.1.nip.io/backend`
-    *   Keycloak: `http://local.127.0.0.1.nip.io/auth`
-    *   Traefik Dashboard: `http://localhost/dashboard/`
+    *   Frontend: `http://spezi.127.0.0.1.nip.io`
+    *   Backend: `http://spezi.127.0.0.1.nip.io/backend`
+    *   Keycloak: `http://spezi.127.0.0.1.nip.io/auth`
+    *   ArgoCD UI: `kubectl port-forward svc/argocd-server -n argocd 8080:443`
 
+3.  **Monitor deployment:**
+
+    ```bash
+    kubectl get applications -n argocd
+    ```
 
 ## Teardown
 
-To delete the local cluster and cleanup the generated files:
+To delete the local cluster:
 
 ```bash
-./local-dev/cleanup.sh
+kind delete cluster --name spezi-study-platform
 ```

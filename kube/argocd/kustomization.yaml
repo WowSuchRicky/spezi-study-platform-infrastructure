@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: argocd
+
+# This assumes the user has the base ArgoCD manifests in a file named upstream.yaml
+# in this directory. If not, they will need to provide the correct path.
+resources:
+  - upstream.yaml
+  - argocd-tanka-cmp-configmap.yaml
+
+patches:
+  - path: argocd-repo-server-patch.yaml
