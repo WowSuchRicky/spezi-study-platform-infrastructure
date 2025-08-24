@@ -8,7 +8,7 @@
         values: {
           service: {
             enabled: true,
-            type: 'LoadBalancer',
+            type: if config.mode == 'DEV' then 'ClusterIP' else 'LoadBalancer',
             [if config.loadBalancerIP != null then 'spec']: {
               loadBalancerIP: config.loadBalancerIP,
             },
