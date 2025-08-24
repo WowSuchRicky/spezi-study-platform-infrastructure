@@ -1,6 +1,8 @@
 function(component=null)
   // Local development environment configuration
   local config = (import '../../lib/platform/config.libsonnet').localDev;
+  local tanka = import '../../vendor/github.com/grafana/jsonnet-libs/tanka-util/main.libsonnet';
+  local kustomize = tanka.kustomize.new(std.thisFile);
   local namespace = import '../../lib/platform/namespace.libsonnet';
   local certManager = import '../../lib/platform/cert-manager.libsonnet';
   local cloudnativePgCrds = import '../../lib/platform/cloudnative-pg-crds.libsonnet';
@@ -17,6 +19,7 @@ function(component=null)
     'cert-manager': certManager.withConfig(config),
     'cloudnative-pg-crds': cloudnativePgCrds.withConfig(config),
     'cloudnative-pg': cloudnativePg.withConfig(config),
+    'sealed-secrets': kustomize.build(path='sealed-secrets'),
     backend: backend.withConfig(config),
     frontend: frontend.withConfig(config),
     keycloak: keycloak.withConfig(config),
