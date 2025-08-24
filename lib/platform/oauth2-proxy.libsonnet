@@ -14,8 +14,8 @@
           },
           type: 'Opaque',
           data: {
-            'client-id': std.base64('local-dev-client-id'),
-            'client-secret': std.base64('local-dev-client-secret'),
+            'client-id': std.base64('oauth2-proxy'),
+            'client-secret': std.base64('c4h7rptpKNYyHOpuH780CXEGyLvYmo6A'),
             'cookie-secret': std.base64('local-dev-cookie-secret-32-chars'),
           },
         }
