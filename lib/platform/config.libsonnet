@@ -23,7 +23,7 @@
   
   // Local development configuration  
   localDev:: self.base {
-    domain: 'spezi.local.dev',
+    domain: 'spezi.172.20.117.44.nip.io',
     loadBalancerIP: null, // No static IP for local dev
     storageClass: 'standard',
     mode: 'DEV',
