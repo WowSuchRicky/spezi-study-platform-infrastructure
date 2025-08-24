@@ -74,7 +74,7 @@
           },
           dnsNames: [
             config.domain,
-          ] + (if config.mode == 'PRODUCTION' then ['study.muci.sh'] else []),
+          ] + (if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then ['study.muci.sh'] else []),
         },
       },
     },

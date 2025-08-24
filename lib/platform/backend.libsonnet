@@ -16,7 +16,7 @@
 
       backend_config: k.core.v1.configMap.new('spezistudyplatform-backend-config', {
         PORT: '3003',
-        MODE: config.mode,
+        MODE: std.get(config, 'mode', 'DEV'),
         ALLOWED_ORIGINS: "('https://" + config.domain + "', 'http://" + config.domain + "'),http://127.0.0.1,http://localhost:5173",
         AUTH_URL: 'https://' + config.domain + '/auth',
         OAUTH_REALM: 'spezistudyplatform',

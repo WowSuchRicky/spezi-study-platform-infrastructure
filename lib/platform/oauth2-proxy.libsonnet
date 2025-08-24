@@ -3,7 +3,7 @@
   local helm = tanka.helm.new(std.thisFile),
   withConfig(config)::
     local secretObject = 
-      if config.mode == 'DEV' then
+      if std.get(config, 'mode', 'DEV') == 'DEV' then
         // For local dev, use a simple Kubernetes secret
         {
           apiVersion: 'v1',
