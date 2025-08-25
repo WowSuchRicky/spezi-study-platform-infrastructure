@@ -66,8 +66,8 @@
       oauth2_proxy: helm.template('oauth2-proxy', '../../charts/oauth2-proxy', {
         namespace: config.namespace,
         values: {
-          config: {
-            configFile: |||
+          configuration: {
+            content: |||
               provider = "keycloak-oidc"
               oidc_issuer_url = "http://keycloak.%(namespace)s.svc.cluster.local/auth/realms/spezistudyplatform"
               email_domains = ["*"]
@@ -76,8 +76,6 @@
               redirect_url = "https://%(domain)s/oauth2/callback"
               cookie_domains = ["%(domain)s"]
             ||| % { domain: config.domain, namespace: config.namespace },
-          },
-          configuration: {
             existingSecret: 'oauth2-proxy-secret',
           },
           ingress: {
