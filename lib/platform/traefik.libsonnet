@@ -8,8 +8,8 @@
         values: {
           service: {
             enabled: true,
-            type: if std.get(config, 'mode', 'DEV') == 'DEV' then 'ClusterIP' else 'LoadBalancer',
-            [if config.loadBalancerIP != null && std.get(config, 'mode', 'DEV') != 'DEV' then 'loadBalancerIP']: config.loadBalancerIP,
+            type: 'LoadBalancer', // Always use LoadBalancer to expose Traefik
+            externalIPs: [config.loadBalancerIP],
           },
           logs: {
             general: {
