@@ -7,10 +7,12 @@
     storageClass: null, // Must be set by environment
     loadBalancerIP: null, // Optional, set by environment if needed
     mode: 'PRODUCTION', // Default to production mode
+    caCrt: null, // Must be set by environment
     
     // Validation function to ensure required values are set
     assert self.domain != null : 'domain must be set in environment config',
     assert self.storageClass != null : 'storageClass must be set in environment config',
+    assert (self.mode == 'DEV' || self.caCrt != null) : 'caCrt must be set in production environment config',
   },
   
   // Production configuration
@@ -19,6 +21,12 @@
     loadBalancerIP: '34.168.131.83',
     storageClass: 'standard-rwo',
     mode: 'PRODUCTION',
+    // TODO: Replace with actual production CA certificate
+    caCrt: |||
+      -----BEGIN CERTIFICATE-----
+      REPLACE_WITH_PRODUCTION_CA_CERTIFICATE
+      -----END CERTIFICATE-----
+    |||,
   },
   
   // Local development configuration  

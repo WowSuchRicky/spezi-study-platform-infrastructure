@@ -47,6 +47,22 @@
         };
     std.objectValues({
       oauth2_proxy_secret: secretObject,
+    } + (
+      if config.mode == 'PRODUCTION' then {
+        'oauth2-proxy-ca-secret': {
+          apiVersion: 'v1',
+          kind: 'Secret',
+          metadata: {
+            name: 'oauth2-proxy-ca-secret',
+            namespace: config.namespace,
+          },
+          type: 'Opaque',
+          stringData: {
+            'ca.crt': config.caCrt,
+          },
+        },
+      } else {}
+    ) + {
       oauth2_proxy: helm.template('oauth2-proxy', '../../charts/oauth2-proxy', {
         namespace: config.namespace,
         values: {
@@ -76,25 +92,28 @@
             '--pass-authorization-header=true',
             '--set-xauthrequest=true',
             '--code-challenge-method=S256',
-            '--insecure-oidc-skip-issuer-verification=true',
-            '--provider-ca-file=/etc/ssl/certs/ca.crt',
-          ],
-          extraVolumes: [
+          ] + (
+            if config.mode == 'DEV' then
+              ['--insecure-oidc-skip-issuer-verification=true']
+            else
+              ['--provider-ca-file=/etc/ssl/certs/ca.crt']
+          ),
+          extraVolumes: if config.mode == 'PRODUCTION' then [
             {
               name: 'ca-secret',
               secret: {
                 secretName: 'oauth2-proxy-ca-secret',
               },
             },
-          ],
-          extraVolumeMounts: [
+          ] else [],
+          extraVolumeMounts: if config.mode == 'PRODUCTION' then [
             {
               name: 'ca-secret',
               mountPath: '/etc/ssl/certs/ca.crt',
               subPath: 'ca.crt',
               readOnly: true,
             },
-          ],
+          ] else [],
           redis: {
             enabled: false,
           },
