@@ -98,7 +98,6 @@ while ! kubectl get namespace spezistudyplatform >/dev/null 2>&1; do
     fi
 done
 info "Namespace spezistudyplatform found!"
-kubectl apply -f "$SCRIPT_DIR/oauth2-proxy-ca-secret.yaml"
 
 info "Waiting for Keycloak statefulset to be available..."
 # Wait for keycloak to exist with retry logic
