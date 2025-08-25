@@ -11,6 +11,15 @@ info() {
     echo "INFO: $1"
 }
 
+trap 'cleanup' EXIT
+
+cleanup() {
+    info "Cleaning up..."
+    if [ -n "$PORT_FORWARD_PID" ] && ps -p $PORT_FORWARD_PID > /dev/null; then
+        kill $PORT_FORWARD_PID
+    fi
+}
+
 # 1. Create KIND cluster
 info "Creating KIND cluster '$KIND_CLUSTER_NAME'..."
 if ! command -v kind &> /dev/null; then
@@ -73,10 +82,44 @@ EOF
 # 5. Wait for Keycloak to be available and bootstrap realm
 info "Waiting for applications to be deployed..."
 info "Waiting for spezistudyplatform namespace to be created..."
-kubectl wait --for=condition=exists namespace/spezistudyplatform --timeout=300s
 
-info "Waiting for Keycloak deployment to be available..."
-kubectl wait --for=condition=available deployment/keycloak -n spezistudyplatform --timeout=600s
+# Wait for namespace to exist with retry logic
+max_attempts=20
+attempt=0
+while [ $attempt -lt $max_attempts ]; do
+    if kubectl get namespace spezistudyplatform >/dev/null 2>&1; then
+        info "Namespace spezistudyplatform found!"
+        break
+    fi
+    info "Waiting for namespace to be created... (attempt $((attempt+1))/$max_attempts)"
+    sleep 15
+    ((attempt++))
+done
+
+if [ $attempt -eq $max_attempts ]; then
+    info "Error: spezistudyplatform namespace not found after waiting. Check ArgoCD sync status."
+    exit 1
+fi
+
+info "Waiting for Keycloak statefulset to be available..."
+# Wait for keycloak to exist with retry logic
+max_attempts=20
+attempt=0
+while [ $attempt -lt $max_attempts ]; do
+        if [ -n "$(kubectl get statefulset -n spezistudyplatform -o jsonpath='{.items[?(@.metadata.name=="keycloak")].metadata.name}')" ]; then
+        info "Keycloak deployment found!"
+        break
+    fi
+    info "Waiting for Keycloak statefulset to be created... (attempt $((attempt+1))/$max_attempts)"
+    sleep 15
+    ((attempt++))
+done
+
+if [ $attempt -eq $max_attempts ]; then
+    info "Error: Keycloak deployment not found after waiting. Check ArgoCD sync status."
+    exit 1
+fi
+kubectl rollout status statefulset/keycloak -n spezistudyplatform --timeout=600s
 
 info "Waiting for Keycloak pod to be ready..."
 kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=keycloak -n spezistudyplatform --timeout=300s
@@ -90,20 +133,35 @@ PORT_FORWARD_PID=$!
 info "Waiting for port-forward to be ready..."
 sleep 5
 
+info "Waiting for Keycloak to be fully ready..."
+max_attempts=30
+attempt=0
+while [ $attempt -lt $max_attempts ]; do
+    if curl --output /dev/null --silent --head --fail http://localhost:8081/auth/; then
+        info "Keycloak is ready!"
+        break
+    fi
+    info "Waiting for Keycloak to be ready... (attempt $((attempt+1))/$max_attempts)"
+    sleep 10
+    ((attempt++))
+done
+
+if [ $attempt -eq $max_attempts ]; then
+    info "Error: Keycloak is not ready after waiting."
+    exit 1
+fi
+
 # Run Tofu bootstrap
 cd "$SCRIPT_DIR/tofu/keycloak-bootstrap/tf"
 if ! command -v tofu &> /dev/null; then
     info "Warning: tofu is not installed. Skipping Keycloak bootstrap."
     info "Please install tofu and run manually:"
     info "cd tofu/keycloak-bootstrap/tf && tofu init && tofu apply"
-    kill $PORT_FORWARD_PID 2>/dev/null || true
 else
     info "Running Keycloak bootstrap with Tofu..."
     tofu init
-    tofu apply -var="keycloak_url=http://localhost:8081" -var="keycloak_password=admin123!" -auto-approve
+    tofu apply -var="keycloak_url=http://localhost:8081/auth" -var="keycloak_password=admin123!" -auto-approve
     info "Keycloak bootstrap completed successfully!"
-    # Kill port forward
-    kill $PORT_FORWARD_PID 2>/dev/null || true
 fi
 
 cd "$SCRIPT_DIR"

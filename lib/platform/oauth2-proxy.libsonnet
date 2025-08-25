@@ -76,6 +76,7 @@
             '--pass-authorization-header=true',
             '--set-xauthrequest=true',
             '--code-challenge-method=S256',
+            '--insecure-oidc-skip-issuer-verification=true',
           ],
           redis: {
             enabled: false,
