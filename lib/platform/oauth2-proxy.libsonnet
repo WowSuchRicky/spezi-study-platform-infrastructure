@@ -69,13 +69,13 @@
           config: {
             configFile: |||
               provider = "keycloak-oidc"
-              oidc_issuer_url = "https://%(domain)s/auth/realms/spezistudyplatform"
+              oidc_issuer_url = "http://keycloak.%(namespace)s.svc.cluster.local/auth/realms/spezistudyplatform"
               email_domains = ["*"]
               upstreams = ["static://200"]
               scope = "openid profile email groups"
               redirect_url = "https://%(domain)s/oauth2/callback"
               cookie_domains = ["%(domain)s"]
-            ||| % { domain: config.domain },
+            ||| % { domain: config.domain, namespace: config.namespace },
           },
           configuration: {
             existingSecret: 'oauth2-proxy-secret',
