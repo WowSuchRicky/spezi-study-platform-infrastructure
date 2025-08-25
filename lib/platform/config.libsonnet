@@ -32,7 +32,7 @@
   // Local development configuration  
   localDev:: self.base {
     domain: 'spezi.172.20.117.44.nip.io',
-    loadBalancerIP: null, // No static IP for local dev
+    loadBalancerIP: '172.20.117.44', // Match nip.io domain
     storageClass: 'standard',
     mode: 'DEV',
   },
