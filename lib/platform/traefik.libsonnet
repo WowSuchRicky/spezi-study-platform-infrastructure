@@ -8,12 +8,8 @@
         values: {
           service: {
             enabled: true,
-            type: if std.get(config, 'mode', 'DEV') == 'DEV' then 'NodePort' else 'LoadBalancer',
+            type: if std.get(config, 'mode', 'DEV') == 'DEV' then 'ClusterIP' else 'LoadBalancer',
             [if config.loadBalancerIP != null && std.get(config, 'mode', 'DEV') != 'DEV' then 'loadBalancerIP']: config.loadBalancerIP,
-            [if std.get(config, 'mode', 'DEV') == 'DEV' then 'nodePorts']: {
-              web: 80,
-              websecure: 443,
-            },
           },
           logs: {
             general: {

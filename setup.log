@@ -84,12 +84,12 @@ networkpolicy.networking.k8s.io/argocd-server-network-policy created
 INFO: Giving resources a moment to be created...
 INFO: Waiting for Argo CD pods to be ready...
 pod/argocd-application-controller-0 condition met
-pod/argocd-applicationset-controller-6ff6f74bc9-w2vln condition met
-pod/argocd-dex-server-558dc4bd7b-mfjqd condition met
-pod/argocd-notifications-controller-9977b5bd6-s4b6p condition met
-pod/argocd-redis-6594484976-p4gbs condition met
-pod/argocd-repo-server-845d4f5c49-qwhxn condition met
-pod/argocd-server-59d75f4c95-jvp28 condition met
+pod/argocd-applicationset-controller-6ff6f74bc9-h55c4 condition met
+pod/argocd-dex-server-558dc4bd7b-z9c5f condition met
+pod/argocd-notifications-controller-9977b5bd6-84vxw condition met
+pod/argocd-redis-6594484976-v8xm7 condition met
+pod/argocd-repo-server-845d4f5c49-z68lc condition met
+pod/argocd-server-59d75f4c95-sk6mq condition met
 INFO: Argo CD is ready.
 INFO: Installing Tanka Config Management Plugin...
 configmap/argocd-tanka-cmp created
@@ -101,7 +101,7 @@ deployment "argocd-repo-server" successfully rolled out
 INFO: Tanka CMP plugin is ready.
 INFO: Bootstrapping Argo CD Root Application...
 application.argoproj.io/root created
-INFO: Waiting for applications to be deployed...
-INFO: Waiting for spezistudyplatform namespace to be created...
-INFO: Waiting for namespace to be created... (attempt 1/20)
+INFO: Waiting for ArgoCD root application to sync...
+INFO: Root application sync status: , health: 
+INFO: Waiting for root application to sync... (attempt 1/30)
 INFO: Cleaning up...
