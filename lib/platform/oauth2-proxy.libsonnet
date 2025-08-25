@@ -45,7 +45,7 @@
             },
           },
         };
-    std.objectValues({
+    {
       oauth2_proxy_secret: secretObject,
     } + (
       if config.mode == 'PRODUCTION' then {
@@ -126,5 +126,5 @@
           ],
         },
       }),
-    }),
+    }
 }

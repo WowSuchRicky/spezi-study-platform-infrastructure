@@ -1,7 +1,7 @@
 {
   local k = import 'k.libsonnet',
   withConfig(config)::
-    std.objectValues({
+    {
       postgres_credentials: k.core.v1.secret.new('spezistudyplatform-postgres-credentials', {
         username: std.base64('spezistudyplatform'),
         password: std.base64('spezistudyplatform1!2@'),
@@ -58,5 +58,5 @@
         [k.core.v1.servicePort.new(3000, 3000)]
       )
       + k.core.v1.service.metadata.withNamespace(config.namespace),
-    }),
+    }
 }

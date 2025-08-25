@@ -2,7 +2,7 @@
   local tanka = import '../../vendor/github.com/grafana/jsonnet-libs/tanka-util/main.libsonnet',
   local helm = tanka.helm.new(std.thisFile),
   withConfig(config)::
-    std.objectValues({
+    {
       traefik: helm.template('traefik', '../../charts/traefik', {
         namespace: config.namespace,
         values: {
@@ -156,7 +156,7 @@
           ],
           routes: [
             {
-              match: 'Host(`' + config.domain + '`) && PathPrefix(`/`)',
+              match: '(Host(`' + config.domain + '`) || Host(`spezi.127.0.0.1.nip.io`)) && PathPrefix(`/`)',
               priority: 1,
               kind: 'Rule',
               services: [
@@ -171,7 +171,7 @@
               ],
             },
             {
-              match: 'Host(`' + config.domain + '`) && PathPrefix(`/backend`)',
+              match: '(Host(`' + config.domain + '`) || Host(`spezi.127.0.0.1.nip.io`)) && PathPrefix(`/backend`)',
               priority: 2,
               kind: 'Rule',
               services: [
@@ -220,5 +220,5 @@
           ],
         },
       },
-    }),
+    }
 }
