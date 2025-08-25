@@ -81,10 +81,52 @@ spec:
     - ServerSideApply=true
 EOF
 
-# 5. Wait for Keycloak to be available and bootstrap realm
-info "Waiting for applications to be deployed..."
-info "Waiting for spezistudyplatform namespace to be created..."
+# 5. Wait for ArgoCD to sync and deploy applications
+info "Waiting for ArgoCD root application to sync..."
 
+# Wait for root application to be synced
+max_attempts=30
+attempt=0
+while [ $attempt -lt $max_attempts ]; do
+    if kubectl get application root -n argocd >/dev/null 2>&1; then
+        app_status=$(kubectl get application root -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "Unknown")
+        health_status=$(kubectl get application root -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null || echo "Unknown")
+        info "Root application sync status: $app_status, health: $health_status"
+        
+        if [ "$app_status" = "Synced" ] && [ "$health_status" = "Healthy" ]; then
+            info "Root application is synced and healthy!"
+            break
+        fi
+    fi
+    info "Waiting for root application to sync... (attempt $((attempt+1))/$max_attempts)"
+    sleep 10
+    ((attempt++))
+done
+
+if [ $attempt -eq $max_attempts ]; then
+    info "Warning: Root application may not be fully synced. Proceeding anyway..."
+fi
+
+info "Waiting for wave 0 applications to be deployed..."
+# Wait specifically for namespace application to be synced
+max_attempts=20
+attempt=0
+while [ $attempt -lt $max_attempts ]; do
+    if kubectl get application local-dev-namespace -n argocd >/dev/null 2>&1; then
+        app_status=$(kubectl get application local-dev-namespace -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "Unknown")
+        info "Namespace application sync status: $app_status"
+        
+        if [ "$app_status" = "Synced" ]; then
+            info "Namespace application is synced!"
+            break
+        fi
+    fi
+    info "Waiting for namespace application to be created and synced... (attempt $((attempt+1))/$max_attempts)"
+    sleep 15
+    ((attempt++))
+done
+
+info "Waiting for spezistudyplatform namespace to be created..."
 # Wait for namespace to exist with retry logic
 max_attempts=20
 attempt=0
@@ -94,6 +136,7 @@ while ! kubectl get namespace spezistudyplatform >/dev/null 2>&1; do
     ((attempt++))
     if [ $attempt -eq $max_attempts ]; then
         info "Error: spezistudyplatform namespace not found after waiting. Check ArgoCD sync status."
+        kubectl get applications -n argocd
         exit 1
     fi
 done
