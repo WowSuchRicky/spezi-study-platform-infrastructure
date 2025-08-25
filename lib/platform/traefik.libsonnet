@@ -8,9 +8,11 @@
         values: {
           service: {
             enabled: true,
-            type: 'LoadBalancer',
-            [if config.loadBalancerIP != null then 'spec']: {
-              loadBalancerIP: config.loadBalancerIP,
+            type: if std.get(config, 'mode', 'DEV') == 'DEV' then 'NodePort' else 'LoadBalancer',
+            [if config.loadBalancerIP != null && std.get(config, 'mode', 'DEV') != 'DEV' then 'loadBalancerIP']: config.loadBalancerIP,
+            [if std.get(config, 'mode', 'DEV') == 'DEV' then 'nodePorts']: {
+              web: 30080,
+              websecure: 30443,
             },
           },
           logs: {
@@ -153,6 +155,7 @@
         },
         spec: {
           entryPoints: [
+            'web',
             'websecure',
           ],
           routes: [
