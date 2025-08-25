@@ -84,13 +84,24 @@ EOF
 # 5. Wait for ArgoCD to sync and deploy applications
 info "Waiting for ArgoCD root application to sync..."
 
+# Give the controller a moment to create the application object and its status
+sleep 5
+
 # Wait for root application to be synced
 max_attempts=30
 attempt=0
 while [ $attempt -lt $max_attempts ]; do
     if kubectl get application root -n argocd >/dev/null 2>&1; then
-        app_status=$(kubectl get application root -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "Unknown")
-        health_status=$(kubectl get application root -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null || echo "Unknown")
+        # Temporarily disable exit on error to handle missing jsonpath
+        set +e
+        app_status=$(kubectl get application root -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null)
+        health_status=$(kubectl get application root -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null)
+        set -e
+
+        # Default status to "Waiting" if kubectl returns an empty string
+        app_status=${app_status:-"Waiting"}
+        health_status=${health_status:-"Waiting"}
+
         info "Root application sync status: $app_status, health: $health_status"
         
         if [ "$app_status" = "Synced" ] && [ "$health_status" = "Healthy" ]; then
