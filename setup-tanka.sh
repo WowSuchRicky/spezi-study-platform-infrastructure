@@ -86,39 +86,31 @@ info "Waiting for spezistudyplatform namespace to be created..."
 # Wait for namespace to exist with retry logic
 max_attempts=20
 attempt=0
-while [ $attempt -lt $max_attempts ]; do
-    if kubectl get namespace spezistudyplatform >/dev/null 2>&1; then
-        info "Namespace spezistudyplatform found!"
-        break
-    fi
+while ! kubectl get namespace spezistudyplatform >/dev/null 2>&1; do
     info "Waiting for namespace to be created... (attempt $((attempt+1))/$max_attempts)"
     sleep 15
     ((attempt++))
+    if [ $attempt -eq $max_attempts ]; then
+        info "Error: spezistudyplatform namespace not found after waiting. Check ArgoCD sync status."
+        exit 1
+    fi
 done
-
-if [ $attempt -eq $max_attempts ]; then
-    info "Error: spezistudyplatform namespace not found after waiting. Check ArgoCD sync status."
-    exit 1
-fi
+info "Namespace spezistudyplatform found!"
 
 info "Waiting for Keycloak statefulset to be available..."
 # Wait for keycloak to exist with retry logic
 max_attempts=20
 attempt=0
-while [ $attempt -lt $max_attempts ]; do
-        if [ -n "$(kubectl get statefulset -n spezistudyplatform -o jsonpath='{.items[?(@.metadata.name=="keycloak")].metadata.name}')" ]; then
-        info "Keycloak deployment found!"
-        break
-    fi
+while ! kubectl get statefulset keycloak -n spezistudyplatform >/dev/null 2>&1; do
     info "Waiting for Keycloak statefulset to be created... (attempt $((attempt+1))/$max_attempts)"
     sleep 15
     ((attempt++))
+    if [ $attempt -eq $max_attempts ]; then
+        info "Error: Keycloak statefulset not found after waiting. Check ArgoCD sync status."
+        exit 1
+    fi
 done
-
-if [ $attempt -eq $max_attempts ]; then
-    info "Error: Keycloak deployment not found after waiting. Check ArgoCD sync status."
-    exit 1
-fi
+info "Keycloak statefulset found!"
 kubectl rollout status statefulset/keycloak -n spezistudyplatform --timeout=600s
 
 info "Waiting for Keycloak pod to be ready..."

@@ -77,6 +77,23 @@
             '--set-xauthrequest=true',
             '--code-challenge-method=S256',
             '--insecure-oidc-skip-issuer-verification=true',
+            '--provider-ca-file=/etc/ssl/certs/ca.crt',
+          ],
+          extraVolumes: [
+            {
+              name: 'ca-secret',
+              secret: {
+                secretName: 'oauth2-proxy-ca-secret',
+              },
+            },
+          ],
+          extraVolumeMounts: [
+            {
+              name: 'ca-secret',
+              mountPath: '/etc/ssl/certs/ca.crt',
+              subPath: 'ca.crt',
+              readOnly: true,
+            },
           ],
           redis: {
             enabled: false,
