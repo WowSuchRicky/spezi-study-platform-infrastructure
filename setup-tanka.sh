@@ -87,8 +87,8 @@ info "Waiting for ArgoCD root application to sync..."
 # Give the controller a moment to create the application object and its status
 sleep 5
 
-# Wait for root application to be synced
-max_attempts=30
+# Wait for root application to be synced first
+max_attempts=20
 attempt=0
 while [ $attempt -lt $max_attempts ]; do
     if kubectl get application root -n argocd >/dev/null 2>&1; then
@@ -104,8 +104,8 @@ while [ $attempt -lt $max_attempts ]; do
 
         info "Root application sync status: $app_status, health: $health_status"
         
-        if [ "$app_status" = "Synced" ] && [ "$health_status" = "Healthy" ]; then
-            info "Root application is synced and healthy!"
+        if [ "$app_status" = "Synced" ]; then
+            info "Root application is synced! Child applications are now being created."
             break
         fi
     fi
@@ -115,27 +115,53 @@ while [ $attempt -lt $max_attempts ]; do
 done
 
 if [ $attempt -eq $max_attempts ]; then
-    info "Warning: Root application may not be fully synced. Proceeding anyway..."
+    info "Error: Root application failed to sync. Aborting."
+    exit 1
 fi
 
-info "Waiting for wave 0 applications to be deployed..."
-# Wait specifically for namespace application to be synced
-max_attempts=20
+info "Waiting for wave 0 applications to be healthy..."
+# Wait for critical wave 0 applications to be healthy before proceeding
+wave0_apps=("local-dev-namespace" "local-dev-cloudnative-pg-crds")
+max_attempts=30
 attempt=0
+
 while [ $attempt -lt $max_attempts ]; do
-    if kubectl get application local-dev-namespace -n argocd >/dev/null 2>&1; then
-        app_status=$(kubectl get application local-dev-namespace -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "Unknown")
-        info "Namespace application sync status: $app_status"
-        
-        if [ "$app_status" = "Synced" ]; then
-            info "Namespace application is synced!"
-            break
+    all_healthy=true
+    for app in "${wave0_apps[@]}"; do
+        if kubectl get application "$app" -n argocd >/dev/null 2>&1; then
+            # Temporarily disable exit on error
+            set +e
+            app_status=$(kubectl get application "$app" -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null)
+            health_status=$(kubectl get application "$app" -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null)
+            set -e
+            
+            app_status=${app_status:-"Unknown"}
+            health_status=${health_status:-"Unknown"}
+            
+            info "Application $app: sync=$app_status, health=$health_status"
+            
+            if [ "$app_status" != "Synced" ] || [ "$health_status" != "Healthy" ]; then
+                all_healthy=false
+            fi
+        else
+            info "Application $app not found yet"
+            all_healthy=false
         fi
+    done
+    
+    if [ "$all_healthy" = true ]; then
+        info "All wave 0 applications are healthy!"
+        break
     fi
-    info "Waiting for namespace application to be created and synced... (attempt $((attempt+1))/$max_attempts)"
+    
+    info "Waiting for wave 0 applications to be healthy... (attempt $((attempt+1))/$max_attempts)"
     sleep 15
     ((attempt++))
 done
+
+if [ $attempt -eq $max_attempts ]; then
+    info "Warning: Not all wave 0 applications are healthy. Proceeding anyway..."
+fi
 
 info "Waiting for spezistudyplatform namespace to be created..."
 # Wait for namespace to exist with retry logic
@@ -153,16 +179,51 @@ while ! kubectl get namespace spezistudyplatform >/dev/null 2>&1; do
 done
 info "Namespace spezistudyplatform found!"
 
-info "Waiting for Keycloak statefulset to be available..."
-# Wait for keycloak to exist with retry logic
-max_attempts=20
+info "Waiting for auth application (includes Keycloak) to be healthy..."
+# Wait for auth application to be deployed and healthy
+max_attempts=30
+attempt=0
+while [ $attempt -lt $max_attempts ]; do
+    if kubectl get application local-dev-auth -n argocd >/dev/null 2>&1; then
+        # Temporarily disable exit on error
+        set +e
+        app_status=$(kubectl get application local-dev-auth -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null)
+        health_status=$(kubectl get application local-dev-auth -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null)
+        set -e
+        
+        app_status=${app_status:-"Unknown"}
+        health_status=${health_status:-"Unknown"}
+        
+        info "Auth application: sync=$app_status, health=$health_status"
+        
+        if [ "$app_status" = "Synced" ] && [ "$health_status" = "Healthy" ]; then
+            info "Auth application is healthy!"
+            break
+        fi
+    else
+        info "Auth application not found yet"
+    fi
+    
+    info "Waiting for auth application to be healthy... (attempt $((attempt+1))/$max_attempts)"
+    sleep 15
+    ((attempt++))
+done
+
+if [ $attempt -eq $max_attempts ]; then
+    info "Warning: Auth application is not healthy. Attempting to continue anyway..."
+fi
+
+info "Waiting for Keycloak statefulset to be ready..."
+# Additional check to ensure Keycloak statefulset exists
+max_attempts=10
 attempt=0
 while ! kubectl get statefulset keycloak -n spezistudyplatform >/dev/null 2>&1; do
     info "Waiting for Keycloak statefulset to be created... (attempt $((attempt+1))/$max_attempts)"
-    sleep 15
+    sleep 10
     ((attempt++))
     if [ $attempt -eq $max_attempts ]; then
         info "Error: Keycloak statefulset not found after waiting. Check ArgoCD sync status."
+        kubectl get applications -n argocd
         exit 1
     fi
 done
