@@ -103,7 +103,7 @@
         },
         spec: {
           forwardAuth: {
-            address: 'http://oauth2-proxy.' + config.namespace + '.svc.cluster.local/oauth2/auth',
+            address: 'http://oauth2-proxy.' + config.namespace + '.svc.cluster.local/oauth2/auth_or_start',
             trustForwardHeader: true,
             authResponseHeaders: [
               'X-Auth-Request-User',
