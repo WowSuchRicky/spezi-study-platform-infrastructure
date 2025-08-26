@@ -69,7 +69,7 @@
           configuration: {
             content: |||
               provider = "keycloak-oidc"
-              oidc_issuer_url = "https://%(domain)s/auth/realms/spezistudyplatform"
+              oidc_issuer_url = "http://keycloak.%(namespace)s.svc.cluster.local/auth/realms/spezistudyplatform"
               email_domains = ["*"]
               upstreams = ["static://200"]
               scope = "openid profile email groups"
@@ -124,10 +124,6 @@
               value: 'true',
             },
           ],
-          deployment: {
-            hostNetwork: std.get(config, 'mode', 'DEV') == 'DEV',
-            dnsPolicy: if std.get(config, 'mode', 'DEV') == 'DEV' then 'ClusterFirstWithHostNet' else 'ClusterFirst',
-          },
         },
       }),
     }
