@@ -173,17 +173,27 @@ info "Waiting for spezistudyplatform namespace to be created..."
 # Wait for namespace to exist with retry logic
 max_attempts=20
 attempt=0
-while ! kubectl get namespace spezistudyplatform >/dev/null 2>&1; do
+while [ $attempt -lt $max_attempts ]; do
+    # Temporarily disable exit on error
+    set +e
+    namespace_exists=$(kubectl get namespace spezistudyplatform >/dev/null 2>&1; echo $?)
+    set -e
+    
+    if [ "$namespace_exists" -eq 0 ]; then
+        info "Namespace spezistudyplatform found!"
+        break
+    fi
+    
     info "Waiting for namespace to be created... (attempt $((attempt+1))/$max_attempts)"
     sleep 15
     ((attempt++))
-    if [ $attempt -eq $max_attempts ]; then
-        info "Error: spezistudyplatform namespace not found after waiting. Check ArgoCD sync status."
-        kubectl get applications -n argocd
-        exit 1
-    fi
 done
-info "Namespace spezistudyplatform found!"
+
+if [ $attempt -eq $max_attempts ]; then
+    info "Error: spezistudyplatform namespace not found after waiting. Check ArgoCD sync status."
+    kubectl get applications -n argocd
+    exit 1
+fi
 
 info "Waiting for auth application (includes Keycloak) to be healthy..."
 # Wait for auth application to be deployed and healthy
@@ -225,16 +235,27 @@ info "Waiting for Keycloak statefulset to be ready..."
 # Additional check to ensure Keycloak statefulset exists
 max_attempts=10
 attempt=0
-while ! kubectl get statefulset keycloak -n spezistudyplatform >/dev/null 2>&1; do
+while [ $attempt -lt $max_attempts ]; do
+    # Temporarily disable exit on error
+    set +e
+    statefulset_exists=$(kubectl get statefulset keycloak -n spezistudyplatform >/dev/null 2>&1; echo $?)
+    set -e
+    
+    if [ "$statefulset_exists" -eq 0 ]; then
+        info "Keycloak statefulset found!"
+        break
+    fi
+    
     info "Waiting for Keycloak statefulset to be created... (attempt $((attempt+1))/$max_attempts)"
     sleep 10
     ((attempt++))
-    if [ $attempt -eq $max_attempts ]; then
-        info "Error: Keycloak statefulset not found after waiting. Check ArgoCD sync status."
-        kubectl get applications -n argocd
-        exit 1
-    fi
 done
+
+if [ $attempt -eq $max_attempts ]; then
+    info "Error: Keycloak statefulset not found after waiting. Check ArgoCD sync status."
+    kubectl get applications -n argocd
+    exit 1
+fi
 info "Keycloak statefulset found!"
 kubectl rollout status statefulset/keycloak -n spezistudyplatform --timeout=600s
 
