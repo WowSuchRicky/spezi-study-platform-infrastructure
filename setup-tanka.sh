@@ -196,9 +196,9 @@ if [ $attempt -eq $max_attempts ]; then
     exit 1
 fi
 
-info "Waiting for auth application (includes Keycloak) to be healthy..."
-# Wait for auth application to be deployed and healthy
-max_attempts=30
+info "Waiting for auth application to be synced..."
+# Wait for auth application to be deployed (synced, not necessarily healthy)
+max_attempts=20
 attempt=0
 while [ $attempt -lt $max_attempts ]; do
     # Temporarily disable exit on error for the entire loop iteration
@@ -206,30 +206,29 @@ while [ $attempt -lt $max_attempts ]; do
     app_exists=$(kubectl get application local-dev-auth -n argocd >/dev/null 2>&1; echo $?)
     if [ "$app_exists" -eq 0 ]; then
         app_status=$(kubectl get application local-dev-auth -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null)
-        health_status=$(kubectl get application local-dev-auth -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null)
         
         app_status=${app_status:-"Unknown"}
-        health_status=${health_status:-"Unknown"}
         
-        info "Auth application: sync=$app_status, health=$health_status"
+        info "Auth application sync status: $app_status"
         
-        if [ "$app_status" = "Synced" ] && [ "$health_status" = "Healthy" ]; then
+        if [ "$app_status" = "Synced" ]; then
             set -e  # Re-enable exit on error
-            info "Auth application is healthy!"
+            info "Auth application is synced! Resources are being created."
             break
         fi
     else
         info "Auth application not found yet"
     fi
     
-    info "Waiting for auth application to be healthy... (attempt $((attempt+1))/$max_attempts)"
+    info "Waiting for auth application to be synced... (attempt $((attempt+1))/$max_attempts)"
     sleep 15
     ((attempt++))
     set -e  # Re-enable exit on error at the very end of loop iteration
 done
 
 if [ $attempt -eq $max_attempts ]; then
-    info "Warning: Auth application is not healthy. Attempting to continue anyway..."
+    info "Error: Auth application failed to sync. Aborting."
+    exit 1
 fi
 
 info "Waiting for Keycloak statefulset to be ready..."
