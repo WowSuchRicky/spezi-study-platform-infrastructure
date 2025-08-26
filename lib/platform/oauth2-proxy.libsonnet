@@ -124,7 +124,8 @@
               value: 'true',
             },
           ],
-          dnsPolicy: 'ClusterFirstWithHostNet',
+          dnsPolicy: if std.get(config, 'mode', 'DEV') == 'DEV' then 'ClusterFirstWithHostNet' else 'ClusterFirst',
+          hostNetwork: std.get(config, 'mode', 'DEV') == 'DEV',
         },
       }),
     }
