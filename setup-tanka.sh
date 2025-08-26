@@ -112,11 +112,11 @@ while [ $attempt -lt $max_attempts ]; do
     else
         info "Root application not found yet"
     fi
-    set -e  # Re-enable exit on error
     
     info "Waiting for root application to sync... (attempt $((attempt+1))/$max_attempts)"
     sleep 10
     ((attempt++))
+    set -e  # Re-enable exit on error at the very end of loop iteration
 done
 
 if [ $attempt -eq $max_attempts ]; then
@@ -153,9 +153,9 @@ while [ $attempt -lt $max_attempts ]; do
             all_healthy=false
         fi
     done
-    set -e  # Re-enable exit on error
     
     if [ "$all_healthy" = true ]; then
+        set -e  # Re-enable exit on error
         info "All wave 0 applications are healthy!"
         break
     fi
@@ -163,6 +163,7 @@ while [ $attempt -lt $max_attempts ]; do
     info "Waiting for wave 0 applications to be healthy... (attempt $((attempt+1))/$max_attempts)"
     sleep 15
     ((attempt++))
+    set -e  # Re-enable exit on error at the very end of loop iteration
 done
 
 if [ $attempt -eq $max_attempts ]; then
@@ -220,11 +221,11 @@ while [ $attempt -lt $max_attempts ]; do
     else
         info "Auth application not found yet"
     fi
-    set -e  # Re-enable exit on error
     
     info "Waiting for auth application to be healthy... (attempt $((attempt+1))/$max_attempts)"
     sleep 15
     ((attempt++))
+    set -e  # Re-enable exit on error at the very end of loop iteration
 done
 
 if [ $attempt -eq $max_attempts ]; then
