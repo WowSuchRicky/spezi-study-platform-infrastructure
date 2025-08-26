@@ -1,6 +1,7 @@
 resource "keycloak_realm" "realm" {
-  realm   = "spezistudyplatform"
-  enabled = true
+  realm        = "spezistudyplatform"
+  enabled      = true
+  frontend_url = var.keycloak_frontend_url
 }
 
 

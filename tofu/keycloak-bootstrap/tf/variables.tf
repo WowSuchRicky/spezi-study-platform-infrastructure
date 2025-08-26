@@ -21,3 +21,9 @@ variable "keycloak_url" {
   type        = string
   default     = "https://platform.spezi.stanford.edu/auth"
 }
+
+variable "keycloak_frontend_url" {
+  description = "Keycloak frontend URL (external URL used in OIDC responses)"
+  type        = string
+  default     = "https://platform.spezi.stanford.edu/auth"
+}

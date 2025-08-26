@@ -289,6 +289,17 @@ if [ $attempt -eq $max_attempts ]; then
     exit 1
 fi
 
+# Detect external domain for Keycloak frontend URL
+info "Detecting external domain for Keycloak configuration..."
+LOCAL_IP=$(ifconfig | grep "inet " | grep -v 127.0.0.1 | head -1 | awk '{print $2}' 2>/dev/null || echo "")
+if [ -n "$LOCAL_IP" ]; then
+    EXTERNAL_DOMAIN="spezi.${LOCAL_IP}.nip.io"
+    info "Using local development domain: $EXTERNAL_DOMAIN"
+else
+    EXTERNAL_DOMAIN="platform.spezi.stanford.edu"
+    info "Using production domain: $EXTERNAL_DOMAIN"
+fi
+
 # Run Tofu bootstrap
 cd "$SCRIPT_DIR/tofu/keycloak-bootstrap/tf"
 if ! command -v tofu &> /dev/null; then
@@ -298,7 +309,11 @@ if ! command -v tofu &> /dev/null; then
 else
     info "Running Keycloak bootstrap with Tofu..."
     tofu init
-    tofu apply -var="keycloak_url=http://localhost:8081/auth" -var="keycloak_password=admin123!" -auto-approve
+    tofu apply \
+        -var="keycloak_url=http://localhost:8081/auth" \
+        -var="keycloak_password=admin123!" \
+        -var="keycloak_frontend_url=https://${EXTERNAL_DOMAIN}/auth" \
+        -auto-approve
     info "Keycloak bootstrap completed successfully!"
 fi
 
