@@ -91,13 +91,13 @@ sleep 5
 max_attempts=20
 attempt=0
 while [ $attempt -lt $max_attempts ]; do
-    if kubectl get application root -n argocd >/dev/null 2>&1; then
-        # Temporarily disable exit on error to handle missing jsonpath
-        set +e
+    # Temporarily disable exit on error for the entire loop iteration
+    set +e
+    app_exists=$(kubectl get application root -n argocd >/dev/null 2>&1; echo $?)
+    if [ "$app_exists" -eq 0 ]; then
         app_status=$(kubectl get application root -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null)
         health_status=$(kubectl get application root -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null)
-        set -e
-
+        
         # Default status to "Waiting" if kubectl returns an empty string
         app_status=${app_status:-"Waiting"}
         health_status=${health_status:-"Waiting"}
@@ -105,10 +105,15 @@ while [ $attempt -lt $max_attempts ]; do
         info "Root application sync status: $app_status, health: $health_status"
         
         if [ "$app_status" = "Synced" ]; then
+            set -e  # Re-enable exit on error
             info "Root application is synced! Child applications are now being created."
             break
         fi
+    else
+        info "Root application not found yet"
     fi
+    set -e  # Re-enable exit on error
+    
     info "Waiting for root application to sync... (attempt $((attempt+1))/$max_attempts)"
     sleep 10
     ((attempt++))
@@ -126,14 +131,14 @@ max_attempts=30
 attempt=0
 
 while [ $attempt -lt $max_attempts ]; do
+    # Temporarily disable exit on error for the entire loop iteration
+    set +e
     all_healthy=true
     for app in "${wave0_apps[@]}"; do
-        if kubectl get application "$app" -n argocd >/dev/null 2>&1; then
-            # Temporarily disable exit on error
-            set +e
+        app_exists=$(kubectl get application "$app" -n argocd >/dev/null 2>&1; echo $?)
+        if [ "$app_exists" -eq 0 ]; then
             app_status=$(kubectl get application "$app" -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null)
             health_status=$(kubectl get application "$app" -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null)
-            set -e
             
             app_status=${app_status:-"Unknown"}
             health_status=${health_status:-"Unknown"}
@@ -148,6 +153,7 @@ while [ $attempt -lt $max_attempts ]; do
             all_healthy=false
         fi
     done
+    set -e  # Re-enable exit on error
     
     if [ "$all_healthy" = true ]; then
         info "All wave 0 applications are healthy!"
@@ -184,12 +190,12 @@ info "Waiting for auth application (includes Keycloak) to be healthy..."
 max_attempts=30
 attempt=0
 while [ $attempt -lt $max_attempts ]; do
-    if kubectl get application local-dev-auth -n argocd >/dev/null 2>&1; then
-        # Temporarily disable exit on error
-        set +e
+    # Temporarily disable exit on error for the entire loop iteration
+    set +e
+    app_exists=$(kubectl get application local-dev-auth -n argocd >/dev/null 2>&1; echo $?)
+    if [ "$app_exists" -eq 0 ]; then
         app_status=$(kubectl get application local-dev-auth -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null)
         health_status=$(kubectl get application local-dev-auth -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null)
-        set -e
         
         app_status=${app_status:-"Unknown"}
         health_status=${health_status:-"Unknown"}
@@ -197,12 +203,14 @@ while [ $attempt -lt $max_attempts ]; do
         info "Auth application: sync=$app_status, health=$health_status"
         
         if [ "$app_status" = "Synced" ] && [ "$health_status" = "Healthy" ]; then
+            set -e  # Re-enable exit on error
             info "Auth application is healthy!"
             break
         fi
     else
         info "Auth application not found yet"
     fi
+    set -e  # Re-enable exit on error
     
     info "Waiting for auth application to be healthy... (attempt $((attempt+1))/$max_attempts)"
     sleep 15
