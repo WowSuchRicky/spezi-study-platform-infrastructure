@@ -34,8 +34,8 @@
             annotations: {},
           },
           deployment: {
-            hostNetwork: std.get(config, 'mode', 'DEV') == 'DEV',
-            dnsPolicy: if std.get(config, 'mode', 'DEV') == 'DEV' then 'ClusterFirstWithHostNet' else null,
+            hostNetwork: false,
+            dnsPolicy: null,
             initContainers: [
               {
                 name: 'volume-permissions',
