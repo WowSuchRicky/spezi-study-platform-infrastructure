@@ -16,6 +16,10 @@
               name: 'KC_HTTP_RELATIVE_PATH',
               value: '/auth',
             },
+            {
+              name: 'KC_HOSTNAME_URL',
+              value: 'https://' + config.domain + '/auth',
+            },
           ],
           customReadinessProbe: {
             failureThreshold: 3,

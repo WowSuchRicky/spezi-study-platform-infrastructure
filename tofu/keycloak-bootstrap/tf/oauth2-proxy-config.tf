@@ -1,7 +1,8 @@
 resource "keycloak_realm" "realm" {
-  realm        = "spezistudyplatform"
-  enabled      = true
-  frontend_url = var.keycloak_frontend_url
+  realm   = "spezistudyplatform"
+  enabled = true
+  # Note: frontend_url configuration needs to be set at Keycloak server level
+  # through KEYCLOAK_FRONTEND_URL environment variable
 }
 
 
