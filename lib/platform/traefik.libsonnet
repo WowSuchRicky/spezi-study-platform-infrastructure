@@ -69,14 +69,14 @@
           ports: if std.get(config, 'mode', 'DEV') == 'DEV' then {
             web: {
               port: 80,
-              nodePort: 80,
+              nodePort: 30080,
               expose: {
                 default: true,
               },
             },
             websecure: {
               port: 443,
-              nodePort: 443,
+              nodePort: 30443,
               expose: {
                 default: true,
               },
