@@ -8,8 +8,8 @@
         values: {
           service: {
             enabled: true,
-            type: 'LoadBalancer', // Always use LoadBalancer to expose Traefik
-            externalIPs: [config.loadBalancerIP],
+            type: if std.get(config, 'mode', 'DEV') == 'DEV' then 'NodePort' else 'LoadBalancer',
+            externalIPs: if std.get(config, 'mode', 'DEV') == 'DEV' then null else [config.loadBalancerIP],
           },
           logs: {
             general: {
@@ -34,8 +34,8 @@
             annotations: {},
           },
           deployment: {
-            hostNetwork: false,
-            dnsPolicy: null,
+            hostNetwork: std.get(config, 'mode', 'DEV') == 'DEV',
+            dnsPolicy: if std.get(config, 'mode', 'DEV') == 'DEV' then 'ClusterFirstWithHostNet' else null,
             initContainers: [
               {
                 name: 'volume-permissions',
@@ -69,12 +69,14 @@
           ports: if std.get(config, 'mode', 'DEV') == 'DEV' then {
             web: {
               port: 80,
+              nodePort: 80,
               expose: {
                 default: true,
               },
             },
             websecure: {
               port: 443,
+              nodePort: 443,
               expose: {
                 default: true,
               },
