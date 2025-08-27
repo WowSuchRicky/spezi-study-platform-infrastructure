@@ -196,71 +196,42 @@ if [ $attempt -eq $max_attempts ]; then
     exit 1
 fi
 
-info "Waiting for auth application to be synced..."
-# Wait for auth application to be deployed (synced, not necessarily healthy)
-max_attempts=20
-attempt=0
-while [ $attempt -lt $max_attempts ]; do
-    # Temporarily disable exit on error for the entire loop iteration
-    set +e
-    app_exists=$(kubectl get application local-dev-auth -n argocd >/dev/null 2>&1; echo $?)
-    if [ "$app_exists" -eq 0 ]; then
-        app_status=$(kubectl get application local-dev-auth -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null)
-        
-        app_status=${app_status:-"Unknown"}
-        
-        info "Auth application sync status: $app_status"
-        
-        if [ "$app_status" = "Synced" ]; then
-            set -e  # Re-enable exit on error
-            info "Auth application is synced! Resources are being created."
-            break
-        fi
-    else
-        info "Auth application not found yet"
-    fi
-    
-    info "Waiting for auth application to be synced... (attempt $((attempt+1))/$max_attempts)"
-    sleep 15
-    ((attempt++))
-    set -e  # Re-enable exit on error at the very end of loop iteration
-done
+info "Auth application will be synced by ArgoCD automatically."
+info "Proceeding with Keycloak setup without waiting for auth application health."
 
-if [ $attempt -eq $max_attempts ]; then
-    info "Error: Auth application failed to sync. Aborting."
-    exit 1
-fi
-
-info "Waiting for Keycloak statefulset to be ready..."
-# Additional check to ensure Keycloak statefulset exists
-max_attempts=10
+info "Waiting for Keycloak to be ready..."
+# Wait for Keycloak statefulset and pod to be ready
+max_attempts=30
 attempt=0
 while [ $attempt -lt $max_attempts ]; do
     # Temporarily disable exit on error
     set +e
     statefulset_exists=$(kubectl get statefulset keycloak -n spezistudyplatform >/dev/null 2>&1; echo $?)
+    if [ "$statefulset_exists" -eq 0 ]; then
+        # Check if pod is ready
+        pod_ready=$(kubectl get pod keycloak-0 -n spezistudyplatform -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}' 2>/dev/null)
+        if [ "$pod_ready" = "True" ]; then
+            set -e
+            info "Keycloak is ready!"
+            break
+        else
+            info "Keycloak pod exists but not ready yet..."
+        fi
+    else
+        info "Waiting for Keycloak statefulset to be created..."
+    fi
     set -e
     
-    if [ "$statefulset_exists" -eq 0 ]; then
-        info "Keycloak statefulset found!"
-        break
-    fi
-    
-    info "Waiting for Keycloak statefulset to be created... (attempt $((attempt+1))/$max_attempts)"
-    sleep 10
+    info "Waiting for Keycloak to be ready... (attempt $((attempt+1))/$max_attempts)"
+    sleep 15
     ((attempt++))
 done
 
 if [ $attempt -eq $max_attempts ]; then
-    info "Error: Keycloak statefulset not found after waiting. Check ArgoCD sync status."
+    info "Error: Keycloak not ready after waiting. Check ArgoCD sync status."
     kubectl get applications -n argocd
     exit 1
 fi
-info "Keycloak statefulset found!"
-kubectl rollout status statefulset/keycloak -n spezistudyplatform --timeout=600s
-
-info "Waiting for Keycloak pod to be ready..."
-kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=keycloak -n spezistudyplatform --timeout=300s
 
 # Bootstrap Keycloak realm and OAuth2 proxy client
 info "Bootstrapping Keycloak realm and OAuth2 proxy configuration..."
@@ -312,7 +283,6 @@ else
     tofu apply \
         -var="keycloak_url=http://localhost:8081/auth" \
         -var="keycloak_password=admin123!" \
-        -var="keycloak_frontend_url=https://${EXTERNAL_DOMAIN}/auth" \
         -auto-approve
     info "Keycloak bootstrap completed successfully!"
 fi
