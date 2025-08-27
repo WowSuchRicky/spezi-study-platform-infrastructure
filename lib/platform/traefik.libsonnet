@@ -90,6 +90,10 @@
               enabled: true,
             },
           },
+          additionalArguments: if std.get(config, 'mode', 'DEV') == 'DEV' then [
+            '--entrypoints.websecure.forwardedHeaders.trustedIPs=10.244.0.0/16,127.0.0.1/32,172.16.0.0/12',
+            '--entrypoints.web.forwardedHeaders.trustedIPs=10.244.0.0/16,127.0.0.1/32,172.16.0.0/12',
+          ] else [],
         },
       }),
       
