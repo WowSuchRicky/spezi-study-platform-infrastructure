@@ -11,7 +11,7 @@
         },
         spec: {
           headers: {
-            requestHeaders: {
+            customRequestHeaders: {
               'X-Forwarded-Proto': 'https',
               'X-Forwarded-Port': '443',
             },
