@@ -17,8 +17,16 @@
               value: '/auth',
             },
             {
-              name: 'KC_HOSTNAME_URL',
-              value: 'https://' + config.domain + '/auth',
+              name: 'KC_HOSTNAME',
+              value: config.domain,
+            },
+            {
+              name: 'KC_HOSTNAME_PATH',
+              value: '/auth',
+            },
+            {
+              name: 'KC_HOSTNAME_STRICT',
+              value: 'false',
             },
           ],
           customReadinessProbe: {
