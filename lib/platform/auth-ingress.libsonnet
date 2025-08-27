@@ -1,6 +1,23 @@
 {
   withConfig(config)::
     {
+      // Headers middleware to ensure proper forwarded headers for Keycloak
+      'keycloak-headers-middleware': {
+        apiVersion: 'traefik.io/v1alpha1',
+        kind: 'Middleware',
+        metadata: {
+          name: 'keycloak-headers',
+          namespace: config.namespace,
+        },
+        spec: {
+          headers: {
+            requestHeaders: {
+              'X-Forwarded-Proto': 'https',
+              'X-Forwarded-Port': '443',
+            },
+          },
+        },
+      },
       'keycloak-ingress': {
         apiVersion: 'traefik.io/v1alpha1',
         kind: 'IngressRoute',
@@ -40,7 +57,9 @@
                   port: 80,
                 },
               ],
-              middlewares: [],
+              middlewares: [
+                { name: 'keycloak-headers' },
+              ],
             },
           ],
           tls: {
