@@ -32,6 +32,10 @@
               name: 'KC_PROXY',
               value: 'edge',
             },
+            {
+              name: 'KC_HOSTNAME_STRICT_HTTPS',
+              value: 'true',
+            },
           ],
           customReadinessProbe: {
             failureThreshold: 3,
