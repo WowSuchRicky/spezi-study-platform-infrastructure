@@ -28,6 +28,10 @@
               name: 'KC_HOSTNAME_STRICT',
               value: 'false',
             },
+            {
+              name: 'KC_PROXY',
+              value: 'edge',
+            },
           ],
           customReadinessProbe: {
             failureThreshold: 3,
