@@ -204,14 +204,14 @@ info "Waiting for Keycloak to be ready..."
 max_attempts=30
 attempt=0
 while [ $attempt -lt $max_attempts ]; do
-    # Temporarily disable exit on error
+    # Temporarily disable exit on error for the entire loop iteration
     set +e
     statefulset_exists=$(kubectl get statefulset keycloak -n spezistudyplatform >/dev/null 2>&1; echo $?)
     if [ "$statefulset_exists" -eq 0 ]; then
         # Check if pod is ready
         pod_ready=$(kubectl get pod keycloak-0 -n spezistudyplatform -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}' 2>/dev/null)
         if [ "$pod_ready" = "True" ]; then
-            set -e
+            set -e  # Re-enable exit on error
             info "Keycloak is ready!"
             break
         else
@@ -220,11 +220,11 @@ while [ $attempt -lt $max_attempts ]; do
     else
         info "Waiting for Keycloak statefulset to be created..."
     fi
-    set -e
     
     info "Waiting for Keycloak to be ready... (attempt $((attempt+1))/$max_attempts)"
     sleep 15
     ((attempt++))
+    set -e  # Re-enable exit on error at the very end of loop iteration
 done
 
 if [ $attempt -eq $max_attempts ]; then
