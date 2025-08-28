@@ -14,11 +14,7 @@
             },
             {
               name: 'KC_HOSTNAME',
-              value: 'https://' + config.domain,
-            },
-            {
-              name: 'KC_HOSTNAME_PATH',
-              value: '/auth',
+              value: 'https://' + config.domain + '/auth',
             },
             {
               name: 'KC_HOSTNAME_STRICT',
