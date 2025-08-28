@@ -14,14 +14,14 @@
             },
             {
               name: 'KC_HOSTNAME',
-              value: config.domain,
+              value: 'https://' + config.domain,
             },
             {
               name: 'KC_HOSTNAME_PATH',
               value: '/auth',
             },
             {
-              name: 'KC_HOSTNAME_STRICT_HTTPS',
+              name: 'KC_HOSTNAME_STRICT',
               value: 'true',
             },
           ] + (
