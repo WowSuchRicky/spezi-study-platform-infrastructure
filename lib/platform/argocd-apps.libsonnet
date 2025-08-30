@@ -27,7 +27,7 @@
       },
       destination: {
         server: if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'https://34.168.131.83' else 'https://kubernetes.default.svc',
-        namespace: config.namespace,
+        namespace: config.platform.namespace,
       },
       syncPolicy: {
         automated: {

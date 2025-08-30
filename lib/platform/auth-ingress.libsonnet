@@ -7,7 +7,7 @@
         kind: 'Middleware',
         metadata: {
           name: 'keycloak-headers',
-          namespace: config.namespace,
+          namespace: config.platform.namespace,
         },
         spec: {
           headers: {
@@ -23,7 +23,7 @@
         kind: 'IngressRoute',
         metadata: {
           name: 'keycloak-ingress',
-          namespace: config.namespace,
+          namespace: config.platform.namespace,
           annotations: {
             'ingress.kubernetes.io/ssl-redirect': 'true',
             'cert-manager.io/cluster-issuer': if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'letsencrypt-prod' else 'selfsigned-issuer',
@@ -36,7 +36,7 @@
           ],
           routes: [
             {
-              match: 'Host(`' + config.domain + '`) && PathPrefix(`/oauth2`)',
+              match: 'Host(`' + config.platform.domain + '`) && PathPrefix(`/oauth2`)',
               priority: 99,
               kind: 'Rule',
               services: [
@@ -48,7 +48,7 @@
               middlewares: [],
             },
             {
-              match: 'Host(`' + config.domain + '`) && PathPrefix(`/auth`)',
+              match: 'Host(`' + config.platform.domain + '`) && PathPrefix(`/auth`)',
               priority: 99,
               kind: 'Rule',
               services: [
@@ -63,7 +63,7 @@
             },
           ],
           tls: {
-            secretName: config.namespace + '-main-tls-secret',
+            secretName: config.platform.namespace + '-main-tls-secret',
           },
         },
       },

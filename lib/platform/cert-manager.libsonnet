@@ -63,18 +63,18 @@
           apiVersion: 'cert-manager.io/v1',
           kind: 'Certificate',
           metadata: {
-            name: config.namespace + '-main-tls-cert',
-            namespace: config.namespace,
+            name: config.platform.namespace + '-main-tls-cert',
+            namespace: config.platform.namespace,
           },
           spec: {
-            commonName: config.domain,
-            secretName: config.namespace + '-main-tls-secret',
+            commonName: config.platform.domain,
+            secretName: config.platform.namespace + '-main-tls-secret',
             issuerRef: {
               name: 'letsencrypt-prod',
               kind: 'ClusterIssuer',
             },
             dnsNames: [
-              config.domain,
+              config.platform.domain,
               'study.muci.sh',
             ],
           },
@@ -97,18 +97,18 @@
           apiVersion: 'cert-manager.io/v1',
           kind: 'Certificate',
           metadata: {
-            name: config.namespace + '-main-tls-cert',
-            namespace: config.namespace,
+            name: config.platform.namespace + '-main-tls-cert',
+            namespace: config.platform.namespace,
           },
           spec: {
-            commonName: config.domain,
-            secretName: config.namespace + '-main-tls-secret',
+            commonName: config.platform.domain,
+            secretName: config.platform.namespace + '-main-tls-secret',
             issuerRef: {
               name: 'selfsigned-issuer',
               kind: 'ClusterIssuer',
             },
             dnsNames: [
-              config.domain,
+              config.platform.domain,
               'spezi.127.0.0.1.nip.io',
             ],
           },

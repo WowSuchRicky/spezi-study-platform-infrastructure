@@ -4,7 +4,7 @@
   withConfig(config)::
     {
       traefik: helm.template('traefik', '../../charts/traefik', {
-        namespace: config.namespace,
+        namespace: config.platform.namespace,
         values: {
           service: {
             enabled: true,
@@ -103,11 +103,11 @@
         kind: 'Middleware',
         metadata: {
           name: 'oauth2-proxy',
-          namespace: config.namespace,
+          namespace: config.platform.namespace,
         },
         spec: {
           forwardAuth: {
-            address: 'http://oauth2-proxy.' + config.namespace + '.svc.cluster.local/oauth2/auth_or_start',
+            address: 'http://oauth2-proxy.' + config.platform.namespace + '.svc.cluster.local/oauth2/auth_or_start',
             trustForwardHeader: true,
             authResponseHeaders: [
               'X-Auth-Request-User',
@@ -126,7 +126,7 @@
         kind: 'Middleware',
         metadata: {
           name: 'oauth2-errors',
-          namespace: config.namespace,
+          namespace: config.platform.namespace,
         },
         spec: {
           errors: {
@@ -147,8 +147,8 @@
         apiVersion: 'traefik.io/v1alpha1',
         kind: 'IngressRoute',
         metadata: {
-          name: config.namespace + '-ingress',
-          namespace: config.namespace,
+          name: config.platform.namespace + '-ingress',
+          namespace: config.platform.namespace,
           annotations: {
             'cert-manager.io/cluster-issuer': if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'letsencrypt-prod' else 'selfsigned-issuer',
             'ingress.kubernetes.io/proxy-buffer-size': '128k',
@@ -162,12 +162,12 @@
           ],
           routes: [
             {
-              match: '(Host(`' + config.domain + '`) || Host(`spezi.127.0.0.1.nip.io`)) && PathPrefix(`/`)',
+              match: '(Host(`' + config.platform.domain + '`) || Host(`spezi.127.0.0.1.nip.io`)) && PathPrefix(`/`)',
               priority: 1,
               kind: 'Rule',
               services: [
                 {
-                  name: config.namespace + '-frontend-service',
+                  name: config.platform.namespace + '-frontend-service',
                   port: 80,
                 },
               ],
@@ -177,12 +177,12 @@
               ],
             },
             {
-              match: '(Host(`' + config.domain + '`) || Host(`spezi.127.0.0.1.nip.io`)) && PathPrefix(`/backend`)',
+              match: '(Host(`' + config.platform.domain + '`) || Host(`spezi.127.0.0.1.nip.io`)) && PathPrefix(`/backend`)',
               priority: 2,
               kind: 'Rule',
               services: [
                 {
-                  name: config.namespace + '-backend-service',
+                  name: config.platform.namespace + '-backend-service',
                   port: 3000,
                 },
               ],
@@ -193,7 +193,7 @@
             },
           ],
           tls: {
-            secretName: config.namespace + '-main-tls-secret',
+            secretName: config.platform.namespace + '-main-tls-secret',
           },
         },
       },
@@ -204,7 +204,7 @@
         kind: 'IngressRoute',
         metadata: {
           name: 'dashboard',
-          namespace: config.namespace,
+          namespace: config.platform.namespace,
           annotations: {
             'traefik.ingress.kubernetes.io/router.tls': 'true',
           },
