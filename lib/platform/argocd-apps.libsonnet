@@ -48,6 +48,7 @@
       // Wave 0
       'namespace-app': app('namespace', 0, config, envPath, envPrefix),
       'cnpg-crds-app': app('cloudnative-pg-crds', 0, config, envPath, envPrefix),
+      'external-secrets-app': app('external-secrets', 0, config, envPath, envPrefix),
 
       // Wave 1
       'traefik-app': app('traefik', 1, config, envPath, envPrefix),
