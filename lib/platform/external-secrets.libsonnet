@@ -21,7 +21,7 @@ local k = import 'k.libsonnet';
         source: {
           repoURL: 'https://charts.external-secrets.io',
           chart: 'external-secrets',
-          targetRevision: '0.10.2',  // Use latest stable version
+          targetRevision: '0.19.2',  // Use latest stable version
           helm: {
             parameters: [
               { name: 'installCRDs', value: 'true' },
