@@ -1,12 +1,12 @@
 config:
   configFile: |-
     provider = "keycloak-oidc"
-    oidc_issuer_url = "https://platform.spezi.stanford.edu/auth/realms/spezistudyplatform"
+    oidc_issuer_url = "https://spezi.172.20.117.44.nip.io/auth/realms/spezistudyplatform"
     email_domains = ["*"]
     upstreams = ["static://200"]
     scope = "openid profile email groups"
-    redirect_url = "https://platform.spezi.stanford.edu/oauth2/callback"
-    cookie_domains = ["platform.spezi.stanford.edu"]
+    redirect_url = "https://spezi.172.20.117.44.nip.io/oauth2/callback"
+    cookie_domains = ["spezi.172.20.117.44.nip.io"]
 
 # self-managed ingress
 ingress:
