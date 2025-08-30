@@ -149,9 +149,15 @@ local k = import 'k.libsonnet';
       },
     };
 
-    // Return all resources
+    // Return all resources as object with named keys
     if externalSecrets.enabled then
-      [externalSecretsNamespace, operator] + 
-      (if externalSecrets.provider == 'vault' then [vault, vaultTokenSecret, secretStore] else [])
-    else []
+      {
+        'external-secrets-namespace': externalSecretsNamespace,
+        'external-secrets-operator': operator,
+      } + (if externalSecrets.provider == 'vault' then {
+        vault: vault,
+        'vault-token-secret': vaultTokenSecret, 
+        'vault-secret-store': secretStore,
+      } else {})
+    else {}
 }
