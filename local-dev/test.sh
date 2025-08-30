@@ -6,7 +6,7 @@ info() {
     echo "INFO: $1"
 }
 
-TARGET_URL="http://local.127.0.0.1.nip.io"
+TARGET_URL="http://spezi.127.0.0.1.nip.io"
 
 info "Running functional test for Spezi Study Platform..."
 info "Curling $TARGET_URL..."

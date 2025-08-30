@@ -1,7 +1,7 @@
 {
   local k = import 'k.libsonnet',
   withConfig(config)::
-    std.objectValues({
+    {
       // Frontend ConfigMap
       frontendConfig: k.core.v1.configMap.new('spezistudyplatform-frontend-config', {
         'VITE_API_BASE': 'https://' + config.domain + '/',
@@ -45,5 +45,5 @@
         )
         + k.core.v1.service.mixin.metadata.withNamespace(config.namespace)
         + k.core.v1.service.mixin.spec.withType('ClusterIP'),
-    }),
+    }
 }

@@ -21,3 +21,4 @@ variable "keycloak_url" {
   type        = string
   default     = "https://platform.spezi.stanford.edu/auth"
 }
+

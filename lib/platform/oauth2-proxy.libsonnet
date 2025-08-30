@@ -3,7 +3,7 @@
   local helm = tanka.helm.new(std.thisFile),
   withConfig(config)::
     local secretObject = 
-      if config.mode == 'DEV' then
+      if std.get(config, 'mode', 'DEV') == 'DEV' then
         // For local dev, use a simple Kubernetes secret
         {
           apiVersion: 'v1',
@@ -14,8 +14,8 @@
           },
           type: 'Opaque',
           data: {
-            'client-id': std.base64('local-dev-client-id'),
-            'client-secret': std.base64('local-dev-client-secret'),
+            'client-id': std.base64('oauth2-proxy'),
+            'client-secret': std.base64('c4h7rptpKNYyHOpuH780CXEGyLvYmo6A'),
             'cookie-secret': std.base64('local-dev-cookie-secret-32-chars'),
           },
         }
@@ -45,23 +45,37 @@
             },
           },
         };
-    std.objectValues({
+    {
       oauth2_proxy_secret: secretObject,
+    } + (
+      if config.mode == 'PRODUCTION' then {
+        'oauth2-proxy-ca-secret': {
+          apiVersion: 'v1',
+          kind: 'Secret',
+          metadata: {
+            name: 'oauth2-proxy-ca-secret',
+            namespace: config.namespace,
+          },
+          type: 'Opaque',
+          stringData: {
+            'ca.crt': config.caCrt,
+          },
+        },
+      } else {}
+    ) + {
       oauth2_proxy: helm.template('oauth2-proxy', '../../charts/oauth2-proxy', {
         namespace: config.namespace,
         values: {
-          config: {
-            configFile: |||
+          configuration: {
+            content: |||
               provider = "keycloak-oidc"
-              oidc_issuer_url = "https://%(domain)s/auth/realms/spezistudyplatform"
+              oidc_issuer_url = "http://keycloak.%(namespace)s.svc.cluster.local/auth/realms/spezistudyplatform"
               email_domains = ["*"]
               upstreams = ["static://200"]
               scope = "openid profile email groups"
               redirect_url = "https://%(domain)s/oauth2/callback"
               cookie_domains = ["%(domain)s"]
-            ||| % { domain: config.domain },
-          },
-          configuration: {
+            ||| % { domain: config.domain, namespace: config.namespace },
             existingSecret: 'oauth2-proxy-secret',
           },
           ingress: {
@@ -76,7 +90,28 @@
             '--pass-authorization-header=true',
             '--set-xauthrequest=true',
             '--code-challenge-method=S256',
-          ],
+          ] + (
+            if config.mode == 'DEV' then
+              ['--insecure-oidc-skip-issuer-verification=true']
+            else
+              ['--provider-ca-file=/etc/ssl/certs/ca.crt']
+          ),
+          extraVolumes: if config.mode == 'PRODUCTION' then [
+            {
+              name: 'ca-secret',
+              secret: {
+                secretName: 'oauth2-proxy-ca-secret',
+              },
+            },
+          ] else [],
+          extraVolumeMounts: if config.mode == 'PRODUCTION' then [
+            {
+              name: 'ca-secret',
+              mountPath: '/etc/ssl/certs/ca.crt',
+              subPath: 'ca.crt',
+              readOnly: true,
+            },
+          ] else [],
           redis: {
             enabled: false,
           },
@@ -91,5 +126,5 @@
           ],
         },
       }),
-    }),
+    }
 }
