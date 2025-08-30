@@ -26,7 +26,7 @@
         },
       },
       destination: {
-        server: if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'https://34.168.131.83' else 'https://kubernetes.default.svc',
+        server: if config.platform.mode == 'PRODUCTION' then 'https://34.168.131.83' else 'https://kubernetes.default.svc',
         namespace: config.platform.namespace,
       },
       syncPolicy: {
@@ -42,8 +42,8 @@
     },
   },
   withConfig(config)::
-    local envPath = if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'environments/default' else 'environments/local-dev';
-    local envPrefix = if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'prod' else 'local-dev';
+    local envPath = if config.platform.mode == 'PRODUCTION' then 'environments/default' else 'environments/local-dev';
+    local envPrefix = if config.platform.mode == 'PRODUCTION' then 'prod' else 'local-dev';
     std.objectValues({
       // Wave 0
       'namespace-app': app('namespace', 0, config, envPath, envPrefix),
