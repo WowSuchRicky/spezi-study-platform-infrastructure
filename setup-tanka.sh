@@ -66,7 +66,7 @@ spec:
   source:
     repoURL: https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git
     path: environments/argocd-bootstrap
-    targetRevision: convert-prod-env
+    targetRevision: switch-to-ext-secrets
     directory:
       exclude: spec.json
       jsonnet: {}

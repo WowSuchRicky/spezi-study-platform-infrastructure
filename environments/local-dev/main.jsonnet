@@ -26,6 +26,7 @@ function(component=null) {
     local frontend = import '../../lib/platform/frontend.libsonnet';
     local traefik = import '../../lib/platform/traefik.libsonnet';
     local auth = import '../../lib/platform/auth.libsonnet';
+    local externalSecrets = import '../../lib/platform/external-secrets.libsonnet';
     // Note: argocd-apps is not included here, it's used to generate the apps that point to this env.
 
     local components = {
@@ -33,7 +34,7 @@ function(component=null) {
       'cert-manager': certManager.withConfig(config),
       'cloudnative-pg-crds': cloudnativePgCrds.withConfig(config),
       'cloudnative-pg': cloudnativePg.withConfig(config),
-      'sealed-secrets': kustomize.build(path='sealed-secrets'),
+      'external-secrets': externalSecrets.withConfig(config),
       backend: backend.withConfig(config),
       frontend: frontend.withConfig(config),
       traefik: traefik.withConfig(config),

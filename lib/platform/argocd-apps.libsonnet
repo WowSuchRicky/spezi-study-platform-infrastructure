@@ -14,7 +14,7 @@
       source: {
         repoURL: 'https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git',
         path: envPath,
-        targetRevision: 'convert-prod-env',
+        targetRevision: 'switch-to-ext-secrets',
         plugin: {
           name: 'tanka',
           env: [

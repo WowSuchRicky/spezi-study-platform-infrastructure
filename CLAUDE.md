@@ -30,13 +30,24 @@ This repository contains infrastructure for the Spezi Study Platform using a Git
 ./setup-tanka.sh
 ```
 
+### Local Development Loop
+```bash
+# Clean restart: delete existing cluster and re-bootstrap
+kind delete cluster --name=spezi-study-platform
+./setup-tanka.sh
+# Success indicator: ArgoCD connection instructions appear in logs
+```
+
 ### Environment Management
 ```bash
 # Deploy specific environment with Tanka
 tk apply environments/local-dev
 
-# Deploy specific component
-tk apply environments/local-dev --component=backend
+# Deploy specific component (use --tla-str for component parameter)
+tk apply environments/local-dev --tla-str component=backend
+
+# Show specific component
+tk show environments/local-dev --tla-str component=external-secrets --dangerous-allow-redirect
 
 # Show diff before applying
 tk diff environments/local-dev
@@ -99,3 +110,10 @@ Required tools:
 
 Optional:
 - `k9s` (brew install k9s) - recommended for cluster management
+
+## Commit Guidelines
+
+When creating commits:
+- Use simple, descriptive commit messages
+- Do not attribute commits to Claude or AI assistants  
+- Keep commit messages concise and professional
