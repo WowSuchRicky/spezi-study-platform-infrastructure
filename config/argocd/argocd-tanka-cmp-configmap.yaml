@@ -16,7 +16,7 @@ data:
         command: [jb, install]
       generate:
         command: [sh, -c]
-        args: ["echo 'ARGOCD_ENV_COMPONENT='$ARGOCD_ENV_COMPONENT >&2 && OTEL_SDK_DISABLED=true /usr/local/bin/tk show --dangerous-allow-redirect . --tla-str component=$ARGOCD_ENV_COMPONENT"]
+        args: ["echo 'ARGOCD_ENV_COMPONENT='$ARGOCD_ENV_COMPONENT >&2 && OTEL_SDK_DISABLED=true OTEL_TRACES_EXPORTER=none OTEL_METRICS_EXPORTER=none OTEL_LOGS_EXPORTER=none /usr/local/bin/tk show --dangerous-allow-redirect . --tla-str component=$ARGOCD_ENV_COMPONENT 2>/dev/null"]
       discover:
         fileName: "./jsonnetfile.json"
       allowConcurrency: true
