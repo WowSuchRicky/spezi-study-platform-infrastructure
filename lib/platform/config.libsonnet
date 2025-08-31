@@ -64,7 +64,7 @@
       mode: 'DEV',
     },
     externalSecrets+: {
-      enabled: false,
+      enabled: true,
       provider: 'vault',
     },
   },
