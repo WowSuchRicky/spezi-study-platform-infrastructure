@@ -2,7 +2,7 @@ local k = import 'k.libsonnet';
 
 {
   withConfig(config)::
-    local namespace = config.platform.namespace;
+    local namespace = config.namespace;
     local externalSecrets = config.externalSecrets;
     
     // External Secrets Operator deployment

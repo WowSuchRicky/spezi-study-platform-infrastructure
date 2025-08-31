@@ -8,7 +8,7 @@
           kind: 'ExternalSecret',
           metadata: {
             name: 'oauth2-proxy-external-secret',
-            namespace: config.platform.namespace,
+            namespace: config.namespace,
             annotations: {
               'argocd.argoproj.io/sync-wave': '25',
             },

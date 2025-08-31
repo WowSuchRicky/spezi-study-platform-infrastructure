@@ -4,7 +4,7 @@
   withConfig(config)::
     {
       keycloak: helm.template('keycloak', '../../charts/keycloak', {
-        namespace: config.platform.namespace,
+        namespace: config.namespace,
         version: '25.1.1',
         values: {
           extraEnvVars: [
@@ -14,7 +14,7 @@
             },
             {
               name: 'KC_HOSTNAME',
-              value: 'https://' + config.platform.domain + '/auth',
+              value: 'https://' + config.domain + '/auth',
             },
             {
               name: 'KC_HOSTNAME_STRICT',

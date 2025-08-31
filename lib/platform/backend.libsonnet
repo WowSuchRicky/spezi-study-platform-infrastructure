@@ -6,25 +6,25 @@
         username: std.base64('spezistudyplatform'),
         password: std.base64('spezistudyplatform1!2@'),
       })
-      + k.core.v1.secret.metadata.withNamespace(config.platform.namespace)
+      + k.core.v1.secret.metadata.withNamespace(config.namespace)
       + k.core.v1.secret.withType('kubernetes.io/basic-auth'),
 
       backend_secret: k.core.v1.secret.new('spezistudyplatform-backend-secret', {
         OAUTH_CLIENT_SECRET: 'Tmd2RUFQcFJaTzA5MENWcDEybHdNUDFyVzVDcTdJQ2EK',
       })
-      + k.core.v1.secret.metadata.withNamespace(config.platform.namespace),
+      + k.core.v1.secret.metadata.withNamespace(config.namespace),
 
       backend_config: k.core.v1.configMap.new('spezistudyplatform-backend-config', {
         PORT: '3003',
-        MODE: config.platform.mode,
-        ALLOWED_ORIGINS: "('https://" + config.platform.domain + "', 'http://" + config.platform.domain + "'),http://127.0.0.1,http://localhost:5173",
-        AUTH_URL: 'https://' + config.platform.domain + '/auth',
+        MODE: config.mode,
+        ALLOWED_ORIGINS: "('https://" + config.domain + "', 'http://" + config.domain + "'),http://127.0.0.1,http://localhost:5173",
+        AUTH_URL: 'https://' + config.domain + '/auth',
         OAUTH_REALM: 'spezistudyplatform',
         OAUTH_CLIENT_ID: 'spezistudyplatform',
         DB_HOST: 'spezistudyplatform-db-rw',
         DB_NAME: 'spezistudyplatform',
       })
-      + k.core.v1.configMap.metadata.withNamespace(config.platform.namespace),
+      + k.core.v1.configMap.metadata.withNamespace(config.namespace),
 
       backend_deployment: k.apps.v1.deployment.new(
         name='spezistudyplatform-backend',
@@ -46,7 +46,7 @@
           ]),
         ]
       )
-      + k.apps.v1.deployment.metadata.withNamespace(config.platform.namespace)
+      + k.apps.v1.deployment.metadata.withNamespace(config.namespace)
       + k.apps.v1.deployment.metadata.withLabels({ app: 'spezistudyplatform-backend' })
       + k.apps.v1.deployment.spec.selector.withMatchLabels({ app: 'spezistudyplatform-backend' })
       + k.apps.v1.deployment.spec.template.metadata.withLabels({ app: 'spezistudyplatform-backend' })
@@ -57,6 +57,6 @@
         { app: 'spezistudyplatform-backend' },
         [k.core.v1.servicePort.new(3000, 3000)]
       )
-      + k.core.v1.service.metadata.withNamespace(config.platform.namespace),
+      + k.core.v1.service.metadata.withNamespace(config.namespace),
     }
 }

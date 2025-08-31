@@ -10,7 +10,7 @@
           kind: 'Secret',
           metadata: {
             name: 'oauth2-proxy-secret',
-            namespace: config.platform.namespace,
+            namespace: config.namespace,
           },
           type: 'Opaque',
           data: {
@@ -27,7 +27,7 @@
           metadata: {
             creationTimestamp: null,
             name: 'oauth2-proxy-secret',
-            namespace: config.platform.namespace,
+            namespace: config.namespace,
           },
           spec: {
             encryptedData: {
@@ -39,7 +39,7 @@
               metadata: {
                 creationTimestamp: null,
                 name: 'oauth2-proxy-secret',
-                namespace: config.platform.namespace,
+                namespace: config.namespace,
               },
               type: 'Opaque',
             },
@@ -48,23 +48,23 @@
     {
       oauth2_proxy_secret: secretObject,
     } + (
-      if config.platform.mode == 'PRODUCTION' then {
+      if config.mode == 'PRODUCTION' then {
         'oauth2-proxy-ca-secret': {
           apiVersion: 'v1',
           kind: 'Secret',
           metadata: {
             name: 'oauth2-proxy-ca-secret',
-            namespace: config.platform.namespace,
+            namespace: config.namespace,
           },
           type: 'Opaque',
           stringData: {
-            'ca.crt': config.platform.caCrt,
+            'ca.crt': config.caCrt,
           },
         },
       } else {}
     ) + {
       oauth2_proxy: helm.template('oauth2-proxy', '../../charts/oauth2-proxy', {
-        namespace: config.platform.namespace,
+        namespace: config.namespace,
         values: {
           configuration: {
             content: |||
@@ -75,7 +75,7 @@
               scope = "openid profile email groups"
               redirect_url = "https://%(domain)s/oauth2/callback"
               cookie_domains = ["%(domain)s"]
-            ||| % { domain: config.platform.domain, namespace: config.platform.namespace },
+            ||| % { domain: config.domain, namespace: config.namespace },
             existingSecret: 'oauth2-proxy-secret',
           },
           ingress: {
@@ -83,7 +83,7 @@
           },
           extraArgs: [
             '--skip-provider-button=true',
-            '--whitelist-domain=*.' + config.platform.domain,
+            '--whitelist-domain=*.' + config.domain,
             '--allowed-role=spezistudyplatform-authorized-users',
             '--pass-access-token=true',
             '--cookie-csrf-expire=60m',
@@ -91,12 +91,12 @@
             '--set-xauthrequest=true',
             '--code-challenge-method=S256',
           ] + (
-            if config.platform.mode == 'DEV' then
+            if config.mode == 'DEV' then
               ['--insecure-oidc-skip-issuer-verification=true']
             else
               ['--provider-ca-file=/etc/ssl/certs/ca.crt']
           ),
-          extraVolumes: if config.platform.mode == 'PRODUCTION' then [
+          extraVolumes: if config.mode == 'PRODUCTION' then [
             {
               name: 'ca-secret',
               secret: {
@@ -104,7 +104,7 @@
               },
             },
           ] else [],
-          extraVolumeMounts: if config.platform.mode == 'PRODUCTION' then [
+          extraVolumeMounts: if config.mode == 'PRODUCTION' then [
             {
               name: 'ca-secret',
               mountPath: '/etc/ssl/certs/ca.crt',

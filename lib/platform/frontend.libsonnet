@@ -4,11 +4,11 @@
     {
       // Frontend ConfigMap
       frontendConfig: k.core.v1.configMap.new('spezistudyplatform-frontend-config', {
-        'VITE_API_BASE': 'https://' + config.platform.domain + '/',
-        'OAUTH_AUTHORITY': 'https://' + config.platform.domain + '/auth/realms/spezistudyplatform',
-        'OAUTH_REDIRECT_URI': 'https://' + config.platform.domain,
+        'VITE_API_BASE': 'https://' + config.domain + '/',
+        'OAUTH_AUTHORITY': 'https://' + config.domain + '/auth/realms/spezistudyplatform',
+        'OAUTH_REDIRECT_URI': 'https://' + config.domain,
         'OAUTH_CLIENT_ID': 'spezistudyplatform',
-      }) + k.core.v1.configMap.mixin.metadata.withNamespace(config.platform.namespace),
+      }) + k.core.v1.configMap.mixin.metadata.withNamespace(config.namespace),
 
       // Frontend Deployment
       frontendDeployment: k.apps.v1.deployment.new(
@@ -24,7 +24,7 @@
             ]),
         ]
       )
-      + k.apps.v1.deployment.mixin.metadata.withNamespace(config.platform.namespace)
+      + k.apps.v1.deployment.mixin.metadata.withNamespace(config.namespace)
       + k.apps.v1.deployment.mixin.metadata.withLabels({ app: 'spezistudyplatform-frontend' })
       + k.apps.v1.deployment.mixin.spec.selector.withMatchLabels({ app: 'spezistudyplatform-frontend' })
       + k.apps.v1.deployment.mixin.spec.template.metadata.withLabels({ app: 'spezistudyplatform-frontend' })
@@ -43,7 +43,7 @@
           { app: 'spezistudyplatform-frontend' },
           [k.core.v1.servicePort.new(80, 80) + k.core.v1.servicePort.withName('main')]
         )
-        + k.core.v1.service.mixin.metadata.withNamespace(config.platform.namespace)
+        + k.core.v1.service.mixin.metadata.withNamespace(config.namespace)
         + k.core.v1.service.mixin.spec.withType('ClusterIP'),
     }
 }

@@ -16,7 +16,7 @@
         kind: 'Cluster',
         metadata: {
           name: 'spezistudyplatform-db',
-          namespace: config.platform.namespace,
+          namespace: config.namespace,
         },
         spec: {
           imageName: 'ghcr.io/cloudnative-pg/postgresql:17-bullseye',
