@@ -52,6 +52,7 @@
       // Wave 1
       'traefik-app': app('traefik', 1, config, envPath, envPrefix),
       'cert-manager-app': app('cert-manager', 1, config, envPath, envPrefix),
+      'external-secrets-app': app('external-secrets', 1, config, envPath, envPrefix),
 
       // Wave 2
       'cnpg-app': app('cloudnative-pg', 2, config, envPath, envPrefix),
