@@ -9,10 +9,34 @@
       + k.core.v1.secret.metadata.withNamespace(config.namespace)
       + k.core.v1.secret.withType('kubernetes.io/basic-auth'),
 
-      backend_secret: k.core.v1.secret.new('spezistudyplatform-backend-secret', {
-        OAUTH_CLIENT_SECRET: 'Tmd2RUFQcFJaTzA5MENWcDEybHdNUDFyVzVDcTdJQ2EK',
-      })
-      + k.core.v1.secret.metadata.withNamespace(config.namespace),
+      backend_external_secret: {
+        apiVersion: 'external-secrets.io/v1beta1',
+        kind: 'ExternalSecret',
+        metadata: {
+          name: 'spezistudyplatform-backend-secret',
+          namespace: config.namespace,
+        },
+        spec: {
+          refreshInterval: '15s',
+          secretStoreRef: {
+            name: 'vault-backend',
+            kind: 'ClusterSecretStore',
+          },
+          target: {
+            name: 'spezistudyplatform-backend-secret',
+            creationPolicy: 'Owner',
+          },
+          data: [
+            {
+              secretKey: 'OAUTH_CLIENT_SECRET',
+              remoteRef: {
+                key: 'spezistudyplatform-backend',
+                property: 'OAUTH_CLIENT_SECRET',
+              },
+            },
+          ],
+        },
+      },
 
       backend_config: k.core.v1.configMap.new('spezistudyplatform-backend-config', {
         PORT: '3003',
@@ -43,6 +67,7 @@
           + k.core.v1.container.withEnv([
             k.core.v1.envVar.fromSecretRef('DB_USER', 'spezistudyplatform-postgres-credentials', 'username'),
             k.core.v1.envVar.fromSecretRef('DB_PASSWORD', 'spezistudyplatform-postgres-credentials', 'password'),
+            k.core.v1.envVar.fromSecretRef('OAUTH_CLIENT_SECRET', 'spezistudyplatform-backend-secret', 'OAUTH_CLIENT_SECRET'),
           ]),
         ]
       )

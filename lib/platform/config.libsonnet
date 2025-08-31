@@ -9,6 +9,20 @@
     mode: 'PRODUCTION', // Default to production mode
     caCrt: null, // Must be set by environment
     
+    // External Secrets configuration (disabled by default)
+    externalSecrets: {
+      enabled: false,
+      provider: null, // 'vault' for local-dev, 'gcpsm' for production
+      vault: {
+        server: 'http://vault.vault.svc.cluster.local:8200',
+        rootToken: 'dev-only-token', // Only for development
+      },
+      gcp: {
+        projectId: null, // Must be set for production
+        serviceAccountKeySecret: null, // Must be set for production
+      },
+    },
+    
     // Validation function to ensure required values are set
     assert self.domain != null : 'domain must be set in environment config',
     assert self.storageClass != null : 'storageClass must be set in environment config',
@@ -35,5 +49,9 @@
     loadBalancerIP: '172.20.117.44', // Match nip.io domain
     storageClass: 'standard',
     mode: 'DEV',
+    externalSecrets+: {
+      enabled: true,
+      provider: 'vault',
+    },
   },
 }

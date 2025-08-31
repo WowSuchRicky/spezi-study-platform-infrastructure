@@ -2,6 +2,35 @@
   local k = import 'k.libsonnet',
   withConfig(config)::
     {
+      frontend_external_secret: {
+        apiVersion: 'external-secrets.io/v1beta1',
+        kind: 'ExternalSecret',
+        metadata: {
+          name: 'spezistudyplatform-frontend-secret',
+          namespace: config.namespace,
+        },
+        spec: {
+          refreshInterval: '15s',
+          secretStoreRef: {
+            name: 'vault-backend',
+            kind: 'ClusterSecretStore',
+          },
+          target: {
+            name: 'spezistudyplatform-frontend-secret',
+            creationPolicy: 'Owner',
+          },
+          data: [
+            {
+              secretKey: 'OAUTH_CLIENT_SECRET',
+              remoteRef: {
+                key: 'spezistudyplatform-frontend',
+                property: 'OAUTH_CLIENT_SECRET',
+              },
+            },
+          ],
+        },
+      },
+
       // Frontend ConfigMap
       frontendConfig: k.core.v1.configMap.new('spezistudyplatform-frontend-config', {
         'VITE_API_BASE': 'https://' + config.domain + '/',
@@ -21,6 +50,9 @@
           + k.core.v1.container.resources.withLimits({ memory: '1Gi', cpu: '100m' })
           + k.core.v1.container.withEnvFrom([
               k.core.v1.envFromSource.configMapRef.withName('spezistudyplatform-frontend-config'),
+            ])
+          + k.core.v1.container.withEnv([
+              k.core.v1.envVar.fromSecretRef('OAUTH_CLIENT_SECRET', 'spezistudyplatform-frontend-secret', 'OAUTH_CLIENT_SECRET'),
             ]),
         ]
       )
