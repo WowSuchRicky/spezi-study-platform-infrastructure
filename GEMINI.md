@@ -30,6 +30,20 @@ This repository contains infrastructure for the Spezi Study Platform using a Git
 ./setup-tanka.sh
 ```
 
+### Testing Local Development Flow
+To test the complete local development setup:
+
+```bash
+# 1. Delete existing KIND cluster
+kind delete cluster --name=spezi-study-platform
+
+# 2. Re-bootstrap the entire cluster
+./setup-tanka.sh
+
+# 3. Success indicator: Look for ArgoCD access instructions in the output
+# You should see a log line explaining how to access ArgoCD UI
+```
+
 ### Environment Management
 ```bash
 # Deploy specific environment with Tanka

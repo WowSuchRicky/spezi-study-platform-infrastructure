@@ -2,12 +2,6 @@
   local k = import 'k.libsonnet',
   withConfig(config)::
     {
-      postgres_credentials: k.core.v1.secret.new('spezistudyplatform-postgres-credentials', {
-        username: std.base64('spezistudyplatform'),
-        password: std.base64('spezistudyplatform1!2@'),
-      })
-      + k.core.v1.secret.metadata.withNamespace(config.namespace)
-      + k.core.v1.secret.withType('kubernetes.io/basic-auth'),
 
       backend_external_secret: {
         apiVersion: 'external-secrets.io/v1beta1',
