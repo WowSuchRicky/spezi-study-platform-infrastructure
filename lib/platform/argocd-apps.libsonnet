@@ -48,6 +48,47 @@
       // Wave 0
       'namespace-app': app('namespace', 0, config, envPath, envPrefix),
       'cnpg-crds-app': app('cloudnative-pg-crds', 0, config, envPath, envPrefix),
+      'external-secrets-operator-app': {
+        apiVersion: 'argoproj.io/v1alpha1',
+        kind: 'Application',
+        metadata: {
+          name: envPrefix + '-external-secrets-operator',
+          namespace: 'argocd',
+          annotations: {
+            'argocd.argoproj.io/sync-wave': '0',
+          },
+        },
+        spec: {
+          project: 'default',
+          source: {
+            repoURL: 'https://charts.external-secrets.io',
+            chart: 'external-secrets',
+            targetRevision: '0.19.2',
+            helm: {
+              parameters: [
+                {
+                  name: 'installCRDs',
+                  value: 'true',
+                },
+              ],
+            },
+          },
+          destination: {
+            server: if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'https://34.168.131.83' else 'https://kubernetes.default.svc',
+            namespace: 'external-secrets-system',
+          },
+          syncPolicy: {
+            automated: {
+              prune: true,
+              selfHeal: true,
+            },
+            syncOptions: [
+              'CreateNamespace=true',
+              'ServerSideApply=true',
+            ],
+          },
+        },
+      },
 
       // Wave 1
       'traefik-app': app('traefik', 1, config, envPath, envPrefix),
