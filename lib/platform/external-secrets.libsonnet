@@ -1,47 +1,7 @@
 {
   withConfig(config)::
     if config.externalSecrets.enabled then
-      {
-        // External Secrets Operator
-        'external-secrets-operator': {
-          apiVersion: 'argoproj.io/v1alpha1',
-          kind: 'Application',
-          metadata: {
-            name: 'external-secrets-operator',
-            namespace: 'argocd',
-          },
-          spec: {
-            project: 'default',
-            source: {
-              repoURL: 'https://charts.external-secrets.io',
-              chart: 'external-secrets',
-              targetRevision: '0.19.2',
-              helm: {
-                parameters: [
-                  {
-                    name: 'installCRDs',
-                    value: 'true',
-                  },
-                ],
-              },
-            },
-            destination: {
-              server: 'https://kubernetes.default.svc',
-              namespace: 'external-secrets-system',
-            },
-            syncPolicy: {
-              automated: {
-                prune: true,
-                selfHeal: true,
-              },
-              syncOptions: [
-                'CreateNamespace=true',
-                'ServerSideApply=true',
-              ],
-            },
-          },
-        },
-      } + (if config.externalSecrets.provider == 'vault' then {
+      (if config.externalSecrets.provider == 'vault' then {
         // HashiCorp Vault for development
         vault: {
           apiVersion: 'v1',
