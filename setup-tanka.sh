@@ -15,7 +15,8 @@ trap 'cleanup' EXIT
 
 cleanup() {
     info "Cleaning up..."
-    if [ -n "$PORT_FORWARD_PID" ] && ps -p $PORT_FORWARD_PID > /dev/null; then
+    if [ -n "$PORT_FORWARD_PID" ] && ps -p $PORT_FORWARD_PID > /dev/null;
+then
         kill $PORT_FORWARD_PID
     fi
 }
@@ -23,12 +24,14 @@ cleanup() {
 
 
 # 1. Create KIND cluster
-info "Creating KIND cluster '$KIND_CLUSTER_NAME'..."
-if ! command -v kind &> /dev/null; then
+info "Creating KIND cluster '$KIND_CLUSTER_NAME'ப்பான"
+if ! command -v kind &> /dev/null;
+then
     info "kind is not installed. Please install it first."
     exit 1
 fi
-if ! kind get clusters | grep -q "$KIND_CLUSTER_NAME"; then
+if ! kind get clusters | grep -q "$KIND_CLUSTER_NAME";
+then
   kind create cluster --name "$KIND_CLUSTER_NAME" --config="$SCRIPT_DIR/local-dev/kind-config.yaml"
 else
   info "KIND cluster '$KIND_CLUSTER_NAME' already exists."
@@ -66,7 +69,7 @@ spec:
   source:
     repoURL: https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git
     path: environments/argocd-bootstrap
-    targetRevision: reset-to-working
+    targetRevision: $(git rev-parse --abbrev-ref HEAD)
     directory:
       exclude: spec.json
       jsonnet: {}
@@ -246,7 +249,8 @@ info "Waiting for Keycloak to be fully ready..."
 max_attempts=30
 attempt=0
 while [ $attempt -lt $max_attempts ]; do
-    if curl --output /dev/null --silent --head --fail http://localhost:8081/auth/; then
+    if curl --output /dev/null --silent --head --fail http://localhost:8081/auth/;
+then
         info "Keycloak is ready!"
         break
     fi
@@ -273,7 +277,8 @@ fi
 
 # Run Tofu bootstrap
 cd "$SCRIPT_DIR/tofu/keycloak-bootstrap/tf"
-if ! command -v tofu &> /dev/null; then
+if ! command -v tofu &> /dev/null;
+then
     info "Warning: tofu is not installed. Skipping Keycloak bootstrap."
     info "Please install tofu and run manually:"
     info "cd tofu/keycloak-bootstrap/tf && tofu init && tofu apply"

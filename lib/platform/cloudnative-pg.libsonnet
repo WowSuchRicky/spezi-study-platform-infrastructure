@@ -39,6 +39,58 @@
           },
         },
       },
+      {
+        apiVersion: 'external-secrets.io/v1',
+        kind: 'ExternalSecret',
+        metadata: {
+          name: 'spezistudyplatform-postgres-credentials',
+          namespace: config.namespace,
+          annotations: {
+            'argocd.argoproj.io/compare-options': 'IgnoreExtraneous',
+          },
+        },
+        spec: {
+          refreshInterval: '15s',
+          secretStoreRef: {
+            name: 'vault-backend',
+            kind: 'ClusterSecretStore',
+          },
+          target: {
+            name: 'spezistudyplatform-postgres-credentials',
+            creationPolicy: 'Owner',
+            template: {
+              type: 'kubernetes.io/basic-auth',
+              engineVersion: 'v2',
+              data: {
+                username: '{{ .username }}',
+                password: '{{ .password }}',
+              },
+            },
+          },
+          data: [
+            {
+              secretKey: 'username',
+              remoteRef: {
+                key: 'spezistudyplatform-postgres-credentials',
+                property: 'username',
+                conversionStrategy: 'Default',
+                decodingStrategy: 'None',
+                metadataPolicy: 'None',
+              },
+            },
+            {
+              secretKey: 'password',
+              remoteRef: {
+                key: 'spezistudyplatform-postgres-credentials',
+                property: 'password',
+                conversionStrategy: 'Default',
+                decodingStrategy: 'None',
+                metadataPolicy: 'None',
+              },
+            },
+          ],
+        },
+      },
     ];
     {
       [std.strReplace(resource.kind + '-' + resource.metadata.name, '/', '-')]: resource
