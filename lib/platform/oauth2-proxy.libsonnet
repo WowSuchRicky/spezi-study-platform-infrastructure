@@ -3,7 +3,7 @@
   local helm = tanka.helm.new(std.thisFile),
   withConfig(config)::
     local secretObject = {
-      apiVersion: 'external-secrets.io/v1beta1',
+      apiVersion: 'external-secrets.io/v1',
       kind: 'ExternalSecret',
       metadata: {
         name: 'oauth2-proxy-secret',

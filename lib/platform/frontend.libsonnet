@@ -3,7 +3,7 @@
   withConfig(config)::
     {
       frontend_external_secret: {
-        apiVersion: 'external-secrets.io/v1beta1',
+        apiVersion: 'external-secrets.io/v1',
         kind: 'ExternalSecret',
         metadata: {
           name: 'spezistudyplatform-frontend-secret',

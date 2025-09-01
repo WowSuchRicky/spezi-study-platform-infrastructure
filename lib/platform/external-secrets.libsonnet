@@ -247,7 +247,7 @@
 
         // ClusterSecretStore for Vault
         'vault-secret-store': {
-          apiVersion: 'external-secrets.io/v1beta1',
+          apiVersion: 'external-secrets.io/v1',
           kind: 'ClusterSecretStore',
           metadata: {
             name: 'vault-backend',
