@@ -72,7 +72,10 @@ spec:
     targetRevision: $(git rev-parse --abbrev-ref HEAD)
     directory:
       exclude: spec.json
-      jsonnet: {}
+      jsonnet:
+        tlas:
+        - name: gitBranch
+          value: $(git rev-parse --abbrev-ref HEAD)
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
