@@ -296,10 +296,10 @@
           spec: {
             provider: {
               gcpsm: {
-                projectId: config.externalSecrets.gcp.projectId,
+                projectID: config.externalSecrets.gcp.projectId,
                 auth: {
                   secretRef: {
-                    secretAccessKey: {
+                    secretAccessKeySecretRef: {
                       name: config.externalSecrets.gcp.serviceAccountKeySecret,
                       namespace: 'external-secrets-system',
                       key: 'secret-access-credentials',
