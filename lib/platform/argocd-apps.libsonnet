@@ -22,6 +22,10 @@
               name: 'COMPONENT',
               value: name,
             },
+            {
+              name: 'ENVIRONMENT',
+              value: if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'default' else 'local-dev',
+            },
           ] + (if std.get(config, 'localIP', null) != null then [
             {
               name: 'LOCAL_IP',
@@ -47,7 +51,7 @@
     },
   },
   withConfig(config)::
-    local envPath = if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'environments/default' else 'environments/local-dev';
+    local envPath = '.';
     local envPrefix = if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'prod' else 'local-dev';
     std.objectValues({
       // Wave 0
