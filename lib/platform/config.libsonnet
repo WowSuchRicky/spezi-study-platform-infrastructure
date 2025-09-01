@@ -45,8 +45,8 @@ function(staticIP='34.168.131.83') {
       enabled: true,
       provider: 'gcpsm',
       gcp: {
-        projectId: 'spezi-study-platform', // TODO: Update with actual GCP project ID
-        serviceAccountKeySecret: 'gcp-sa-key', // TODO: Create this secret
+        projectId: 'spezistudyplatform-dev',
+        serviceAccountKeySecret: 'gcp-sa-key',
       },
     },
   },

@@ -354,7 +354,18 @@ if [ $attempt -eq $max_attempts ]; then
     error "Keycloak not ready after waiting. Check ArgoCD sync status."
 fi
 
-# --- 8. Bootstrap Keycloak for Production ---
+# --- 8. Create GCP Service Account Secret for External Secrets ---
+info "Creating GCP service account secret for External Secrets..."
+
+# Create external-secrets-system namespace if it doesn't exist
+kubectl create namespace external-secrets-system --dry-run=client -o yaml | kubectl apply -f -
+
+# Create GCP service account secret for external-secrets operator
+kubectl create secret generic gcp-sa-key --from-file=secret-access-credentials="$CREDENTIALS_FILE" -n external-secrets-system --dry-run=client -o yaml | kubectl apply -f -
+
+info "GCP service account secret created for External Secrets."
+
+# --- 9. Bootstrap Keycloak for Production ---
 info "Bootstrapping Keycloak realm and OAuth2 proxy configuration for production..."
 
 # Port forward to access Keycloak
