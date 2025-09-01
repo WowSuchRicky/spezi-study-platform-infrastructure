@@ -176,6 +176,13 @@ info "Tanka CMP plugin is ready."
 # --- 6. Bootstrap Argo CD Root Application ---
 info "Bootstrapping Argo CD Root Application for production..."
 
+# Delete existing application if it exists to ensure clean state
+if kubectl get application root-prod -n argocd >/dev/null 2>&1; then
+    info "Deleting existing root-prod application to recreate with correct configuration..."
+    kubectl delete application root-prod -n argocd
+    sleep 5
+fi
+
 cat <<EOF | kubectl apply -f -
 apiVersion: argoproj.io/v1alpha1
 kind: Application
