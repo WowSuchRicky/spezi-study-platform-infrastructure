@@ -64,6 +64,10 @@ fi
 info "Setting GCP project to $GCP_PROJECT_ID"
 gcloud config set project "$GCP_PROJECT_ID"
 
+# Enable required APIs
+info "Enabling required GCP APIs..."
+gcloud services enable secretmanager.googleapis.com --project="$GCP_PROJECT_ID"
+
 # Create or verify service account key
 SERVICE_ACCOUNT_EMAIL="spezistudyplatform-dev-svc@${GCP_PROJECT_ID}.iam.gserviceaccount.com"
 CREDENTIALS_FILE="$SCRIPT_DIR/gcp-service-account-key.json"

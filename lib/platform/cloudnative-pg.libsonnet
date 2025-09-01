@@ -52,7 +52,7 @@
         spec: {
           refreshInterval: '15s',
           secretStoreRef: {
-            name: 'vault-backend',
+            name: if config.externalSecrets.provider == 'gcpsm' then 'gcpsm-secret-store' else 'vault-backend',
             kind: 'ClusterSecretStore',
           },
           target: {
