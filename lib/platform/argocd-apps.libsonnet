@@ -22,7 +22,12 @@
               name: 'COMPONENT',
               value: name,
             },
-          ],
+          ] + (if std.get(config, 'localIP', null) != null then [
+            {
+              name: 'LOCAL_IP',
+              value: config.localIP,
+            },
+          ] else []),
         },
       },
       destination: {

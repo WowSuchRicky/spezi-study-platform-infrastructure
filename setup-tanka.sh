@@ -11,6 +11,10 @@ info() {
     echo "INFO: $1"
 }
 
+# Detect local IP for nip.io domain
+LOCAL_IP="${LOCAL_IP:-$("$SCRIPT_DIR/scripts/get-local-ip.sh")}"
+info "Detected local IP: $LOCAL_IP"
+
 trap 'cleanup' EXIT
 
 cleanup() {
@@ -76,6 +80,8 @@ spec:
         tlas:
         - name: gitBranch
           value: $(git rev-parse --abbrev-ref HEAD)
+        - name: localIP
+          value: $LOCAL_IP
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd

@@ -285,6 +285,32 @@
         },
 
         
+      } else if config.externalSecrets.provider == 'gcpsm' then {
+        // GCP Secret Manager for production
+        'gcp-secret-store': {
+          apiVersion: 'external-secrets.io/v1',
+          kind: 'ClusterSecretStore',
+          metadata: {
+            name: 'gcpsm-secret-store',
+          },
+          spec: {
+            provider: {
+              gcpsm: {
+                projectId: config.externalSecrets.gcp.projectId,
+                auth: {
+                  secretRef: {
+                    secretAccessKey: {
+                      name: config.externalSecrets.gcp.serviceAccountKeySecret,
+                      namespace: 'external-secrets-system',
+                      key: 'secret-access-credentials',
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        
       } else {})
     else {}
 }

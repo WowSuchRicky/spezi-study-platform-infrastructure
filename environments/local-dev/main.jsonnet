@@ -1,4 +1,4 @@
-function(component=null) {
+function(component=null, localIP='172.20.117.44') {
   apiVersion: 'tanka.dev/v1alpha1',
   kind: 'Environment',
   metadata: {
@@ -15,7 +15,7 @@ function(component=null) {
   },
   data:
     // Local development environment configuration
-    local config = (import '../../lib/platform/config.libsonnet').localDev;
+    local config = (import '../../lib/platform/config.libsonnet')().localDev(localIP);
     local tanka = import '../../vendor/github.com/grafana/jsonnet-libs/tanka-util/main.libsonnet';
     local kustomize = tanka.kustomize.new(std.thisFile);
     local namespace = import '../../lib/platform/namespace.libsonnet';

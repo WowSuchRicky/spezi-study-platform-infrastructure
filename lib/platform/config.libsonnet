@@ -1,4 +1,4 @@
-{
+function(staticIP='34.168.131.83') {
   // Base configuration that can be customized per environment
   base:: {
     namespace: 'spezistudyplatform',
@@ -32,7 +32,7 @@
   // Production configuration
   prod:: self.base {
     domain: 'platform.spezi.stanford.edu',
-    loadBalancerIP: '34.168.131.83',
+    loadBalancerIP: staticIP,
     storageClass: 'standard-rwo',
     mode: 'PRODUCTION',
     // TODO: Replace with actual production CA certificate
@@ -41,12 +41,20 @@
       REPLACE_WITH_PRODUCTION_CA_CERTIFICATE
       -----END CERTIFICATE-----
     |||,
+    externalSecrets+: {
+      enabled: true,
+      provider: 'gcpsm',
+      gcp: {
+        projectId: 'spezi-study-platform', // TODO: Update with actual GCP project ID
+        serviceAccountKeySecret: 'gcp-sa-key', // TODO: Create this secret
+      },
+    },
   },
   
   // Local development configuration  
-  localDev:: self.base {
-    domain: 'spezi.172.20.117.44.nip.io',
-    loadBalancerIP: '172.20.117.44', // Match nip.io domain
+  localDev(ip=staticIP):: self.base {
+    domain: 'spezi.' + ip + '.nip.io',
+    loadBalancerIP: ip,
     storageClass: 'standard',
     mode: 'DEV',
     externalSecrets+: {
