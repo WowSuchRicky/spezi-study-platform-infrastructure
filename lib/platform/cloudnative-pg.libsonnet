@@ -91,6 +91,74 @@
           ],
         },
       },
+      // PushSecret for postgres password (only for GCP Secret Manager)
+      if config.externalSecrets.provider == 'gcpsm' then {
+        apiVersion: 'external-secrets.io/v1alpha1',
+        kind: 'PushSecret',
+        metadata: {
+          name: 'postgres-password-push-secret',
+          namespace: 'external-secrets-system',
+        },
+        spec: {
+          updatePolicy: 'IfNotExists',
+          refreshInterval: '24h',
+          secretStoreRefs: [
+            {
+              name: 'gcpsm-secret-store',
+              kind: 'ClusterSecretStore',
+            },
+          ],
+          selector: {
+            generatorRef: {
+              apiVersion: 'generators.external-secrets.io/v1alpha1',
+              kind: 'Password',
+              name: 'db-password-generator',
+            },
+          },
+          data: [
+            {
+              match: {
+                secretKey: 'password',
+                remoteRef: {
+                  remoteKey: 'spezistudyplatform-postgres-credentials',
+                  property: 'password',
+                },
+              },
+            },
+          ],
+        },
+      } else {},
+      // PushSecret for postgres username (static value, only for GCP Secret Manager)
+      if config.externalSecrets.provider == 'gcpsm' then {
+        apiVersion: 'external-secrets.io/v1alpha1',
+        kind: 'PushSecret',
+        metadata: {
+          name: 'postgres-username-push-secret',
+          namespace: 'external-secrets-system',
+        },
+        spec: {
+          updatePolicy: 'IfNotExists',
+          refreshInterval: '24h',
+          secretStoreRefs: [
+            {
+              name: 'gcpsm-secret-store',
+              kind: 'ClusterSecretStore',
+            },
+          ],
+          data: [
+            {
+              match: {
+                secretKey: 'username',
+                remoteRef: {
+                  remoteKey: 'spezistudyplatform-postgres-credentials',
+                  property: 'username',
+                },
+              },
+              secretValue: 'spezistudyplatform',
+            },
+          ],
+        },
+      } else {},
     ];
     {
       [std.strReplace(resource.kind + '-' + resource.metadata.name, '/', '-')]: resource
