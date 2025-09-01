@@ -15,23 +15,25 @@
         repoURL: 'https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git',
         path: envPath,
         targetRevision: if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'main' else std.get(config, 'gitBranch', 'main'),
-        plugin: {
-          name: 'tanka',
-          env: [
-            {
-              name: 'COMPONENT',
-              value: name,
-            },
-          ] + (if std.get(config, 'localIP', null) != null then [
-            {
-              name: 'LOCAL_IP',
-              value: config.localIP,
-            },
-          ] else []),
+        directory: {
+          exclude: 'spec.json',
+          jsonnet: {
+            tlas: [
+              {
+                name: 'component',
+                value: name,
+              },
+            ] + (if std.get(config, 'localIP', null) != null then [
+              {
+                name: 'localIP',
+                value: config.localIP,
+              },
+            ] else []),
+          },
         },
       },
       destination: {
-        server: if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'https://34.168.131.83' else 'https://kubernetes.default.svc',
+        server: 'https://kubernetes.default.svc',
         namespace: config.namespace,
       },
       syncPolicy: {
@@ -79,7 +81,7 @@
             },
           },
           destination: {
-            server: if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'https://34.168.131.83' else 'https://kubernetes.default.svc',
+            server: 'https://kubernetes.default.svc',
             namespace: 'external-secrets-system',
           },
           syncPolicy: {
