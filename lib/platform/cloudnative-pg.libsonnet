@@ -59,8 +59,8 @@
               type: 'kubernetes.io/basic-auth',
               engineVersion: 'v2',
               data: {
-                username: '{{ .username | base64 }}',
-                password: '{{ .password | base64 }}',
+                username: '{{ .username }}',
+                password: '{{ .password }}',
               },
             },
           },
