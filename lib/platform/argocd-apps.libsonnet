@@ -15,21 +15,19 @@
         repoURL: 'https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git',
         path: envPath,
         targetRevision: std.get(config, 'gitBranch', if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'main' else 'main'),
-        directory: {
-          exclude: 'spec.json',
-          jsonnet: {
-            tlas: [
-              {
-                name: 'component',
-                value: name,
-              },
-            ] + (if std.get(config, 'localIP', null) != null then [
-              {
-                name: 'localIP',
-                value: config.localIP,
-              },
-            ] else []),
-          },
+        plugin: {
+          name: 'tanka',
+          env: [
+            {
+              name: 'COMPONENT',
+              value: name,
+            },
+          ] + (if std.get(config, 'localIP', null) != null then [
+            {
+              name: 'LOCAL_IP',
+              value: config.localIP,
+            },
+          ] else []),
         },
       },
       destination: {
