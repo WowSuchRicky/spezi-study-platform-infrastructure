@@ -29,6 +29,9 @@
               remoteRef: {
                 key: 'spezistudyplatform-backend',
                 property: 'OAUTH_CLIENT_SECRET',
+                conversionStrategy: 'Default',
+                decodingStrategy: 'None',
+                metadataPolicy: 'None',
               },
             },
           ],

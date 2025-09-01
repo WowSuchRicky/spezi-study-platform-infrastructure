@@ -28,6 +28,9 @@
             remoteRef: {
               key: 'oauth2-proxy-secret',
               property: 'client-id',
+              conversionStrategy: 'Default',
+              decodingStrategy: 'None',
+              metadataPolicy: 'None',
             },
           },
           {
@@ -35,6 +38,9 @@
             remoteRef: {
               key: 'oauth2-proxy-secret',
               property: 'client-secret',
+              conversionStrategy: 'Default',
+              decodingStrategy: 'None',
+              metadataPolicy: 'None',
             },
           },
           {
@@ -42,6 +48,9 @@
             remoteRef: {
               key: 'oauth2-proxy-secret',
               property: 'cookie-secret',
+              conversionStrategy: 'Default',
+              decodingStrategy: 'None',
+              metadataPolicy: 'None',
             },
           },
         ],

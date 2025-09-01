@@ -73,6 +73,9 @@
               remoteRef: {
                 key: 'spezistudyplatform-postgres-credentials',
                 property: 'username',
+                conversionStrategy: 'Default',
+                decodingStrategy: 'None',
+                metadataPolicy: 'None',
               },
             },
             {
@@ -80,6 +83,9 @@
               remoteRef: {
                 key: 'spezistudyplatform-postgres-credentials',
                 property: 'password',
+                conversionStrategy: 'Default',
+                decodingStrategy: 'None',
+                metadataPolicy: 'None',
               },
             },
           ],
