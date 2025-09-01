@@ -14,7 +14,7 @@
       source: {
         repoURL: 'https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git',
         path: envPath,
-        targetRevision: if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'main' else std.get(config, 'gitBranch', 'main'),
+        targetRevision: std.get(config, 'gitBranch', if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'main' else 'main'),
         directory: {
           exclude: 'spec.json',
           jsonnet: {
