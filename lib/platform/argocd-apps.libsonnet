@@ -14,7 +14,7 @@
       source: {
         repoURL: 'https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git',
         path: envPath,
-        targetRevision: 'reset-to-working',
+        targetRevision: if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'main' else 'external-secrets',
         plugin: {
           name: 'tanka',
           env: [
