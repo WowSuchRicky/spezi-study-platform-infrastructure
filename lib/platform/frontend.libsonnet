@@ -9,7 +9,7 @@
           name: 'spezistudyplatform-frontend-secret',
           namespace: config.namespace,
           annotations: {
-            'argocd.argoproj.io/sync-options': 'IgnoreExtraneous',
+            'argocd.argoproj.io/compare-options': 'IgnoreExtraneous',
           },
         },
         spec: {
