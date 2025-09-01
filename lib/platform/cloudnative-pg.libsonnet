@@ -45,6 +45,9 @@
         metadata: {
           name: 'spezistudyplatform-postgres-credentials',
           namespace: config.namespace,
+          annotations: {
+            'argocd.argoproj.io/sync-options': 'IgnoreExtraneous',
+          },
         },
         spec: {
           refreshInterval: '15s',

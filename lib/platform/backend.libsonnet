@@ -9,6 +9,9 @@
         metadata: {
           name: 'spezistudyplatform-backend-secret',
           namespace: config.namespace,
+          annotations: {
+            'argocd.argoproj.io/sync-options': 'IgnoreExtraneous',
+          },
         },
         spec: {
           refreshInterval: '15s',

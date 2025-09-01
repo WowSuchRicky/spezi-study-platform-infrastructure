@@ -8,6 +8,9 @@
         metadata: {
           name: 'spezistudyplatform-frontend-secret',
           namespace: config.namespace,
+          annotations: {
+            'argocd.argoproj.io/sync-options': 'IgnoreExtraneous',
+          },
         },
         spec: {
           refreshInterval: '15s',
