@@ -118,3 +118,8 @@ data:
       - BackgroundScanReport
       - ClusterBackgroundScanReport
       - UpdateRequest
+    ### External Secrets PushSecret resources excluded to test sync resolution
+    - apiGroups:
+      - external-secrets.io
+      kinds:
+      - PushSecret
