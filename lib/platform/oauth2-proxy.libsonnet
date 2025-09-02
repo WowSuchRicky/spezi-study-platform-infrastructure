@@ -150,8 +150,10 @@
             },
           ],
           selector: {
-            secret: {
-              name: 'oauth2-proxy-secret',
+            generatorRef: {
+              apiVersion: 'generators.external-secrets.io/v1alpha1',
+              kind: 'Fake',
+              name: 'oauth2-proxy-client-id-generator',
             },
           },
           data: [

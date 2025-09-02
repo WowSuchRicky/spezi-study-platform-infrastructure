@@ -361,6 +361,35 @@
             allowRepeat: true,
           },
         },
+
+        // Fake generators for static values
+        'oauth2-proxy-client-id-generator': {
+          apiVersion: 'generators.external-secrets.io/v1alpha1',
+          kind: 'Fake',
+          metadata: {
+            name: 'oauth2-proxy-client-id-generator',
+            namespace: 'external-secrets-system',
+          },
+          spec: {
+            data: {
+              'client-id': 'oauth2-proxy',
+            },
+          },
+        },
+
+        'postgres-username-generator': {
+          apiVersion: 'generators.external-secrets.io/v1alpha1',
+          kind: 'Fake',
+          metadata: {
+            name: 'postgres-username-generator',
+            namespace: 'external-secrets-system',
+          },
+          spec: {
+            data: {
+              username: 'spezistudyplatform',
+            },
+          },
+        },
         
       } else {})
     else {}

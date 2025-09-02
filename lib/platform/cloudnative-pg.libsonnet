@@ -146,8 +146,10 @@
             },
           ],
           selector: {
-            secret: {
-              name: 'spezistudyplatform-postgres-credentials',
+            generatorRef: {
+              apiVersion: 'generators.external-secrets.io/v1alpha1',
+              kind: 'Fake',
+              name: 'postgres-username-generator',
             },
           },
           data: [
