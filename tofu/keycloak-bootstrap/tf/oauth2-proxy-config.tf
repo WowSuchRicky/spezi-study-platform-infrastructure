@@ -16,7 +16,7 @@ resource "keycloak_openid_client" "oauth2_proxy_client" {
 
   access_type         = "CONFIDENTIAL"
   valid_redirect_uris = [
-    "https://spezi.172.20.117.44.nip.io/oauth2/callback"
+    "${var.frontend_url}/oauth2/callback"
   ]
 
   direct_access_grants_enabled = false 
