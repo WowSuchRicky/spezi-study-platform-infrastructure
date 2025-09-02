@@ -46,7 +46,7 @@
           namespace: 'external-secrets-system',
         },
         spec: {
-          updatePolicy: 'IfNotExists',
+          updatePolicy: 'Replace',
           refreshInterval: '24h',
           secretStoreRefs: [
             {
