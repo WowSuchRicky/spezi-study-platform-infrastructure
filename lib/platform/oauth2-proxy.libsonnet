@@ -158,7 +158,6 @@
                   property: 'client-id',
                 },
               },
-              secretValue: 'oauth2-proxy',
             },
           ],
         },

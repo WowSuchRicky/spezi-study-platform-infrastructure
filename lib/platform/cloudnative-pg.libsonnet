@@ -154,7 +154,6 @@
                   property: 'username',
                 },
               },
-              secretValue: 'spezistudyplatform',
             },
           ],
         },

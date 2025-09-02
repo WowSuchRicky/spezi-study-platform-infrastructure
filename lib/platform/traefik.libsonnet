@@ -9,7 +9,9 @@
           service: {
             enabled: true,
             type: if std.get(config, 'mode', 'DEV') == 'DEV' then 'NodePort' else 'LoadBalancer',
-            externalIPs: if std.get(config, 'mode', 'DEV') == 'DEV' then null else [config.loadBalancerIP],
+            spec: if std.get(config, 'mode', 'DEV') == 'DEV' then {} else {
+              loadBalancerIP: config.loadBalancerIP,
+            },
           },
           logs: {
             general: {

@@ -16,10 +16,6 @@
               name: 'KC_HOSTNAME',
               value: 'https://' + config.domain + '/auth',
             },
-            {
-              name: 'KC_HOSTNAME_STRICT',
-              value: 'true',
-            },
           ] + (
             if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then [
               {
@@ -35,7 +31,10 @@
                 value: 'false',
               },
             ] else [
-              // For DEV mode, disable proxy mode to avoid X-Forwarded header issues
+              {
+                name: 'KC_HOSTNAME_STRICT',
+                value: 'true',
+              },
             ]
           ),
           customReadinessProbe: {
