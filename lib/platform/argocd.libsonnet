@@ -136,7 +136,6 @@
               secretKey: 'clientSecret',
               remoteRef: {
                 key: 'keycloak-argocd-client',
-                property: 'client-secret',
                 conversionStrategy: 'Default',
                 decodingStrategy: 'None',
                 metadataPolicy: 'None',

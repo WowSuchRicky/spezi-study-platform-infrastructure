@@ -195,3 +195,10 @@ resource "keycloak_openid_client_optional_scopes" "argocd_groups_scope" {
     keycloak_openid_client_scope.argocd_groups_scope.name,
   ]
 }
+
+# Output the ArgoCD client secret (will be stored in Terraform state)
+output "argocd_client_secret" {
+  value     = keycloak_openid_client.argocd_client.client_secret
+  sensitive = true
+  description = "ArgoCD OIDC client secret - store this in your external secret manager"
+}
