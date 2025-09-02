@@ -65,6 +65,9 @@
         metadata: {
           name: 'oauth2-proxy-client-secret-push',
           namespace: 'external-secrets-system',
+          annotations: {
+            'argocd.argoproj.io/compare-options': 'IgnoreExtraneous',
+          },
         },
         spec: {
           updatePolicy: 'Replace',
@@ -102,6 +105,9 @@
         metadata: {
           name: 'oauth2-proxy-cookie-secret-push',
           namespace: 'external-secrets-system',
+          annotations: {
+            'argocd.argoproj.io/compare-options': 'IgnoreExtraneous',
+          },
         },
         spec: {
           updatePolicy: 'Replace',
@@ -139,6 +145,9 @@
         metadata: {
           name: 'oauth2-proxy-client-id-push',
           namespace: 'external-secrets-system',
+          annotations: {
+            'argocd.argoproj.io/compare-options': 'IgnoreExtraneous',
+          },
         },
         spec: {
           updatePolicy: 'Replace',

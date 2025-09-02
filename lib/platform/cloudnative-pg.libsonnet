@@ -98,6 +98,9 @@
         metadata: {
           name: 'postgres-password-push-secret',
           namespace: 'external-secrets-system',
+          annotations: {
+            'argocd.argoproj.io/compare-options': 'IgnoreExtraneous',
+          },
         },
         spec: {
           updatePolicy: 'Replace',
@@ -135,6 +138,9 @@
         metadata: {
           name: 'postgres-username-push-secret',
           namespace: 'external-secrets-system',
+          annotations: {
+            'argocd.argoproj.io/compare-options': 'IgnoreExtraneous',
+          },
         },
         spec: {
           updatePolicy: 'Replace',

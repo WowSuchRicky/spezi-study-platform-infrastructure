@@ -44,6 +44,9 @@
         metadata: {
           name: 'frontend-oauth-push-secret',
           namespace: 'external-secrets-system',
+          annotations: {
+            'argocd.argoproj.io/compare-options': 'IgnoreExtraneous',
+          },
         },
         spec: {
           updatePolicy: 'Replace',
