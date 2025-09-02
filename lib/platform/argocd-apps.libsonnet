@@ -1,5 +1,5 @@
 {
-  local app(name, wave, config, envPath, envPrefix) = {
+  local app(name, wave, config, envPath, envPrefix, ignoreDifferences=[]) = {
     apiVersion: 'argoproj.io/v1alpha1',
     kind: 'Application',
     metadata: {
@@ -46,13 +46,24 @@
         syncOptions: [
           'CreateNamespace=true',
           'ServerSideApply=true',
+          'RespectIgnoreDifferences=true',
         ],
+        ignoreDifferences: ignoreDifferences,
       },
     },
   },
   withConfig(config)::
     local envPath = '.';
     local envPrefix = if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'prod' else 'local-dev';
+    local pushSecretIgnore = [
+      {
+        group: 'external-secrets.io',
+        kind: 'PushSecret',
+        jsonPointers: [
+          '/status',
+        ],
+      },
+    ];
     std.objectValues({
       // Wave 0
       'namespace-app': app('namespace', 0, config, envPath, envPrefix),
@@ -105,11 +116,11 @@
       'external-secrets-app': app('external-secrets', 1, config, envPath, envPrefix),
 
       // Wave 2
-      'cnpg-app': app('cloudnative-pg', 2, config, envPath, envPrefix),
-      'auth-app': app('auth', 2, config, envPath, envPrefix),
+      'cnpg-app': app('cloudnative-pg', 2, config, envPath, envPrefix, pushSecretIgnore),
+      'auth-app': app('auth', 2, config, envPath, envPrefix, pushSecretIgnore),
 
       // Wave 3
-      'backend-app': app('backend', 3, config, envPath, envPrefix),
-      'frontend-app': app('frontend', 3, config, envPath, envPrefix),
+      'backend-app': app('backend', 3, config, envPath, envPrefix, pushSecretIgnore),
+      'frontend-app': app('frontend', 3, config, envPath, envPrefix, pushSecretIgnore),
     }),
 }
