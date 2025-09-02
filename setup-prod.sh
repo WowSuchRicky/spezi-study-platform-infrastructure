@@ -416,6 +416,13 @@ $TERRAFORM_CMD apply \
 
 info "Keycloak bootstrap completed successfully!"
 
+# Store ArgoCD client secret in GCP Secret Manager
+info "Storing ArgoCD client secret in GCP Secret Manager..."
+ARGOCD_CLIENT_SECRET=$($TERRAFORM_CMD output -raw argocd_client_secret)
+echo "$ARGOCD_CLIENT_SECRET" | gcloud secrets create keycloak-argocd-client --data-file=- --project="$GCP_PROJECT_ID" || \
+    echo "$ARGOCD_CLIENT_SECRET" | gcloud secrets versions add keycloak-argocd-client --data-file=- --project="$GCP_PROJECT_ID"
+info "ArgoCD client secret stored in GCP Secret Manager."
+
 cd "$SCRIPT_DIR"
 
 # --- 9. Final setup message ---
