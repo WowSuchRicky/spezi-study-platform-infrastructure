@@ -60,6 +60,7 @@
         kind: 'PushSecret',
         namespace: 'external-secrets-system',
         jsonPointers: ['/status'],
+        managedFieldsManagers: ['external-secrets'],
       },
     ];
     std.objectValues({
