@@ -262,7 +262,7 @@ fi
 
 info "Waiting for wave 0 applications to be healthy..."
 # Wait for critical wave 0 applications to be healthy before proceeding
-wave0_apps=("default-namespace" "default-cloudnative-pg-crds")
+wave0_apps=("prod-namespace" "prod-cloudnative-pg-crds")
 max_attempts=30
 attempt=0
 
