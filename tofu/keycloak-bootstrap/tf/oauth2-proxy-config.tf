@@ -134,6 +134,7 @@ resource "keycloak_openid_client" "argocd_client" {
 
   direct_access_grants_enabled = false
   standard_flow_enabled        = true
+  client_secret                = random_password.argocd_client_secret.result
 }
 
 # Create ArgoCD admin role
@@ -196,9 +197,21 @@ resource "keycloak_openid_client_optional_scopes" "argocd_groups_scope" {
   ]
 }
 
-# Output the ArgoCD client secret (will be stored in Terraform state)
-output "argocd_client_secret" {
-  value     = keycloak_openid_client.argocd_client.client_secret
-  sensitive = true
-  description = "ArgoCD OIDC client secret - store this in your external secret manager"
+resource "random_password" "argocd_client_secret" {
+  length           = 32
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}<>:?"
+}
+
+resource "kubernetes_secret" "argocd_oidc_secret" {
+  metadata {
+    name      = "argocd-oidc-secret"
+    namespace = "argocd"
+  }
+
+  data = {
+    "oidc.keycloak.clientSecret" = random_password.argocd_client_secret.result
+  }
+
+  type = "Opaque"
 }

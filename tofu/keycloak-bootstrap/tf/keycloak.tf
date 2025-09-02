@@ -13,5 +13,13 @@ terraform {
             source = "registry.terraform.io/mrparkers/keycloak"
             version = ">= 4.0.0"
         }
+        random = {
+            source = "registry.terraform.io/hashicorp/random"
+            version = ">= 3.1.0"
+        }
+        kubernetes = {
+            source = "registry.terraform.io/hashicorp/kubernetes"
+            version = ">= 2.11.0"
+        }
     }
 }

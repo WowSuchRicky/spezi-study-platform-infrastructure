@@ -85,7 +85,7 @@
           name: 'Keycloak',
           issuer: 'https://' + config.domain + '/auth/realms/spezistudyplatform',
           clientId: 'argocd',
-          clientSecret: '$oidc.keycloak.clientSecret',
+          clientSecret: '$ARGOCD_OIDC_CLIENT_SECRET',
           requestedScopes: ['openid', 'profile', 'email', 'argocd_groups'],
           requestedIDTokenClaims: {
             groups: {
@@ -104,46 +104,7 @@
       })
       + k.core.v1.configMap.metadata.withNamespace('argocd'),
 
-      // Secret for ArgoCD OIDC client secret - get from Keycloak client secret in external secret manager
-      argocd_oidc_secret: {
-        apiVersion: 'external-secrets.io/v1',
-        kind: 'ExternalSecret',
-        metadata: {
-          name: 'argocd-oidc-secret',
-          namespace: 'argocd',
-          annotations: {
-            'argocd.argoproj.io/compare-options': 'IgnoreExtraneous',
-          },
-        },
-        spec: {
-          refreshInterval: '15s',
-          secretStoreRef: {
-            name: if config.externalSecrets.provider == 'gcpsm' then 'gcpsm-secret-store' else 'vault-backend',
-            kind: 'ClusterSecretStore',
-          },
-          target: {
-            name: 'argocd-oidc-secret',
-            creationPolicy: 'Owner',
-            template: {
-              engineVersion: 'v2',
-              data: {
-                'oidc.keycloak.clientSecret': '{{ .clientSecret }}',
-              },
-            },
-          },
-          data: [
-            {
-              secretKey: 'clientSecret',
-              remoteRef: {
-                key: 'keycloak-argocd-client',
-                conversionStrategy: 'Default',
-                decodingStrategy: 'None',
-                metadataPolicy: 'None',
-              },
-            },
-          ],
-        },
-      },
+      
 
       // Note: ArgoCD OIDC client secret will be managed separately through Keycloak client secret
     }
