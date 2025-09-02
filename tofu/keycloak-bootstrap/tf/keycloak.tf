@@ -1,4 +1,8 @@
 # currently requires manual setup: https://registry.terraform.io/providers/mrparkers/keycloak/latest/docs
+provider "kubernetes" {
+  config_path = "~/.kube/config"
+}
+
 provider "keycloak" {
   client_id                = var.keycloak_client_id
   username                 = var.keycloak_username
