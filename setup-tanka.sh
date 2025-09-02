@@ -46,6 +46,11 @@ info "KIND cluster is ready."
 info "Installing Argo CD..."
 kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+# Apply custom ArgoCD configuration for resource ignoring
+info "Applying ArgoCD configuration for PushSecret ignore rules..."
+kubectl apply -f "$SCRIPT_DIR/config/argocd/argocd-cm-config.yaml"
+
 info "Giving resources a moment to be created..."
 sleep 5
 info "Waiting for Argo CD pods to be ready..."
