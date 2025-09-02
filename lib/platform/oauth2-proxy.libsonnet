@@ -216,24 +216,10 @@
             if config.mode == 'DEV' then
               ['--insecure-oidc-skip-issuer-verification=true']
             else
-              ['--provider-ca-file=/etc/ssl/certs/ca.crt']
+              []
           ),
-          extraVolumes: if config.mode == 'PRODUCTION' then [
-            {
-              name: 'ca-secret',
-              secret: {
-                secretName: 'oauth2-proxy-ca-secret',
-              },
-            },
-          ] else [],
-          extraVolumeMounts: if config.mode == 'PRODUCTION' then [
-            {
-              name: 'ca-secret',
-              mountPath: '/etc/ssl/certs/ca.crt',
-              subPath: 'ca.crt',
-              readOnly: true,
-            },
-          ] else [],
+          extraVolumes: [],
+          extraVolumeMounts: [],
           redis: {
             enabled: false,
           },
