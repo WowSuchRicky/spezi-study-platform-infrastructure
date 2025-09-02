@@ -20,24 +20,7 @@
         },
       },
 
-      argocd_oauth_errors_middleware: {
-        apiVersion: 'traefik.io/v1alpha1',
-        kind: 'Middleware',
-        metadata: {
-          name: 'oauth2-errors',
-          namespace: config.namespace,
-        },
-        spec: {
-          errors: {
-            status: ['401-403'],
-            service: {
-              name: 'oauth2-proxy',
-              port: 80,
-            },
-            query: '/oauth2/sign_in?rd={url}',
-          },
-        },
-      },
+      // oauth2-errors middleware already exists from traefik component
 
       argocd_ingress_route: {
         apiVersion: 'traefik.io/v1alpha1',
@@ -121,7 +104,7 @@
       })
       + k.core.v1.configMap.metadata.withNamespace('argocd'),
 
-      // Secret for ArgoCD OIDC client secret
+      // Secret for ArgoCD OIDC client secret - get from Keycloak client secret in external secret manager
       argocd_oidc_secret: {
         apiVersion: 'external-secrets.io/v1',
         kind: 'ExternalSecret',
@@ -152,8 +135,8 @@
             {
               secretKey: 'clientSecret',
               remoteRef: {
-                key: 'argocd-oidc',
-                property: 'client_secret',
+                key: 'keycloak-argocd-client',
+                property: 'client-secret',
                 conversionStrategy: 'Default',
                 decodingStrategy: 'None',
                 metadataPolicy: 'None',
@@ -163,44 +146,6 @@
         },
       },
 
-      // PushSecret for ArgoCD OIDC client secret (only for GCP Secret Manager)
-      argocd_oidc_push_secret: if config.externalSecrets.provider == 'gcpsm' then {
-        apiVersion: 'external-secrets.io/v1alpha1',
-        kind: 'PushSecret',
-        metadata: {
-          name: 'argocd-oidc-push-secret',
-          namespace: 'external-secrets-system',
-          annotations: {
-            'argocd.argoproj.io/compare-options': 'IgnoreExtraneous',
-          },
-        },
-        spec: {
-          updatePolicy: 'Replace',
-          refreshInterval: '24h',
-          secretStoreRefs: [
-            {
-              name: 'gcpsm-secret-store',
-              kind: 'ClusterSecretStore',
-            },
-          ],
-          selector: {
-            secret: {
-              name: 'keycloak-argocd-client-secret',
-              namespace: config.namespace,
-            },
-          },
-          data: [
-            {
-              match: {
-                secretKey: 'client-secret',
-                remoteRef: {
-                  remoteKey: 'argocd-oidc',
-                  property: 'client_secret',
-                },
-              },
-            },
-          ],
-        },
-      } else {},
+      // Note: ArgoCD OIDC client secret will be managed separately through Keycloak client secret
     }
 }
