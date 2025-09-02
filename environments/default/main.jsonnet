@@ -27,6 +27,7 @@ function(component=null) {
     local traefik = import '../../lib/platform/traefik.libsonnet';
     local auth = import '../../lib/platform/auth.libsonnet';
     local externalSecrets = import '../../lib/platform/external-secrets.libsonnet';
+    local argocd = import '../../lib/platform/argocd.libsonnet';
     // Note: argocd-apps is not included here, it's used to generate the apps that point to this env.
 
     local components = {
@@ -39,6 +40,7 @@ function(component=null) {
       frontend: frontend.withConfig(config),
       traefik: traefik.withConfig(config),
       auth: auth.withConfig(config),
+      argocd: argocd.withConfig(config),
     };
 
     if component != null then

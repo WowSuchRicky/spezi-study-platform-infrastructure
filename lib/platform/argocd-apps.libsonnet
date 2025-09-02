@@ -121,5 +121,6 @@
       // Wave 3 - Apps with PushSecrets need ignore differences  
       'backend-app': app('backend', 3, config, envPath, envPrefix, pushSecretIgnoreDifferences),
       'frontend-app': app('frontend', 3, config, envPath, envPrefix, pushSecretIgnoreDifferences),
+      'argocd-app': app('argocd', 3, config, envPath, envPrefix, pushSecretIgnoreDifferences),
     }),
 }
