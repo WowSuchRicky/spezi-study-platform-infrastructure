@@ -189,10 +189,17 @@
         namespace: config.namespace,
         values: {
           configuration: {
-            content: |||
-              provider = "keycloak-oidc"
-              oidc_issuer_url = "http://keycloak.%(namespace)s.svc.cluster.local/auth/realms/spezistudyplatform"
-              email_domains = ["*"]
+            content: (
+              if config.mode == 'DEV' then |||
+                provider = "keycloak-oidc"
+                oidc_issuer_url = "http://keycloak.%(namespace)s.svc.cluster.local/auth/realms/spezistudyplatform"
+                email_domains = ["*"]
+              ||| else |||
+                provider = "keycloak-oidc"
+                oidc_issuer_url = "https://%(domain)s/auth/realms/spezistudyplatform"
+                email_domains = ["*"]
+              |||
+            ) + |||
               upstreams = ["static://200"]
               scope = "openid profile email groups"
               redirect_url = "https://%(domain)s/oauth2/callback"
