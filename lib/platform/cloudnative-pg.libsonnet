@@ -145,6 +145,11 @@
               kind: 'ClusterSecretStore',
             },
           ],
+          selector: {
+            secret: {
+              name: 'spezistudyplatform-postgres-credentials',
+            },
+          },
           data: [
             {
               match: {

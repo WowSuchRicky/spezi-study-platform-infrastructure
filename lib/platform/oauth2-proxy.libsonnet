@@ -149,6 +149,11 @@
               kind: 'ClusterSecretStore',
             },
           ],
+          selector: {
+            secret: {
+              name: 'oauth2-proxy-secret',
+            },
+          },
           data: [
             {
               match: {
