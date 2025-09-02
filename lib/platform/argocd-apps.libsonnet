@@ -58,6 +58,7 @@
       {
         group: 'external-secrets.io',
         kind: 'PushSecret',
+        namespace: 'external-secrets-system',
         jsonPointers: ['/status'],
       },
     ];
