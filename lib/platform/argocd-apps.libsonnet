@@ -59,7 +59,14 @@
         group: 'external-secrets.io',
         kind: 'PushSecret',
         namespace: 'external-secrets-system',
-        jsonPointers: ['/status', '/metadata/resourceVersion', '/metadata/generation'],
+        jsonPointers: [
+          '/status',
+          '/status/refreshTime', 
+          '/status/syncedResourceVersion',
+          '/status/syncedPushSecrets',
+          '/metadata/resourceVersion', 
+          '/metadata/generation'
+        ],
         managedFieldsManagers: ['external-secrets'],
       },
     ];
