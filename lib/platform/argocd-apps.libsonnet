@@ -53,14 +53,14 @@
   withConfig(config)::
     local envPath = '.';
     local envPrefix = if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'prod' else 'local-dev';
-    // Ignore differences for PushSecret status fields that are managed by external-secrets operator
+    // Ignore ALL differences for PushSecret resources (treat as managed externally)
     local pushSecretIgnoreDifferences = [
       {
         group: 'external-secrets.io',
         kind: 'PushSecret',
         namespace: 'external-secrets-system',
-        jsonPointers: ['/status', '/metadata/resourceVersion', '/metadata/generation'],
-        managedFieldsManagers: ['external-secrets'],
+        // Ignore all differences - treat PushSecrets as externally managed
+        jqPathExpressions: ['.'],
       },
     ];
     std.objectValues({
@@ -114,11 +114,11 @@
       'cert-manager-app': app('cert-manager', 1, config, envPath, envPrefix),
       'external-secrets-app': app('external-secrets', 1, config, envPath, envPrefix),
 
-      // Wave 2 - Apps with PushSecrets need ignore differences
+      // Wave 2 - Apps with PushSecrets ignore all PushSecret differences
       'cnpg-app': app('cloudnative-pg', 2, config, envPath, envPrefix, pushSecretIgnoreDifferences),
       'auth-app': app('auth', 2, config, envPath, envPrefix, pushSecretIgnoreDifferences),
 
-      // Wave 3 - Apps with PushSecrets need ignore differences  
+      // Wave 3 - Apps with PushSecrets ignore all PushSecret differences  
       'backend-app': app('backend', 3, config, envPath, envPrefix, pushSecretIgnoreDifferences),
       'frontend-app': app('frontend', 3, config, envPath, envPrefix, pushSecretIgnoreDifferences),
       'argocd-app': app('argocd', 3, config, envPath, envPrefix, pushSecretIgnoreDifferences),
