@@ -231,6 +231,7 @@
             '--pass-authorization-header=true',
             '--set-xauthrequest=true',
             '--code-challenge-method=S256',
+            '--reverse-proxy=true',
           ] + (
             if config.mode == 'DEV' then
               ['--insecure-oidc-skip-issuer-verification=true']
