@@ -42,7 +42,7 @@
                 { name: 'oauth2-proxy-argo', namespace: config.namespace },
                 { name: 'oauth2-errors', namespace: config.namespace },
               ],
-              priority: 1,
+              priority: 10,
               services: [
                 {
                   name: 'argocd-server',
@@ -57,7 +57,7 @@
                 { name: 'oauth2-proxy-argo', namespace: config.namespace },
                 { name: 'oauth2-errors', namespace: config.namespace },
               ],
-              priority: 1,
+              priority: 10,
               services: [
                 {
                   name: 'argocd-server',
