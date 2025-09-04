@@ -175,5 +175,6 @@
     {
       [std.strReplace(resource.kind + '-' + resource.metadata.name, '/', '-')]: resource
       for resource in allManifests
+      if std.objectHas(resource, 'kind')
     },
 }
