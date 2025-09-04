@@ -39,7 +39,7 @@
               kind: 'Rule',
               match: 'Host(`' + config.domain + '`) && PathPrefix(`/argo`)',
               middlewares: [
-                { name: 'oauth2-proxy', namespace: config.namespace },
+                { name: 'oauth2-proxy-argo', namespace: config.namespace },
                 { name: 'oauth2-errors', namespace: config.namespace },
               ],
               priority: 1,
@@ -54,7 +54,7 @@
               kind: 'Rule', 
               match: 'Host(`' + config.domain + '`) && PathPrefix(`/argo`) && Header(`Content-Type`, `application/grpc`)',
               middlewares: [
-                { name: 'oauth2-proxy', namespace: config.namespace },
+                { name: 'oauth2-proxy-argo', namespace: config.namespace },
                 { name: 'oauth2-errors', namespace: config.namespace },
               ],
               priority: 1,
