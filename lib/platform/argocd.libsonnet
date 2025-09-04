@@ -68,7 +68,7 @@
             },
           ],
           tls: {
-            secretName: config.domain + '-main-tls-secret',
+            secretName: 'spezistudyplatform-main-tls-secret',
           },
         },
       },
