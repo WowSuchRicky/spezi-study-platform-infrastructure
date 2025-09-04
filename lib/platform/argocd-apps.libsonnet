@@ -53,15 +53,9 @@
   withConfig(config)::
     local envPath = '.';
     local envPrefix = if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'prod' else 'local-dev';
-    // Ignore ALL differences for PushSecret resources (they are managed externally)
-    local pushSecretIgnoreDifferences = [
-      {
-        group: 'external-secrets.io',
-        kind: 'PushSecret',
-        namespace: 'external-secrets-system',
-        managedFieldsManagers: ['external-secrets'],
-      },
-    ];
+    // Note: PushSecrets removed - using Vault instead of GCP Secret Manager for now
+    // TODO: Re-add PushSecret ignore differences when switching back to GCP Secret Manager
+    local pushSecretIgnoreDifferences = [];
     std.objectValues({
       // Wave 0
       'namespace-app': app('namespace', 0, config, envPath, envPrefix),

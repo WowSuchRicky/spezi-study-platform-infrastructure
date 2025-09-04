@@ -43,11 +43,11 @@ function(staticIP='34.168.131.83') {
     |||,
     externalSecrets+: {
       enabled: true,
-      provider: 'gcpsm',
-      gcp: {
-        projectId: 'spezistudyplatform-dev',
-        serviceAccountKeySecret: 'gcp-sa-key',
-      },
+      provider: 'vault',  // TODO: Switch to 'gcpsm' when ready to use GCP Secret Manager
+      // gcp: {
+      //   projectId: 'spezistudyplatform-dev', 
+      //   serviceAccountKeySecret: 'gcp-sa-key',
+      // },
     },
   },
   
