@@ -19,8 +19,11 @@ resource "keycloak_openid_client" "oauth2_proxy_client" {
     "${var.frontend_url}/oauth2/callback"
   ]
 
+  client_secret       = random_password.oauth2_proxy_client_secret.result
   direct_access_grants_enabled = false 
   standard_flow_enabled        = true
+  
+  depends_on = [random_password.oauth2_proxy_client_secret]
 }
 
 # Create groups client scope
@@ -199,10 +202,77 @@ resource "keycloak_openid_client_optional_scopes" "argocd_groups_scope" {
   ]
 }
 
+resource "random_password" "oauth2_proxy_client_secret" {
+  length           = 32
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}<>:?"
+}
+
 resource "random_password" "argocd_client_secret" {
   length           = 32
   special          = true
   override_special = "!#$%&*()-_=+[]{}<>:?"
+}
+
+resource "kubernetes_secret" "oauth2_proxy_secret_update" {
+  metadata {
+    name      = "oauth2-proxy-secret-update"
+    namespace = "vault"
+  }
+
+  data = {
+    "client-secret" = random_password.oauth2_proxy_client_secret.result
+  }
+
+  type = "Opaque"
+  
+  depends_on = [random_password.oauth2_proxy_client_secret]
+}
+
+resource "kubernetes_job_v1" "vault_oauth2_proxy_secret_update" {
+  metadata {
+    name      = "vault-oauth2-proxy-secret-update"
+    namespace = "vault"
+  }
+  
+  spec {
+    template {
+      metadata {}
+      spec {
+        restart_policy = "Never"
+        container {
+          name  = "vault-update"
+          image = "hashicorp/vault:1.15"
+          command = [
+            "sh",
+            "-c",
+            "CLIENT_SECRET=$(cat /secret/client-secret) && vault kv put secret/oauth2-proxy-secret client-id=oauth2-proxy client-secret=$CLIENT_SECRET cookie-secret=local-dev-cookie-secret-32-chars"
+          ]
+          env {
+            name  = "VAULT_ADDR"
+            value = "http://vault.vault.svc.cluster.local:8200"
+          }
+          env {
+            name  = "VAULT_TOKEN"
+            value = "dev-only-token"
+          }
+          volume_mount {
+            name       = "secret-volume"
+            mount_path = "/secret"
+            read_only  = true
+          }
+        }
+        volume {
+          name = "secret-volume"
+          secret {
+            secret_name = kubernetes_secret.oauth2_proxy_secret_update.metadata[0].name
+          }
+        }
+      }
+    }
+  }
+  
+  depends_on = [kubernetes_secret.oauth2_proxy_secret_update]
 }
 
 resource "kubernetes_secret" "argocd_oidc_secret" {
