@@ -76,6 +76,8 @@
       // ArgoCD OIDC configuration
       argocd_oidc_config: k.core.v1.configMap.new('argocd-cmd-params-cm', {
         'server.insecure': 'true',
+        'server.basehref': '/argo',
+        'server.rootpath': '/argo',
       })
       + k.core.v1.configMap.metadata.withNamespace('argocd'),
 
