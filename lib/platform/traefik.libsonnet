@@ -165,7 +165,7 @@
           routes: [
             {
               match: '(Host(`' + config.domain + '`) || Host(`spezi.127.0.0.1.nip.io`)) && PathPrefix(`/`)',
-              priority: 1,
+              priority: 2,
               kind: 'Rule',
               services: [
                 {
@@ -180,7 +180,7 @@
             },
             {
               match: '(Host(`' + config.domain + '`) || Host(`spezi.127.0.0.1.nip.io`)) && PathPrefix(`/backend`)',
-              priority: 2,
+              priority: 3,
               kind: 'Rule',
               services: [
                 {
