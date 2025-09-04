@@ -53,19 +53,13 @@
   withConfig(config)::
     local envPath = '.';
     local envPrefix = if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'prod' else 'local-dev';
-    // Ignore specific differences for PushSecret resources
+    // Ignore ALL differences for PushSecret resources (they are managed externally)
     local pushSecretIgnoreDifferences = [
       {
         group: 'external-secrets.io',
         kind: 'PushSecret',
         namespace: 'external-secrets-system',
-        jsonPointers: [
-          '/status',
-          '/metadata/resourceVersion', 
-          '/metadata/generation',
-          '/metadata/managedFields',
-          '/spec/refreshInterval',
-        ],
+        managedFieldsManagers: ['external-secrets'],
       },
     ];
     std.objectValues({
