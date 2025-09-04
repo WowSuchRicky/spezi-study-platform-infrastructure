@@ -88,12 +88,13 @@
           issuer: 'https://' + config.domain + '/auth/realms/spezistudyplatform',
           clientId: 'argocd',
           clientSecret: '$ARGOCD_OIDC_CLIENT_SECRET',
-          requestedScopes: ['openid', 'profile', 'email', 'argocd_groups'],
+          requestedScopes: ['openid', 'profile', 'email', 'groups'],
           requestedIDTokenClaims: {
             groups: {
               essential: true,
             },
           },
+          cliClientId: 'argocd-cli',
         }),
         'policy.default': 'role:readonly',
         'policy.csv': std.join('\n', [

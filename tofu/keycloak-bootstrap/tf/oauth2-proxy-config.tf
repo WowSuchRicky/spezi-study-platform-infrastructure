@@ -291,3 +291,33 @@ resource "kubernetes_secret" "argocd_oidc_secret" {
     ignore_changes = [data, metadata]
   }
 }
+
+# ArgoCD CLI Client for PKCE support
+resource "keycloak_openid_client" "argocd_cli_client" {
+  realm_id    = keycloak_realm.realm.id
+  client_id   = "argocd-cli"
+  name        = "ArgoCD CLI"
+  enabled     = true
+
+  access_type         = "PUBLIC"
+  standard_flow_enabled = true
+  direct_access_grants_enabled = false
+  implicit_flow_enabled = false
+  
+  # Enable PKCE
+  pkce_code_challenge_method = "S256"
+  
+  valid_redirect_uris = [
+    "http://localhost:8085/auth/callback"
+  ]
+}
+
+# Add groups scope to ArgoCD CLI client
+resource "keycloak_openid_client_optional_scopes" "argocd_cli_groups_scope" {
+  realm_id  = keycloak_realm.realm.id
+  client_id = keycloak_openid_client.argocd_cli_client.id
+  
+  optional_scopes = [
+    keycloak_openid_client_scope.argocd_groups_scope.name,
+  ]
+}
