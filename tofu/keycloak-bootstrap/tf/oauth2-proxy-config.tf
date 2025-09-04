@@ -135,6 +135,8 @@ resource "keycloak_openid_client" "argocd_client" {
   direct_access_grants_enabled = false
   standard_flow_enabled        = true
   client_secret                = random_password.argocd_client_secret.result
+  
+  depends_on = [random_password.argocd_client_secret]
 }
 
 # Create ArgoCD admin role
@@ -214,4 +216,8 @@ resource "kubernetes_secret" "argocd_oidc_secret" {
   }
 
   type = "Opaque"
+  
+  lifecycle {
+    ignore_changes = [data, metadata]
+  }
 }
