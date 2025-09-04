@@ -59,7 +59,13 @@
         group: 'external-secrets.io',
         kind: 'PushSecret',
         namespace: 'external-secrets-system',
-        jsonPointers: ['/status', '/metadata/resourceVersion', '/metadata/generation'],
+        jsonPointers: [
+          '/status',
+          '/metadata/resourceVersion', 
+          '/metadata/generation',
+          '/metadata/managedFields',
+          '/spec/refreshInterval',
+        ],
       },
     ];
     std.objectValues({
