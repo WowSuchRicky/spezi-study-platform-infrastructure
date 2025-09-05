@@ -151,6 +151,7 @@ resource "keycloak_openid_client" "argocd_client" {
   access_type         = "PUBLIC"
   valid_redirect_uris = [
     "${var.frontend_url}/argo/auth/callback",
+    "${var.frontend_url}/argo/auth/login",
     "http://localhost:8085/auth/callback"
   ]
 

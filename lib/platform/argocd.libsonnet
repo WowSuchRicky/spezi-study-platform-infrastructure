@@ -93,10 +93,12 @@
         // TODO: This shouldn't need to be specified so exhaustively here, per https://argo-cd.readthedocs.io/en/stable/operator-manual/user-management/keycloak/#keycloak-and-argocd-with-pkce. 
         // come back and clean this up eventually. It's not harmful, just ugly!
         data: {
+          'url': 'https://' + config.domain + '/argo',
           'oidc.config': |||
             name: Keycloak
             issuer: https://%(domain)s/auth/realms/spezistudyplatform
             clientId: argocd
+            redirectURI: https://%(domain)s/argo/auth/callback
             enablePKCEAuthentication: true
             requestedScopes: ["openid", "profile", "email", "groups"]
             requestedIDTokenClaims:
