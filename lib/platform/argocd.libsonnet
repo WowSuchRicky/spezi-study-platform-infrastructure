@@ -216,6 +216,10 @@
 
       argocd_server_config: k.core.v1.configMap.new('argocd-server-config', {
         'url': 'https://' + config.domain + '/argo',
+      })
+      + k.core.v1.configMap.metadata.withNamespace('argocd'),
+
+      argocd_rbac_cm: k.core.v1.configMap.new('argocd-rbac-cm', {
         'policy.default': 'role:readonly',
         'policy.csv': std.join('\n', [
           'p, role:admin, applications, *, */*, allow',
