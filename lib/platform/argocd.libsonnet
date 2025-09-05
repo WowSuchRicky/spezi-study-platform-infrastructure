@@ -86,7 +86,7 @@
       })
       + k.core.v1.configMap.metadata.withNamespace('argocd'),
 
-      argocd_server_config: k.core.v1.configMap.new('argocd-server-config', {
+      argocd_server_config: k.core.v1.configMap.new('argocd-cm', {
         'url': 'https://' + config.domain + '/argo',
         'oidc.config': |||
           name: Keycloak
