@@ -88,6 +88,13 @@
 
       argocd_server_config: k.core.v1.configMap.new('argocd-server-config', {
         'url': 'https://' + config.domain + '/argo',
+        'oidc.config': std.manifestYamlDoc({
+          name: 'OAuth2-Proxy',
+          issuer: 'https://' + config.domain + '/argo/api/dex',
+          clientId: 'argo-workflows-sso',
+          clientSecret: 'unused',
+          requestedScopes: ['openid', 'profile', 'email', 'groups'],
+        }),
         'dex.config': std.manifestYamlDoc({
           issuer: 'https://' + config.domain + '/argo/api/dex',
           storage: {
@@ -100,6 +107,17 @@
             level: 'debug',
             format: 'text',
           },
+          oauth2: {
+            skipApprovalScreen: true,
+          },
+          staticClients: [
+            {
+              id: 'argo-workflows-sso',
+              redirectURIs: ['https://' + config.domain + '/argo/auth/callback'],
+              name: 'ArgoCD',
+              secret: 'unused',
+            },
+          ],
           connectors: [
             {
               type: 'authproxy',
