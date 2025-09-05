@@ -88,18 +88,30 @@
 
       argocd_server_config: k.core.v1.configMap.new('argocd-server-config', {
         'url': 'https://' + config.domain + '/argo',
-        'oidc.config': std.manifestYamlDoc({
-          name: 'Keycloak',
-          issuer: 'https://' + config.domain + '/auth/realms/spezistudyplatform',
-          clientId: 'argocd',
-          clientSecret: '$ARGOCD_OIDC_CLIENT_SECRET',
-          requestedScopes: ['openid', 'profile', 'email', 'groups'],
-          requestedIDTokenClaims: {
-            groups: {
-              essential: true,
-            },
+        'dex.config': std.manifestYamlDoc({
+          issuer: 'https://' + config.domain + '/argo/api/dex',
+          storage: {
+            type: 'memory',
           },
-          cliClientId: 'argocd-cli',
+          web: {
+            http: '0.0.0.0:5556',
+          },
+          logger: {
+            level: 'debug',
+            format: 'text',
+          },
+          connectors: [
+            {
+              type: 'authproxy',
+              id: 'oauth2-proxy',
+              name: 'OAuth2-Proxy',
+              config: {
+                userHeader: 'X-Forwarded-User',
+                emailHeader: 'X-Forwarded-Email',
+                groupsHeader: 'X-Forwarded-Groups',
+              },
+            },
+          ],
         }),
         'policy.default': 'role:readonly',
         'policy.csv': std.join('\n', [
