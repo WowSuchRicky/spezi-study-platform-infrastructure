@@ -116,11 +116,29 @@ resource "keycloak_user_roles" "testuser_roles" {
   user_id  = keycloak_user.testuser.id
   
   role_ids = [
-    keycloak_role.authorized_users.id
+    keycloak_role.authorized_users.id,
+    keycloak_role.argocd_admins.id
   ]
 }
 
 # Note: testuser2 intentionally does not get the authorized role
+
+resource "keycloak_user" "newadmin" {
+  realm_id = keycloak_realm.realm.id
+  username = "newadmin"
+  email    = "newadmin@example.com"
+  email_verified = true
+
+  first_name = "New"
+  last_name  = "Admin"
+
+  initial_password {
+    value     = "password"
+    temporary = false
+  }
+}
+
+
 
 # ArgoCD OIDC Client Configuration
 resource "keycloak_openid_client" "argocd_client" {
