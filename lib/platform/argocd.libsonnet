@@ -86,38 +86,30 @@
       })
       + k.core.v1.configMap.metadata.withNamespace('argocd'),
 
-      // Patch the existing argocd-cm ConfigMap with OIDC configuration
-      argocd_cm_patch: {
-        apiVersion: 'v1',
-        kind: 'ConfigMap',
-        metadata: {
-          name: 'argocd-cm',
-          namespace: 'argocd',
-        },
-        data: {
-          'url': 'https://' + config.domain + '/argo',
-          'oidc.config': |||
-            name: Keycloak
-            issuer: https://%(domain)s/auth/realms/spezistudyplatform
-            clientId: argocd
-            clientSecret: $ARGOCD_OIDC_CLIENT_SECRET
-            enablePKCEAuthentication: true
-            requestedScopes: ["openid", "profile", "email", "groups"]
-            requestedIDTokenClaims:
-              groups:
-                essential: true
-            cliClientId: argocd
-          ||| % { domain: config.domain },
-          'policy.default': 'role:readonly',
-          'policy.csv': std.join('\n', [
-            'p, role:admin, applications, *, */*, allow',
-            'p, role:admin, certificates, *, *, allow', 
-            'p, role:admin, clusters, *, *, allow',
-            'p, role:admin, repositories, *, *, allow',
-            'g, ArgoCDAdmins, role:admin',
-          ]),
-        },
-      },
+      argocd_server_config: k.core.v1.configMap.new('argocd-server-config', {
+        'url': 'https://' + config.domain + '/argo',
+        'oidc.config': |||
+          name: Keycloak
+          issuer: https://%(domain)s/auth/realms/spezistudyplatform
+          clientId: argocd
+          clientSecret: $ARGOCD_OIDC_CLIENT_SECRET
+          enablePKCEAuthentication: true
+          requestedScopes: ["openid", "profile", "email", "groups"]
+          requestedIDTokenClaims:
+            groups:
+              essential: true
+          cliClientId: argocd
+        ||| % { domain: config.domain },
+        'policy.default': 'role:readonly',
+        'policy.csv': std.join('\n', [
+          'p, role:admin, applications, *, */*, allow',
+          'p, role:admin, certificates, *, *, allow', 
+          'p, role:admin, clusters, *, *, allow',
+          'p, role:admin, repositories, *, *, allow',
+          'g, ArgoCDAdmins, role:admin',
+        ]),
+      })
+      + k.core.v1.configMap.metadata.withNamespace('argocd'),
 
       
 
