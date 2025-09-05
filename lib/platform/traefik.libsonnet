@@ -164,7 +164,7 @@
           ],
           routes: [
             {
-              match: 'Host(`' + config.domain + '`) && PathPrefix(`/`) && !PathPrefix(`/argo`) && !PathPrefix(`/auth`) && !PathPrefix(`/oauth2`)',
+              match: 'Host(`' + config.domain + '`) && (Path(`/`) || PathPrefix(`/app`) || PathPrefix(`/static`) || PathPrefix(`/assets`))',
               priority: 1,
               kind: 'Rule',
               services: [
