@@ -89,47 +89,18 @@
       argocd_server_config: k.core.v1.configMap.new('argocd-server-config', {
         'url': 'https://' + config.domain + '/argo',
         'oidc.config': std.manifestYamlDoc({
-          name: 'OAuth2-Proxy',
-          issuer: 'https://' + config.domain + '/argo/api/dex',
-          clientId: 'argo-workflows-sso',
-          clientSecret: 'unused',
+          name: 'Keycloak',
+          issuer: 'https://' + config.domain + '/auth/realms/spezistudyplatform',
+          clientId: 'argocd',
+          clientSecret: '$ARGOCD_OIDC_CLIENT_SECRET',
+          enablePKCEAuthentication: true,
           requestedScopes: ['openid', 'profile', 'email', 'groups'],
-        }),
-        'dex.config': std.manifestYamlDoc({
-          issuer: 'https://' + config.domain + '/argo/api/dex',
-          storage: {
-            type: 'memory',
-          },
-          web: {
-            http: '0.0.0.0:5556',
-          },
-          logger: {
-            level: 'debug',
-            format: 'text',
-          },
-          oauth2: {
-            skipApprovalScreen: true,
-          },
-          staticClients: [
-            {
-              id: 'argo-workflows-sso',
-              redirectURIs: ['https://' + config.domain + '/argo/auth/callback'],
-              name: 'ArgoCD',
-              secret: 'unused',
+          requestedIDTokenClaims: {
+            groups: {
+              essential: true,
             },
-          ],
-          connectors: [
-            {
-              type: 'authproxy',
-              id: 'oauth2-proxy',
-              name: 'OAuth2-Proxy',
-              config: {
-                userHeader: 'X-Forwarded-User',
-                emailHeader: 'X-Forwarded-Email',
-                groupsHeader: 'X-Forwarded-Groups',
-              },
-            },
-          ],
+          },
+          cliClientId: 'argocd-cli',
         }),
         'policy.default': 'role:readonly',
         'policy.csv': std.join('\n', [
