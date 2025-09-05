@@ -100,13 +100,13 @@
             clientId: argocd
             redirectURI: https://%(domain)s/argo/auth/callback
             enablePKCEAuthentication: true
+            insecure: true
             requestedScopes: ["openid", "profile", "email", "groups"]
             requestedIDTokenClaims:
               groups:
                 essential: true
             cliClientId: argocd
           ||| % { domain: config.domain },
-          'oidc.tls.insecure.skip.verify': 'true',
           'resource.customizations.ignoreResourceUpdates.ConfigMap': |||
             jqPathExpressions:
               - '.metadata.annotations."cluster-autoscaler.kubernetes.io/last-updated"'
