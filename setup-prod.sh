@@ -159,7 +159,7 @@ info "kubectl configured for GKE cluster."
 # --- 4. Install Argo CD ---
 info "Installing Argo CD..."
 kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/v3.1.1/manifests/install.yaml
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/v3.1.4/manifests/install.yaml
 
 # Apply custom ArgoCD configuration for resource ignoring
 info "Applying ArgoCD configuration for PushSecret ignore rules..."
