@@ -140,7 +140,7 @@ resource "keycloak_user" "newadmin" {
 
 
 
-# ArgoCD OIDC Client Configuration
+# ArgoCD OIDC Client Configuration (supports both web UI and CLI)
 resource "keycloak_openid_client" "argocd_client" {
   realm_id            = keycloak_realm.realm.id
   client_id           = "argocd"
@@ -150,8 +150,12 @@ resource "keycloak_openid_client" "argocd_client" {
 
   access_type         = "CONFIDENTIAL"
   valid_redirect_uris = [
-    "${var.frontend_url}/argo/auth/callback"
+    "${var.frontend_url}/argo/auth/callback",
+    "http://localhost:8085/auth/callback"
   ]
+
+  # Enable PKCE for CLI support
+  pkce_code_challenge_method = "S256"
 
   direct_access_grants_enabled = false
   standard_flow_enabled        = true
@@ -310,32 +314,3 @@ resource "kubernetes_secret" "argocd_oidc_secret" {
   }
 }
 
-# ArgoCD CLI Client for PKCE support
-resource "keycloak_openid_client" "argocd_cli_client" {
-  realm_id    = keycloak_realm.realm.id
-  client_id   = "argocd-cli"
-  name        = "ArgoCD CLI"
-  enabled     = true
-
-  access_type         = "PUBLIC"
-  standard_flow_enabled = true
-  direct_access_grants_enabled = false
-  implicit_flow_enabled = false
-  
-  # Enable PKCE
-  pkce_code_challenge_method = "S256"
-  
-  valid_redirect_uris = [
-    "http://localhost:8085/auth/callback"
-  ]
-}
-
-# Add groups scope to ArgoCD CLI client
-resource "keycloak_openid_client_optional_scopes" "argocd_cli_groups_scope" {
-  realm_id  = keycloak_realm.realm.id
-  client_id = keycloak_openid_client.argocd_cli_client.id
-  
-  optional_scopes = [
-    keycloak_openid_client_scope.argocd_groups_scope.name,
-  ]
-}

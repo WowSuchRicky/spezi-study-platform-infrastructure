@@ -88,20 +88,18 @@
 
       argocd_server_config: k.core.v1.configMap.new('argocd-server-config', {
         'url': 'https://' + config.domain + '/argo',
-        'oidc.config': std.manifestYamlDoc({
-          name: 'Keycloak',
-          issuer: 'https://' + config.domain + '/auth/realms/spezistudyplatform',
-          clientId: 'argocd',
-          clientSecret: '$ARGOCD_OIDC_CLIENT_SECRET',
-          enablePKCEAuthentication: true,
-          requestedScopes: ['openid', 'profile', 'email', 'groups'],
-          requestedIDTokenClaims: {
-            groups: {
-              essential: true,
-            },
-          },
-          cliClientId: 'argocd-cli',
-        }),
+        'oidc.config': |||
+          name: Keycloak
+          issuer: https://%(domain)s/auth/realms/spezistudyplatform
+          clientId: argocd
+          clientSecret: $ARGOCD_OIDC_CLIENT_SECRET
+          enablePKCEAuthentication: true
+          requestedScopes: ["openid", "profile", "email", "groups"]
+          requestedIDTokenClaims:
+            groups:
+              essential: true
+          cliClientId: argocd
+        ||| % { domain: config.domain },
         'policy.default': 'role:readonly',
         'policy.csv': std.join('\n', [
           'p, role:admin, applications, *, */*, allow',
