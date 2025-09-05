@@ -148,7 +148,7 @@ resource "keycloak_openid_client" "argocd_client" {
   name                = "ArgoCD"
   enabled             = true
 
-  access_type         = "CONFIDENTIAL"
+  access_type         = "PUBLIC"
   valid_redirect_uris = [
     "${var.frontend_url}/argo/auth/callback",
     "http://localhost:8085/auth/callback"
@@ -159,9 +159,6 @@ resource "keycloak_openid_client" "argocd_client" {
 
   direct_access_grants_enabled = false
   standard_flow_enabled        = true
-  client_secret                = random_password.argocd_client_secret.result
-  
-  depends_on = [random_password.argocd_client_secret]
 }
 
 # Create ArgoCD admin role
@@ -230,11 +227,6 @@ resource "random_password" "oauth2_proxy_client_secret" {
   override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
-resource "random_password" "argocd_client_secret" {
-  length           = 32
-  special          = true
-  override_special = "!#$%&*()-_=+[]{}<>:?"
-}
 
 resource "kubernetes_secret" "oauth2_proxy_secret_update" {
   metadata {
@@ -297,20 +289,4 @@ resource "kubernetes_job_v1" "vault_oauth2_proxy_secret_update" {
   depends_on = [kubernetes_secret.oauth2_proxy_secret_update]
 }
 
-resource "kubernetes_secret" "argocd_oidc_secret" {
-  metadata {
-    name      = "argocd-oidc-secret"
-    namespace = "argocd"
-  }
-
-  data = {
-    "oidc.keycloak.clientSecret" = random_password.argocd_client_secret.result
-  }
-
-  type = "Opaque"
-  
-  lifecycle {
-    ignore_changes = [data, metadata]
-  }
-}
 
