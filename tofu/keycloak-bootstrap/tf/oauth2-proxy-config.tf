@@ -180,18 +180,11 @@ resource "keycloak_user_roles" "testuser_argocd_roles" {
   ]
 }
 
-# Create groups scope for ArgoCD
-resource "keycloak_openid_client_scope" "argocd_groups_scope" {
-  realm_id    = keycloak_realm.realm.id
-  name        = "argocd_groups"
-  description = "Groups for ArgoCD"
-}
-
-# Add groups mapper for ArgoCD client
+# Add groups mapper to standard groups scope for ArgoCD
 resource "keycloak_openid_group_membership_protocol_mapper" "argocd_groups_mapper" {
   realm_id         = keycloak_realm.realm.id
-  client_scope_id  = keycloak_openid_client_scope.argocd_groups_scope.id
-  name             = "groups"
+  client_scope_id  = keycloak_openid_client_scope.groups_scope.id
+  name             = "argocd-groups"
 
   claim_name     = "groups"
   full_path      = false
@@ -200,11 +193,11 @@ resource "keycloak_openid_group_membership_protocol_mapper" "argocd_groups_mappe
   add_to_userinfo     = true
 }
 
-# Add roles mapper to ArgoCD groups scope
+# Add roles mapper to groups scope for ArgoCD
 resource "keycloak_openid_user_realm_role_protocol_mapper" "argocd_roles_mapper" {
   realm_id         = keycloak_realm.realm.id
-  client_scope_id  = keycloak_openid_client_scope.argocd_groups_scope.id
-  name             = "realm roles"
+  client_scope_id  = keycloak_openid_client_scope.groups_scope.id
+  name             = "argocd-realm-roles"
 
   claim_name                = "groups"
   multivalued               = true
@@ -218,7 +211,7 @@ resource "keycloak_openid_client_optional_scopes" "argocd_groups_scope" {
   realm_id  = keycloak_realm.realm.id
   client_id = keycloak_openid_client.argocd_client.id
   optional_scopes = [
-    keycloak_openid_client_scope.argocd_groups_scope.name,
+    keycloak_openid_client_scope.groups_scope.name,
   ]
 }
 

@@ -96,7 +96,7 @@
           'url': 'https://' + config.domain + '/argo',
           'oidc.config': |||
             name: Keycloak
-            issuer: https://%(domain)s/auth/realms/spezistudyplatform
+            issuer: http://keycloak.%(namespace)s.svc.cluster.local/auth/realms/spezistudyplatform
             clientId: argocd
             redirectURI: https://%(domain)s/argo/auth/callback
             enablePKCEAuthentication: true
@@ -105,7 +105,7 @@
               groups:
                 essential: true
             cliClientId: argocd
-          ||| % { domain: config.domain },
+          ||| % { domain: config.domain, namespace: config.namespace },
           'resource.customizations.ignoreResourceUpdates.ConfigMap': |||
             jqPathExpressions:
               - '.metadata.annotations."cluster-autoscaler.kubernetes.io/last-updated"'
