@@ -17,7 +17,7 @@ data "google_secret_manager_secret_version" "google_client_secret" {
 resource "keycloak_oidc_identity_provider" "google" {
   depends_on = [null_resource.google_oauth_client]
   
-  realm             = keycloak_realm.spezistudyplatform.id
+  realm             = keycloak_realm.realm.id
   alias             = "google"
   display_name      = "Google"
   provider_id       = "google"
@@ -61,7 +61,7 @@ resource "keycloak_oidc_identity_provider" "google" {
 
 # Identity Provider Mapper for email
 resource "keycloak_custom_identity_provider_mapper" "google_email_mapper" {
-  realm                    = keycloak_realm.spezistudyplatform.id
+  realm                    = keycloak_realm.realm.id
   name                     = "email-mapper"
   identity_provider_alias  = keycloak_oidc_identity_provider.google.alias
   identity_provider_mapper = "oidc-user-attribute-idp-mapper"
@@ -75,7 +75,7 @@ resource "keycloak_custom_identity_provider_mapper" "google_email_mapper" {
 
 # Identity Provider Mapper for first name
 resource "keycloak_custom_identity_provider_mapper" "google_first_name_mapper" {
-  realm                    = keycloak_realm.spezistudyplatform.id
+  realm                    = keycloak_realm.realm.id
   name                     = "first-name-mapper"
   identity_provider_alias  = keycloak_oidc_identity_provider.google.alias
   identity_provider_mapper = "oidc-user-attribute-idp-mapper"
@@ -89,7 +89,7 @@ resource "keycloak_custom_identity_provider_mapper" "google_first_name_mapper" {
 
 # Identity Provider Mapper for last name
 resource "keycloak_custom_identity_provider_mapper" "google_last_name_mapper" {
-  realm                    = keycloak_realm.spezistudyplatform.id
+  realm                    = keycloak_realm.realm.id
   name                     = "last-name-mapper"
   identity_provider_alias  = keycloak_oidc_identity_provider.google.alias
   identity_provider_mapper = "oidc-user-attribute-idp-mapper"
@@ -103,7 +103,7 @@ resource "keycloak_custom_identity_provider_mapper" "google_last_name_mapper" {
 
 # Identity Provider Mapper for username (use email as username)
 resource "keycloak_custom_identity_provider_mapper" "google_username_mapper" {
-  realm                    = keycloak_realm.spezistudyplatform.id
+  realm                    = keycloak_realm.realm.id
   name                     = "username-mapper"
   identity_provider_alias  = keycloak_oidc_identity_provider.google.alias
   identity_provider_mapper = "oidc-username-idp-mapper"
@@ -116,14 +116,14 @@ resource "keycloak_custom_identity_provider_mapper" "google_username_mapper" {
 
 # Automatically add new Google users to the authorized users group
 resource "keycloak_role" "spezistudyplatform_google_users" {
-  realm_id    = keycloak_realm.spezistudyplatform.id
+  realm_id    = keycloak_realm.realm.id
   name        = "spezistudyplatform-google-users"
   description = "Role for users who sign up via Google SSO"
 }
 
 # Add Google users to the authorized users group automatically
 resource "keycloak_custom_identity_provider_mapper" "google_group_mapper" {
-  realm                    = keycloak_realm.spezistudyplatform.id
+  realm                    = keycloak_realm.realm.id
   name                     = "google-users-group-mapper"
   identity_provider_alias  = keycloak_oidc_identity_provider.google.alias
   identity_provider_mapper = "oidc-role-idp-mapper"
