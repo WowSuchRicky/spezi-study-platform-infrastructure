@@ -14,7 +14,12 @@
           forwardAuth: {
             address: 'http://oauth2-proxy.' + config.namespace + '.svc.cluster.local/oauth2/auth?allowed_groups=ArgoCDAdmins',
             trustForwardHeader: true,
-            authResponseHeaders: [],
+            authResponseHeaders: [
+              'X-Forwarded-User',
+              'X-Forwarded-Email',
+              'X-Forwarded-Groups',
+              'X-Forwarded-Preferred-Username',
+            ],
             authRequestHeaders: [],
           },
         },
