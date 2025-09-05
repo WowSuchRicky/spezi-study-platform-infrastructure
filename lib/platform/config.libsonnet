@@ -1,4 +1,4 @@
-{
+function(staticIP='34.168.131.83') {
   // Base configuration that can be customized per environment
   base:: {
     namespace: 'spezistudyplatform',
@@ -26,27 +26,31 @@
     // Validation function to ensure required values are set
     assert self.domain != null : 'domain must be set in environment config',
     assert self.storageClass != null : 'storageClass must be set in environment config',
-    assert (self.mode == 'DEV' || self.caCrt != null) : 'caCrt must be set in production environment config',
+    // caCrt is optional for production when using trusted CAs like Let's Encrypt
   },
   
   // Production configuration
   prod:: self.base {
     domain: 'platform.spezi.stanford.edu',
-    loadBalancerIP: '34.168.131.83',
+    loadBalancerIP: staticIP,
     storageClass: 'standard-rwo',
     mode: 'PRODUCTION',
-    // TODO: Replace with actual production CA certificate
-    caCrt: |||
-      -----BEGIN CERTIFICATE-----
-      REPLACE_WITH_PRODUCTION_CA_CERTIFICATE
-      -----END CERTIFICATE-----
-    |||,
+    // Use system CA certificates for production (Let's Encrypt should be trusted by default)
+    caCrt: null,
+    externalSecrets+: {
+      enabled: true,
+      provider: 'vault',  // TODO: Switch to 'gcpsm' when ready to use GCP Secret Manager
+      // gcp: {
+      //   projectId: 'spezistudyplatform-dev', 
+      //   serviceAccountKeySecret: 'gcp-sa-key',
+      // },
+    },
   },
   
   // Local development configuration  
-  localDev:: self.base {
-    domain: 'spezi.172.20.117.44.nip.io',
-    loadBalancerIP: '172.20.117.44', // Match nip.io domain
+  localDev(ip=staticIP):: self.base {
+    domain: 'spezi.' + ip + '.nip.io',
+    loadBalancerIP: ip,
     storageClass: 'standard',
     mode: 'DEV',
     externalSecrets+: {

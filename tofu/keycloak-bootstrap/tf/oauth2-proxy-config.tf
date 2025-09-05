@@ -16,11 +16,14 @@ resource "keycloak_openid_client" "oauth2_proxy_client" {
 
   access_type         = "CONFIDENTIAL"
   valid_redirect_uris = [
-    "https://spezi.172.20.117.44.nip.io/oauth2/callback"
+    "${var.frontend_url}/oauth2/callback"
   ]
 
+  client_secret       = random_password.oauth2_proxy_client_secret.result
   direct_access_grants_enabled = false 
   standard_flow_enabled        = true
+  
+  depends_on = [random_password.oauth2_proxy_client_secret]
 }
 
 # Create groups client scope
@@ -113,8 +116,171 @@ resource "keycloak_user_roles" "testuser_roles" {
   user_id  = keycloak_user.testuser.id
   
   role_ids = [
-    keycloak_role.authorized_users.id
+    keycloak_role.authorized_users.id,
+    keycloak_role.argocd_admins.id
   ]
 }
 
 # Note: testuser2 intentionally does not get the authorized role
+
+resource "keycloak_user" "newadmin" {
+  realm_id = keycloak_realm.realm.id
+  username = "newadmin"
+  email    = "newadmin@example.com"
+  email_verified = true
+
+  first_name = "New"
+  last_name  = "Admin"
+
+  initial_password {
+    value     = "password"
+    temporary = false
+  }
+}
+
+
+
+# ArgoCD OIDC Client Configuration (supports both web UI and CLI)
+resource "keycloak_openid_client" "argocd_client" {
+  realm_id            = keycloak_realm.realm.id
+  client_id           = "argocd"
+
+  name                = "ArgoCD"
+  enabled             = true
+
+  access_type         = "PUBLIC"
+  valid_redirect_uris = [
+    "${var.frontend_url}/argo/auth/callback",
+    "${var.frontend_url}/argo/auth/login",
+    "http://localhost:8085/auth/callback"
+  ]
+
+  # Enable PKCE for CLI support
+  pkce_code_challenge_method = "S256"
+
+  direct_access_grants_enabled = false
+  standard_flow_enabled        = true
+}
+
+# Create ArgoCD admin role
+resource "keycloak_role" "argocd_admins" {
+  realm_id    = keycloak_realm.realm.id
+  name        = "ArgoCDAdmins"
+  description = "ArgoCD Administrators"
+}
+
+# Assign ArgoCD admin role to testuser
+resource "keycloak_user_roles" "testuser_argocd_roles" {
+  realm_id = keycloak_realm.realm.id
+  user_id  = keycloak_user.testuser.id
+  
+  role_ids = [
+    keycloak_role.authorized_users.id,
+    keycloak_role.argocd_admins.id
+  ]
+}
+
+# Add groups mapper to standard groups scope for ArgoCD
+resource "keycloak_openid_group_membership_protocol_mapper" "argocd_groups_mapper" {
+  realm_id         = keycloak_realm.realm.id
+  client_scope_id  = keycloak_openid_client_scope.groups_scope.id
+  name             = "argocd-groups"
+
+  claim_name     = "groups"
+  full_path      = false
+  add_to_id_token     = true
+  add_to_access_token = true
+  add_to_userinfo     = true
+}
+
+# Add roles mapper to groups scope for ArgoCD
+resource "keycloak_openid_user_realm_role_protocol_mapper" "argocd_roles_mapper" {
+  realm_id         = keycloak_realm.realm.id
+  client_scope_id  = keycloak_openid_client_scope.groups_scope.id
+  name             = "argocd-realm-roles"
+
+  claim_name                = "groups"
+  multivalued               = true
+  add_to_id_token          = true
+  add_to_access_token      = true
+  add_to_userinfo          = true
+}
+
+# Assign groups scope to ArgoCD client
+resource "keycloak_openid_client_optional_scopes" "argocd_groups_scope" {
+  realm_id  = keycloak_realm.realm.id
+  client_id = keycloak_openid_client.argocd_client.id
+  optional_scopes = [
+    keycloak_openid_client_scope.groups_scope.name,
+  ]
+}
+
+resource "random_password" "oauth2_proxy_client_secret" {
+  length           = 32
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}<>:?"
+}
+
+
+resource "kubernetes_secret" "oauth2_proxy_secret_update" {
+  metadata {
+    name      = "oauth2-proxy-secret-update"
+    namespace = "vault"
+  }
+
+  data = {
+    "client-secret" = random_password.oauth2_proxy_client_secret.result
+  }
+
+  type = "Opaque"
+  
+  depends_on = [random_password.oauth2_proxy_client_secret]
+}
+
+resource "kubernetes_job_v1" "vault_oauth2_proxy_secret_update" {
+  metadata {
+    name      = "vault-oauth2-proxy-secret-update"
+    namespace = "vault"
+  }
+  
+  spec {
+    template {
+      metadata {}
+      spec {
+        restart_policy = "Never"
+        container {
+          name  = "vault-update"
+          image = "hashicorp/vault:1.15"
+          command = [
+            "sh",
+            "-c",
+            "CLIENT_SECRET=$(cat /secret/client-secret) && vault kv put secret/oauth2-proxy-secret client-id=oauth2-proxy client-secret=$CLIENT_SECRET cookie-secret=local-dev-cookie-secret-32-chars"
+          ]
+          env {
+            name  = "VAULT_ADDR"
+            value = "http://vault.vault.svc.cluster.local:8200"
+          }
+          env {
+            name  = "VAULT_TOKEN"
+            value = "dev-only-token"
+          }
+          volume_mount {
+            name       = "secret-volume"
+            mount_path = "/secret"
+            read_only  = true
+          }
+        }
+        volume {
+          name = "secret-volume"
+          secret {
+            secret_name = kubernetes_secret.oauth2_proxy_secret_update.metadata[0].name
+          }
+        }
+      }
+    }
+  }
+  
+  depends_on = [kubernetes_secret.oauth2_proxy_secret_update]
+}
+
+

@@ -2,7 +2,7 @@
   local tanka = import '../../vendor/github.com/grafana/jsonnet-libs/tanka-util/main.libsonnet',
   local kustomize = tanka.kustomize.new(std.thisFile),
   withConfig(config)::
-    local cnpgManifests = kustomize.build('../../vendor/cloudnative-pg/');
+    local cnpgManifests = kustomize.build('../../kustomize/cloudnative-pg/');
     // Convert to array if it's an object, otherwise use as is
     local manifestArray = if std.isArray(cnpgManifests) then cnpgManifests else std.objectValues(cnpgManifests);
     local filtered = [
@@ -52,7 +52,7 @@
         spec: {
           refreshInterval: '15s',
           secretStoreRef: {
-            name: 'vault-backend',
+            name: if config.externalSecrets.provider == 'gcpsm' then 'gcpsm-secret-store' else 'vault-backend',
             kind: 'ClusterSecretStore',
           },
           target: {
@@ -91,9 +91,90 @@
           ],
         },
       },
+      // PushSecret for postgres password (only for GCP Secret Manager)
+      if config.externalSecrets.provider == 'gcpsm' then {
+        apiVersion: 'external-secrets.io/v1alpha1',
+        kind: 'PushSecret',
+        metadata: {
+          name: 'postgres-password-push-secret',
+          namespace: 'external-secrets-system',
+          annotations: {
+            'argocd.argoproj.io/compare-options': 'IgnoreExtraneous',
+          },
+        },
+        spec: {
+          updatePolicy: 'Replace',
+          refreshInterval: '24h',
+          secretStoreRefs: [
+            {
+              name: 'gcpsm-secret-store',
+              kind: 'ClusterSecretStore',
+            },
+          ],
+          selector: {
+            generatorRef: {
+              apiVersion: 'generators.external-secrets.io/v1alpha1',
+              kind: 'Password',
+              name: 'db-password-generator',
+            },
+          },
+          data: [
+            {
+              match: {
+                secretKey: 'password',
+                remoteRef: {
+                  remoteKey: 'spezistudyplatform-postgres-credentials',
+                  property: 'password',
+                },
+              },
+            },
+          ],
+        },
+      } else {},
+      // PushSecret for postgres username (static value, only for GCP Secret Manager)
+      if config.externalSecrets.provider == 'gcpsm' then {
+        apiVersion: 'external-secrets.io/v1alpha1',
+        kind: 'PushSecret',
+        metadata: {
+          name: 'postgres-username-push-secret',
+          namespace: 'external-secrets-system',
+          annotations: {
+            'argocd.argoproj.io/compare-options': 'IgnoreExtraneous',
+          },
+        },
+        spec: {
+          updatePolicy: 'Replace',
+          refreshInterval: '24h',
+          secretStoreRefs: [
+            {
+              name: 'gcpsm-secret-store',
+              kind: 'ClusterSecretStore',
+            },
+          ],
+          selector: {
+            generatorRef: {
+              apiVersion: 'generators.external-secrets.io/v1alpha1',
+              kind: 'Fake',
+              name: 'postgres-username-generator',
+            },
+          },
+          data: [
+            {
+              match: {
+                secretKey: 'username',
+                remoteRef: {
+                  remoteKey: 'spezistudyplatform-postgres-credentials',
+                  property: 'username',
+                },
+              },
+            },
+          ],
+        },
+      } else {},
     ];
     {
       [std.strReplace(resource.kind + '-' + resource.metadata.name, '/', '-')]: resource
       for resource in allManifests
+      if std.objectHas(resource, 'kind')
     },
 }

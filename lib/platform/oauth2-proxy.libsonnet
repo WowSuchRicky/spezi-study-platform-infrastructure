@@ -15,7 +15,7 @@
       spec: {
         refreshInterval: '15s',
         secretStoreRef: {
-          name: 'vault-backend',
+          name: if config.externalSecrets.provider == 'gcpsm' then 'gcpsm-secret-store' else 'vault-backend',
           kind: 'ClusterSecretStore',
         },
         target: {
@@ -58,6 +58,126 @@
     };
     {
       oauth2_proxy_secret: secretObject,
+      // PushSecret for oauth2-proxy client-secret (only for GCP Secret Manager)
+      oauth2_proxy_client_secret_push: if config.externalSecrets.provider == 'gcpsm' then {
+        apiVersion: 'external-secrets.io/v1alpha1',
+        kind: 'PushSecret',
+        metadata: {
+          name: 'oauth2-proxy-client-secret-push',
+          namespace: 'external-secrets-system',
+          annotations: {
+            'argocd.argoproj.io/compare-options': 'IgnoreExtraneous',
+          },
+        },
+        spec: {
+          updatePolicy: 'Replace',
+          refreshInterval: '24h',
+          secretStoreRefs: [
+            {
+              name: 'gcpsm-secret-store',
+              kind: 'ClusterSecretStore',
+            },
+          ],
+          selector: {
+            generatorRef: {
+              apiVersion: 'generators.external-secrets.io/v1alpha1',
+              kind: 'Password',
+              name: 'oauth-secret-generator',
+            },
+          },
+          data: [
+            {
+              match: {
+                secretKey: 'password',
+                remoteRef: {
+                  remoteKey: 'oauth2-proxy-secret',
+                  property: 'client-secret',
+                },
+              },
+            },
+          ],
+        },
+      } else {},
+      // PushSecret for oauth2-proxy cookie-secret (only for GCP Secret Manager)
+      oauth2_proxy_cookie_secret_push: if config.externalSecrets.provider == 'gcpsm' then {
+        apiVersion: 'external-secrets.io/v1alpha1',
+        kind: 'PushSecret',
+        metadata: {
+          name: 'oauth2-proxy-cookie-secret-push',
+          namespace: 'external-secrets-system',
+          annotations: {
+            'argocd.argoproj.io/compare-options': 'IgnoreExtraneous',
+          },
+        },
+        spec: {
+          updatePolicy: 'Replace',
+          refreshInterval: '24h',
+          secretStoreRefs: [
+            {
+              name: 'gcpsm-secret-store',
+              kind: 'ClusterSecretStore',
+            },
+          ],
+          selector: {
+            generatorRef: {
+              apiVersion: 'generators.external-secrets.io/v1alpha1',
+              kind: 'Password',
+              name: 'cookie-secret-generator',
+            },
+          },
+          data: [
+            {
+              match: {
+                secretKey: 'password',
+                remoteRef: {
+                  remoteKey: 'oauth2-proxy-secret',
+                  property: 'cookie-secret',
+                },
+              },
+            },
+          ],
+        },
+      } else {},
+      // PushSecret for oauth2-proxy client-id (static value, only for GCP Secret Manager)
+      oauth2_proxy_client_id_push: if config.externalSecrets.provider == 'gcpsm' then {
+        apiVersion: 'external-secrets.io/v1alpha1',
+        kind: 'PushSecret',
+        metadata: {
+          name: 'oauth2-proxy-client-id-push',
+          namespace: 'external-secrets-system',
+          annotations: {
+            'argocd.argoproj.io/compare-options': 'IgnoreExtraneous',
+          },
+        },
+        spec: {
+          updatePolicy: 'Replace',
+          refreshInterval: '24h',
+          secretStoreRefs: [
+            {
+              name: 'gcpsm-secret-store',
+              kind: 'ClusterSecretStore',
+            },
+          ],
+          selector: {
+            generatorRef: {
+              apiVersion: 'generators.external-secrets.io/v1alpha1',
+              kind: 'Fake',
+              name: 'oauth2-proxy-client-id-generator',
+            },
+          },
+          data: [
+            {
+              match: {
+                secretKey: 'client-id',
+                remoteRef: {
+                  remoteKey: 'oauth2-proxy-secret',
+                  property: 'client-id',
+                },
+              },
+            },
+          ],
+        },
+      } else {},
     } + (
       if config.mode == 'PRODUCTION' then {
         'oauth2-proxy-ca-secret': {
@@ -78,15 +198,25 @@
         namespace: config.namespace,
         values: {
           configuration: {
-            content: |||
-              provider = "keycloak-oidc"
-              oidc_issuer_url = "http://keycloak.%(namespace)s.svc.cluster.local/auth/realms/spezistudyplatform"
-              email_domains = ["*"]
-              upstreams = ["static://200"]
-              scope = "openid profile email groups"
-              redirect_url = "https://%(domain)s/oauth2/callback"
-              cookie_domains = ["%(domain)s"]
-            ||| % { domain: config.domain, namespace: config.namespace },
+            content: (
+              if config.mode == 'DEV' then |||
+                provider = "keycloak-oidc"
+                oidc_issuer_url = "http://keycloak.%(namespace)s.svc.cluster.local/auth/realms/spezistudyplatform"
+                email_domains = ["*"]
+                upstreams = ["static://200"]
+                scope = "openid profile email groups"
+                redirect_url = "https://%(domain)s/oauth2/callback"
+                cookie_domains = ["%(domain)s"]
+              ||| % { domain: config.domain, namespace: config.namespace } else |||
+                provider = "keycloak-oidc"
+                oidc_issuer_url = "https://%(domain)s/auth/realms/spezistudyplatform"
+                email_domains = ["*"]
+                upstreams = ["static://200"]
+                scope = "openid profile email groups"
+                redirect_url = "https://%(domain)s/oauth2/callback"
+                cookie_domains = ["%(domain)s"]
+              ||| % { domain: config.domain, namespace: config.namespace }
+            ),
             existingSecret: 'oauth2-proxy-secret',
           },
           ingress: {
@@ -101,28 +231,15 @@
             '--pass-authorization-header=true',
             '--set-xauthrequest=true',
             '--code-challenge-method=S256',
+            '--reverse-proxy=true',
           ] + (
             if config.mode == 'DEV' then
               ['--insecure-oidc-skip-issuer-verification=true']
             else
-              ['--provider-ca-file=/etc/ssl/certs/ca.crt']
+              []
           ),
-          extraVolumes: if config.mode == 'PRODUCTION' then [
-            {
-              name: 'ca-secret',
-              secret: {
-                secretName: 'oauth2-proxy-ca-secret',
-              },
-            },
-          ] else [],
-          extraVolumeMounts: if config.mode == 'PRODUCTION' then [
-            {
-              name: 'ca-secret',
-              mountPath: '/etc/ssl/certs/ca.crt',
-              subPath: 'ca.crt',
-              readOnly: true,
-            },
-          ] else [],
+          extraVolumes: [],
+          extraVolumeMounts: [],
           redis: {
             enabled: false,
           },

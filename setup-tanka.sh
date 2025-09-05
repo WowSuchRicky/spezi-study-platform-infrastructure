@@ -11,6 +11,10 @@ info() {
     echo "INFO: $1"
 }
 
+# Detect local IP for nip.io domain
+LOCAL_IP="${LOCAL_IP:-$("$SCRIPT_DIR/scripts/get-local-ip.sh")}"
+info "Detected local IP: $LOCAL_IP"
+
 trap 'cleanup' EXIT
 
 cleanup() {
@@ -41,7 +45,12 @@ info "KIND cluster is ready."
 # 2. Install Argo CD
 info "Installing Argo CD..."
 kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/v3.1.1/manifests/install.yaml
+
+# Apply custom ArgoCD configuration for resource ignoring
+info "Applying ArgoCD configuration for PushSecret ignore rules..."
+kubectl apply -f "$SCRIPT_DIR/config/argocd/argocd-cm-config.yaml"
+
 info "Giving resources a moment to be created..."
 sleep 5
 info "Waiting for Argo CD pods to be ready..."
@@ -76,6 +85,8 @@ spec:
         tlas:
         - name: gitBranch
           value: $(git rev-parse --abbrev-ref HEAD)
+        - name: localIP
+          value: $LOCAL_IP
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
