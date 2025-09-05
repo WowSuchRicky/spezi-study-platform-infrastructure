@@ -15,7 +15,7 @@ function(component=null) {
   },
   data:
     // Production environment configuration
-    local config = (import '../../lib/platform/config.libsonnet').prod;
+    local config = (import '../../lib/platform/config.libsonnet')().prod;
     local tanka = import '../../vendor/github.com/grafana/jsonnet-libs/tanka-util/main.libsonnet';
     local kustomize = tanka.kustomize.new(std.thisFile);
     local namespace = import '../../lib/platform/namespace.libsonnet';
@@ -26,6 +26,8 @@ function(component=null) {
     local frontend = import '../../lib/platform/frontend.libsonnet';
     local traefik = import '../../lib/platform/traefik.libsonnet';
     local auth = import '../../lib/platform/auth.libsonnet';
+    local externalSecrets = import '../../lib/platform/external-secrets.libsonnet';
+    local argocd = import '../../lib/platform/argocd.libsonnet';
     // Note: argocd-apps is not included here, it's used to generate the apps that point to this env.
 
     local components = {
@@ -33,11 +35,12 @@ function(component=null) {
       'cert-manager': certManager.withConfig(config),
       'cloudnative-pg-crds': cloudnativePgCrds.withConfig(config),
       'cloudnative-pg': cloudnativePg.withConfig(config),
-      'sealed-secrets': kustomize.build(path='sealed-secrets'),
+      'external-secrets': externalSecrets.withConfig(config),
       backend: backend.withConfig(config),
       frontend: frontend.withConfig(config),
       traefik: traefik.withConfig(config),
       auth: auth.withConfig(config),
+      argocd: argocd.withConfig(config),
     };
 
     if component != null then

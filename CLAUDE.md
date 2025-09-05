@@ -60,7 +60,10 @@ tk diff environments/local-dev
 ```bash
 # Initialize and apply Keycloak bootstrap (run from tofu/keycloak-bootstrap/tf/)
 tofu init
-tofu apply -var="keycloak_url=http://localhost:8081/auth" -var="keycloak_password=admin123!" -auto-approve
+
+# For production environment, first port-forward to Keycloak, then apply
+kubectl port-forward -n spezistudyplatform svc/keycloak 8081:80 &
+tofu apply -var="keycloak_url=http://localhost:8081/auth" -var="keycloak_password=admin123!" -var="frontend_url=https://platform.spezi.stanford.edu" -auto-approve
 ```
 
 ### Kubernetes Operations
@@ -113,3 +116,7 @@ Required tools:
 
 Optional:
 - `k9s` (brew install k9s) - recommended for cluster management
+
+## Code Style and Commit Guidelines
+
+**IMPORTANT**: When making commits, do NOT add any flashy elements, emojis, or specific attribution. Keep commit messages simple and professional.

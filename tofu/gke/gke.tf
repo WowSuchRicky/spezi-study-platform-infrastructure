@@ -10,12 +10,6 @@ variable "gke_num_nodes" {
   description = "number of gke nodes"
 }
 
-# GKE cluster
-data "google_container_engine_versions" "gke_version" {
-  location = var.zone
-  version_prefix = "1.31."
-}
-
 # Static IP address for GKE
 resource "google_compute_address" "ip_address" {
   name = "spezistudyplatform-dev-static-ip"
@@ -42,7 +36,6 @@ resource "google_container_node_pool" "primary_nodes" {
   location   = var.zone
   cluster    = google_container_cluster.primary.name
 
-  version = data.google_container_engine_versions.gke_version.release_channel_latest_version["REGULAR"]
   node_count = var.gke_num_nodes
 
   node_config {

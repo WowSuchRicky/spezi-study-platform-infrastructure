@@ -22,3 +22,9 @@ variable "keycloak_url" {
   default     = "https://platform.spezi.stanford.edu/auth"
 }
 
+variable "frontend_url" {
+  description = "Frontend URL for OAuth2 redirect URIs"
+  type        = string
+  default     = "https://spezi.172.20.117.44.nip.io"  # Default to local-dev
+}
+

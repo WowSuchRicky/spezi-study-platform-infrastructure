@@ -9,7 +9,9 @@
           service: {
             enabled: true,
             type: if std.get(config, 'mode', 'DEV') == 'DEV' then 'NodePort' else 'LoadBalancer',
-            externalIPs: if std.get(config, 'mode', 'DEV') == 'DEV' then null else [config.loadBalancerIP],
+            spec: if std.get(config, 'mode', 'DEV') == 'DEV' then {} else {
+              loadBalancerIP: config.loadBalancerIP,
+            },
           },
           logs: {
             general: {
@@ -162,7 +164,7 @@
           ],
           routes: [
             {
-              match: '(Host(`' + config.domain + '`) || Host(`spezi.127.0.0.1.nip.io`)) && PathPrefix(`/`)',
+              match: 'Host(`' + config.domain + '`) && (Path(`/`) || PathPrefix(`/app`) || PathPrefix(`/static`) || PathPrefix(`/assets`))',
               priority: 1,
               kind: 'Rule',
               services: [
@@ -177,7 +179,7 @@
               ],
             },
             {
-              match: '(Host(`' + config.domain + '`) || Host(`spezi.127.0.0.1.nip.io`)) && PathPrefix(`/backend`)',
+              match: 'Host(`' + config.domain + '`) && PathPrefix(`/backend`)',
               priority: 2,
               kind: 'Rule',
               services: [

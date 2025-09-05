@@ -1,5 +1,5 @@
 {
-  local app(name, wave, config, envPath, envPrefix) = {
+  local app(name, wave, config, envPath, envPrefix, ignoreDifferences=null) = {
     apiVersion: 'argoproj.io/v1alpha1',
     kind: 'Application',
     metadata: {
@@ -14,7 +14,7 @@
       source: {
         repoURL: 'https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git',
         path: envPath,
-        targetRevision: if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'main' else std.get(config, 'gitBranch', 'main'),
+        targetRevision: std.get(config, 'gitBranch', if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'main' else 'main'),
         plugin: {
           name: 'tanka',
           env: [
@@ -22,11 +22,20 @@
               name: 'COMPONENT',
               value: name,
             },
-          ],
+            {
+              name: 'ENVIRONMENT',
+              value: if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'default' else 'local-dev',
+            },
+          ] + (if std.get(config, 'localIP', null) != null then [
+            {
+              name: 'LOCAL_IP',
+              value: config.localIP,
+            },
+          ] else []),
         },
       },
       destination: {
-        server: if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'https://34.168.131.83' else 'https://kubernetes.default.svc',
+        server: 'https://kubernetes.default.svc',
         namespace: config.namespace,
       },
       syncPolicy: {
@@ -39,11 +48,14 @@
           'ServerSideApply=true',
         ],
       },
-    },
+    } + (if ignoreDifferences != null then { ignoreDifferences: ignoreDifferences } else {}),
   },
   withConfig(config)::
-    local envPath = if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'environments/default' else 'environments/local-dev';
+    local envPath = '.';
     local envPrefix = if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'prod' else 'local-dev';
+    // Note: PushSecrets removed - using Vault instead of GCP Secret Manager for now
+    // TODO: Re-add PushSecret ignore differences when switching back to GCP Secret Manager
+    local pushSecretIgnoreDifferences = [];
     std.objectValues({
       // Wave 0
       'namespace-app': app('namespace', 0, config, envPath, envPrefix),
@@ -74,7 +86,7 @@
             },
           },
           destination: {
-            server: if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'https://34.168.131.83' else 'https://kubernetes.default.svc',
+            server: 'https://kubernetes.default.svc',
             namespace: 'external-secrets-system',
           },
           syncPolicy: {
@@ -95,12 +107,13 @@
       'cert-manager-app': app('cert-manager', 1, config, envPath, envPrefix),
       'external-secrets-app': app('external-secrets', 1, config, envPath, envPrefix),
 
-      // Wave 2
-      'cnpg-app': app('cloudnative-pg', 2, config, envPath, envPrefix),
-      'auth-app': app('auth', 2, config, envPath, envPrefix),
+      // Wave 2 - Apps with PushSecrets ignore all PushSecret differences
+      'cnpg-app': app('cloudnative-pg', 2, config, envPath, envPrefix, pushSecretIgnoreDifferences),
+      'auth-app': app('auth', 2, config, envPath, envPrefix, pushSecretIgnoreDifferences),
 
-      // Wave 3
-      'backend-app': app('backend', 3, config, envPath, envPrefix),
-      'frontend-app': app('frontend', 3, config, envPath, envPrefix),
+      // Wave 3 - Apps with PushSecrets ignore all PushSecret differences  
+      'backend-app': app('backend', 3, config, envPath, envPrefix, pushSecretIgnoreDifferences),
+      'frontend-app': app('frontend', 3, config, envPath, envPrefix, pushSecretIgnoreDifferences),
+      'argocd-app': app('argocd', 3, config, envPath, envPrefix, pushSecretIgnoreDifferences),
     }),
 }

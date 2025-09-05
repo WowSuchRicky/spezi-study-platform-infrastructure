@@ -41,7 +41,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-  - match: Host(`platform.spezi.stanford.edu`) && PathPrefix(`/`)
+  - match: Host(`platform.spezi.stanford.edu`) && (Path(`/`) || PathPrefix(`/app`) || PathPrefix(`/static`) || PathPrefix(`/assets`))
     priority: 1
     kind: Rule
     services:
