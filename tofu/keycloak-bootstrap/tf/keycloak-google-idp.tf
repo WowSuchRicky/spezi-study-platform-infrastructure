@@ -37,7 +37,6 @@ resource "keycloak_oidc_identity_provider" "google" {
   authenticate_by_default     = false
   enabled                     = true
   trust_email                 = true
-  account_linking_only        = false
   link_only                   = false
   
   # Default scopes for Google
@@ -45,18 +44,7 @@ resource "keycloak_oidc_identity_provider" "google" {
   
   # Import existing user if email matches
   first_broker_login_flow_alias = "first broker login"
-  
-  extra_config = {
-    "syncMode" = "IMPORT"
-    "acceptsPromptNoneForwardFromClient" = "false"
-    "disableUserInfo" = "false"
-    "hideOnLoginPage" = "false"
-    "loginHint" = "false"
-    "uiLocales" = "false"
-    "userIp" = "false"
-    "validateSignature" = "true"
-    "useJwksUrl" = "true"
-  }
+  sync_mode = "IMPORT"
 }
 
 # Identity Provider Mapper for email
