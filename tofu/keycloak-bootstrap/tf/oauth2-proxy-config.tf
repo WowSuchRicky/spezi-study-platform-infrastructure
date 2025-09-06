@@ -287,4 +287,8 @@ resource "kubernetes_job_v1" "vault_oauth2_proxy_secret_update" {
   depends_on = [kubernetes_secret.oauth2_proxy_secret_update]
 }
 
-
+output "argocd_client_secret" {
+  description = "The client secret for the ArgoCD Keycloak client."
+  value       = keycloak_openid_client.argocd_client.client_secret
+  sensitive   = true
+}

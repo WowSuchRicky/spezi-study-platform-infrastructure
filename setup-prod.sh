@@ -114,6 +114,7 @@ REQUIRED_ROLES=(
     "roles/container.admin"
     "roles/compute.admin"
     "roles/iam.serviceAccountUser"
+    "roles/secretmanager.secretAccessor"
 )
 
 for role in "${REQUIRED_ROLES[@]}"; do

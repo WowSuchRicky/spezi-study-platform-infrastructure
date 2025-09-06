@@ -1,29 +1,14 @@
 # Keycloak Google Identity Provider Configuration
 
-# Data sources to read Google OAuth credentials from Secret Manager
-data "google_secret_manager_secret_version" "google_client_id" {
-  depends_on = [null_resource.google_oauth_client]
-  project    = var.gcp_project_id
-  secret     = "keycloak-google-client-id"
-}
-
-data "google_secret_manager_secret_version" "google_client_secret" {
-  depends_on = [null_resource.google_oauth_client]
-  project    = var.gcp_project_id
-  secret     = "keycloak-google-client-secret"
-}
-
 # Google Identity Provider for Keycloak
 resource "keycloak_oidc_identity_provider" "google" {
-  depends_on = [null_resource.google_oauth_client]
-  
   realm             = keycloak_realm.realm.id
   alias             = "google"
   display_name      = "Google"
   provider_id       = "google"
   
-  client_id         = data.google_secret_manager_secret_version.google_client_id.secret_data
-  client_secret     = data.google_secret_manager_secret_version.google_client_secret.secret_data
+  client_id         = data.google_secret_manager_secret_version.google_sso_client_id.secret_data
+  client_secret     = data.google_secret_manager_secret_version.google_sso_client_secret.secret_data
   
   authorization_url = "https://accounts.google.com/oauth2/v2/auth"
   token_url         = "https://oauth2.googleapis.com/token"
