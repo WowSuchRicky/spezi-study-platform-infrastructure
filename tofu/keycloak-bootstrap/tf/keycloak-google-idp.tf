@@ -87,22 +87,19 @@ resource "keycloak_custom_identity_provider_mapper" "google_username_mapper" {
   }
 }
 
-# Automatically add new Google users to the authorized users group
-resource "keycloak_role" "spezistudyplatform_google_users" {
-  realm_id    = keycloak_realm.realm.id
-  name        = "spezistudyplatform-google-users"
-  description = "Role for users who sign up via Google SSO"
-}
-
-# Add Google users to the authorized users group automatically
-resource "keycloak_custom_identity_provider_mapper" "google_group_mapper" {
+# Identity Provider Mapper for email_verified (maps provider claim into Keycloak user.emailVerified)
+resource "keycloak_custom_identity_provider_mapper" "google_email_verified_mapper" {
   realm                    = keycloak_realm.realm.id
-  name                     = "google-users-group-mapper"
+  name                     = "email-verified-mapper"
   identity_provider_alias  = keycloak_oidc_identity_provider.google.alias
-  identity_provider_mapper = "oidc-role-idp-mapper"
-  
+  identity_provider_mapper = "oidc-user-attribute-idp-mapper"
+
   extra_config = {
     "syncMode" = "INHERIT"
-    "role" = keycloak_role.spezistudyplatform_google_users.name
+    # Map the OIDC claim 'email_verified' from Google into the Keycloak user property
+    "user.attribute" = "emailVerified"
+    "claim" = "email_verified"
   }
 }
+
+
