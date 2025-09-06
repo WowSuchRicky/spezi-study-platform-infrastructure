@@ -10,8 +10,9 @@
 #    - Navigate to "APIs & Services" > "Credentials".
 #    - Click "+ CREATE CREDENTIALS" > "OAuth client ID".
 #    - Select "Web application" as the type.
-#    - Add the Keycloak redirect URI under "Authorized redirect URIs":
-#      https://<your-keycloak-domain>/auth/realms/<your-realm>/broker/google/endpoint
+#    - Add the following under "Authorized redirect URIs":
+#      - For Production: https://platform.spezi.stanford.edu/auth/realms/spezistudyplatform/broker/google/endpoint
+#      - For Local Dev: http://localhost:8081/auth/realms/spezistudyplatform/broker/google/endpoint
 #    - Click "Create" and copy the "Client ID" and "Client Secret".
 #
 # 2. Store the Credentials in Secret Manager:
