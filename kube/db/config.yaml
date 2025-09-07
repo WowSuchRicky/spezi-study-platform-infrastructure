@@ -1,9 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: spezistudyplatform-db-bootstrap-config
-  namespace: spezistudyplatform
-data:
-  database: spezistudyplatform
-  owner: spezistudyplatform
-  secret-name: spezistudyplatform-db-password
