@@ -99,7 +99,7 @@
             issuer: https://%(domain)s/auth/realms/spezistudyplatform
             clientId: argocd
             redirectURI: https://%(domain)s/argo/auth/callback
-            enablePKCEAuthentication: false
+            enablePKCEAuthentication: true
             insecure: true
             requestedScopes: ["openid", "profile", "email", "groups"]
             requestedIDTokenClaims:
