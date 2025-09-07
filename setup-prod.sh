@@ -67,6 +67,9 @@ gcloud config set project "$GCP_PROJECT_ID"
 # Enable required APIs
 info "Enabling required GCP APIs..."
 gcloud services enable secretmanager.googleapis.com --project="$GCP_PROJECT_ID"
+gcloud services enable iamcredentials.googleapis.com --project="$GCP_PROJECT_ID"
+gcloud services enable cloudresourcemanager.googleapis.com --project="$GCP_PROJECT_ID"
+gcloud services enable iap.googleapis.com --project="$GCP_PROJECT_ID"
 
 # Create or verify service account key
 SERVICE_ACCOUNT_EMAIL="spezistudyplatform-dev-svc@${GCP_PROJECT_ID}.iam.gserviceaccount.com"
@@ -111,6 +114,7 @@ REQUIRED_ROLES=(
     "roles/container.admin"
     "roles/compute.admin"
     "roles/iam.serviceAccountUser"
+    "roles/secretmanager.secretAccessor"
 )
 
 for role in "${REQUIRED_ROLES[@]}"; do
@@ -176,7 +180,6 @@ info "Argo CD is ready."
 info "Installing Tanka Config Management Plugin..."
 kubectl apply -f "$SCRIPT_DIR/config/argocd/argocd-tanka-cmp-configmap.yaml"
 kubectl patch deployment argocd-repo-server -n argocd --patch-file "$SCRIPT_DIR/config/argocd/repo-server-patch.yaml"
-kubectl patch deployment argocd-server -n argocd --patch-file "$SCRIPT_DIR/kube/argocd/argocd-server-patch.yaml"
 
 info "Waiting for ArgoCD repo server to restart with Tanka plugin..."
 kubectl rollout status deployment argocd-repo-server -n argocd
@@ -413,6 +416,7 @@ $TERRAFORM_CMD apply \
     -var="keycloak_url=http://localhost:8081/auth" \
     -var="keycloak_password=admin123!" \
     -var="frontend_url=https://$PRODUCTION_DOMAIN" \
+    -var="gcp_project_id=$GCP_PROJECT_ID" \
     -auto-approve
 
 info "Keycloak bootstrap completed successfully!"
@@ -424,6 +428,11 @@ echo "$ARGOCD_CLIENT_SECRET" | gcloud secrets create keycloak-argocd-client --da
     echo "$ARGOCD_CLIENT_SECRET" | gcloud secrets versions add keycloak-argocd-client --data-file=- --project="$GCP_PROJECT_ID"
 info "ArgoCD client secret stored in GCP Secret Manager."
 
+# Get Google OAuth client ID for display (created automatically by Terraform)
+info "Google OAuth client will be created automatically by Terraform..."
+GOOGLE_CLIENT_ID=$($TERRAFORM_CMD output -raw google_oauth_client_id 2>/dev/null || echo "will-be-created-by-terraform")
+info "Google OAuth credentials are automatically stored in GCP Secret Manager."
+
 cd "$SCRIPT_DIR"
 
 # --- 9. Final setup message ---
@@ -434,6 +443,12 @@ info ""
 info "=== Access Information ==="
 info "Production URL: https://$PRODUCTION_DOMAIN"
 info "Static IP configured: $STATIC_IP"
+info ""
+info "=== Google SSO Information ==="
+info "Google SSO has been configured in Keycloak!"
+info "Users can now sign in with their Google accounts at: https://$PRODUCTION_DOMAIN/auth"
+info "Google OAuth Client ID: $GOOGLE_CLIENT_ID"
+info "OAuth credentials have been stored in GCP Secret Manager"
 info ""
 info "To access the ArgoCD UI:"
 echo "ArgoCD Admin Password:"

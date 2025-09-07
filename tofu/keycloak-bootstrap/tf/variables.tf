@@ -28,3 +28,21 @@ variable "frontend_url" {
   default     = "https://spezi.172.20.117.44.nip.io"  # Default to local-dev
 }
 
+variable "gcp_project_id" {
+  description = "GCP project ID for OAuth client creation"
+  type        = string
+}
+
+variable "google_oauth_client_id" {
+  description = "Google OAuth client ID"
+  type        = string
+  default     = ""
+}
+
+variable "google_oauth_client_secret" {
+  description = "Google OAuth client secret"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+

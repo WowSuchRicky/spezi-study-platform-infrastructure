@@ -3,6 +3,10 @@ resource "keycloak_realm" "realm" {
   enabled = true
   # Note: frontend_url configuration needs to be set at Keycloak server level
   # through KEYCLOAK_FRONTEND_URL environment variable
+  
+  # Set SSO session timeout to 24 hours (86400 seconds)
+  sso_session_idle_timeout = "24h"
+  sso_session_max_lifespan = "24h"
 }
 
 
@@ -283,4 +287,8 @@ resource "kubernetes_job_v1" "vault_oauth2_proxy_secret_update" {
   depends_on = [kubernetes_secret.oauth2_proxy_secret_update]
 }
 
-
+output "argocd_client_secret" {
+  description = "The client secret for the ArgoCD Keycloak client."
+  value       = keycloak_openid_client.argocd_client.client_secret
+  sensitive   = true
+}
