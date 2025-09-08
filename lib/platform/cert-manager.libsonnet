@@ -75,7 +75,6 @@
             },
             dnsNames: [
               config.domain,
-              'study.muci.sh',
             ],
           },
         },

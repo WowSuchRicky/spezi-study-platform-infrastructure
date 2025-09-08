@@ -18,6 +18,8 @@
     # TODO: decide if we really need this every time.
     force_init: true
   register: tf_apply_result
+  environment:
+    GOOGLE_APPLICATION_CREDENTIALS: "{{ gcp_credentials_file }}"
 
 - name: Set Terraform output as Ansible facts
   set_fact:
