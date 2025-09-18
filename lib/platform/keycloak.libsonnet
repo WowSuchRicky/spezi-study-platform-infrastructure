@@ -7,6 +7,10 @@
         namespace: config.namespace,
         version: '25.1.1',
         values: {
+          image+: {
+            registry: 'docker.io',
+            repository: 'bitnamilegacy/keycloak',
+          },
           extraEnvVars: [
             {
               name: 'KC_HTTP_RELATIVE_PATH',
@@ -66,6 +70,10 @@
             adminPassword: 'admin123!',
           },
           postgresql: {
+            image+: {
+              registry: 'docker.io',
+              repository: 'bitnamilegacy/postgresql',
+            },
             auth: {
               postgresPassword: 'postgres123!',
               password: 'keycloak123!',

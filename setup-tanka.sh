@@ -28,17 +28,24 @@ then
 
 
 # 1. Create KIND cluster
-info "Creating KIND cluster '$KIND_CLUSTER_NAME'ப்பான"
+info "Ensuring KIND cluster '$KIND_CLUSTER_NAME' is available"
 if ! command -v kind &> /dev/null;
 then
     info "kind is not installed. Please install it first."
     exit 1
 fi
-if ! kind get clusters | grep -q "$KIND_CLUSTER_NAME";
+if kind get clusters | grep -Fxq "$KIND_CLUSTER_NAME";
 then
-  kind create cluster --name "$KIND_CLUSTER_NAME" --config="$SCRIPT_DIR/local-dev/kind-config.yaml"
+    if kubectl cluster-info --context "kind-$KIND_CLUSTER_NAME" >/dev/null 2>&1;
+    then
+        info "KIND cluster '$KIND_CLUSTER_NAME' already exists and is reachable."
+    else
+        info "Stale KIND cluster '$KIND_CLUSTER_NAME' detected. Recreating..."
+        kind delete cluster --name "$KIND_CLUSTER_NAME" || true
+        kind create cluster --name "$KIND_CLUSTER_NAME" --config="$SCRIPT_DIR/local-dev/kind-config.yaml"
+    fi
 else
-  info "KIND cluster '$KIND_CLUSTER_NAME' already exists."
+    kind create cluster --name "$KIND_CLUSTER_NAME" --config="$SCRIPT_DIR/local-dev/kind-config.yaml"
 fi
 info "KIND cluster is ready."
 

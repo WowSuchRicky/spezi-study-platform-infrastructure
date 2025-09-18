@@ -197,6 +197,10 @@
       oauth2_proxy: helm.template('oauth2-proxy', '../../charts/oauth2-proxy', {
         namespace: config.namespace,
         values: {
+          image+: {
+            registry: 'docker.io',
+            repository: 'bitnamilegacy/oauth2-proxy',
+          },
           configuration: {
             content: (
               if config.mode == 'DEV' then |||
