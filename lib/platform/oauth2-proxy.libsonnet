@@ -197,6 +197,11 @@
       oauth2_proxy: helm.template('oauth2-proxy', '../../charts/oauth2-proxy', {
         namespace: config.namespace,
         values: {
+          global+: {
+            security+: {
+              allowInsecureImages: true,
+            },
+          },
           image+: {
             registry: 'docker.io',
             repository: 'bitnamilegacy/oauth2-proxy',

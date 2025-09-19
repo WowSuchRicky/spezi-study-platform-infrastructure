@@ -7,6 +7,11 @@
         namespace: config.namespace,
         version: '25.1.1',
         values: {
+          global+: {
+            security+: {
+              allowInsecureImages: true,
+            },
+          },
           image+: {
             registry: 'docker.io',
             repository: 'bitnamilegacy/keycloak',
@@ -70,6 +75,11 @@
             adminPassword: 'admin123!',
           },
           postgresql: {
+            global+: {
+              security+: {
+                allowInsecureImages: true,
+              },
+            },
             image+: {
               registry: 'docker.io',
               repository: 'bitnamilegacy/postgresql',
