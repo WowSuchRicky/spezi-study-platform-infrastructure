@@ -114,6 +114,7 @@
         // come back and clean this up eventually. It's not harmful, just ugly!
         data: {
           'url': 'https://' + config.domain + '/argo',
+        } + (if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then {
           'oidc.config': |||
             name: Keycloak
             issuer: https://%(domain)s/auth/realms/spezistudyplatform
@@ -127,6 +128,7 @@
                 essential: true
             cliClientId: argocd
           ||| % { domain: config.domain },
+        } else {} ) + {
           'resource.customizations.ignoreResourceUpdates.ConfigMap': |||
             jqPathExpressions:
               - '.metadata.annotations."cluster-autoscaler.kubernetes.io/last-updated"'
