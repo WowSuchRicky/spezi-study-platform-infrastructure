@@ -27,6 +27,26 @@
 
       // oauth2-errors middleware already exists from traefik component
 
+      argocd_tls_certificate: {
+        apiVersion: 'cert-manager.io/v1',
+        kind: 'Certificate',
+        metadata: {
+          name: 'argocd-main-tls-cert',
+          namespace: 'argocd',
+        },
+        spec: {
+          commonName: config.domain,
+          secretName: 'spezistudyplatform-main-tls-secret',
+          issuerRef: {
+            name: if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'letsencrypt-prod' else 'selfsigned-issuer',
+            kind: 'ClusterIssuer',
+          },
+          dnsNames: [
+            config.domain,
+          ] + (if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then [] else ['spezi.127.0.0.1.nip.io']),
+        },
+      },
+
       argocd_ingress_route: {
         apiVersion: 'traefik.io/v1alpha1',
         kind: 'IngressRoute',
@@ -34,7 +54,7 @@
           name: 'argocd-ingress',
           namespace: 'argocd',
           annotations: {
-            'cert-manager.io/cluster-issuer': 'letsencrypt-prod',
+            'cert-manager.io/cluster-issuer': if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'letsencrypt-prod' else 'selfsigned-issuer',
           },
         },
         spec: {

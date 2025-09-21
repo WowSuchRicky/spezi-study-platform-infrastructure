@@ -211,6 +211,11 @@
               if config.mode == 'DEV' then |||
                 provider = "keycloak-oidc"
                 oidc_issuer_url = "http://keycloak.%(namespace)s.svc.cluster.local/auth/realms/spezistudyplatform"
+                login_url = "https://%(domain)s/auth/realms/spezistudyplatform/protocol/openid-connect/auth"
+                redeem_url = "http://keycloak.%(namespace)s.svc.cluster.local/auth/realms/spezistudyplatform/protocol/openid-connect/token"
+                oidc_jwks_url = "http://keycloak.%(namespace)s.svc.cluster.local/auth/realms/spezistudyplatform/protocol/openid-connect/certs"
+                profile_url = "http://keycloak.%(namespace)s.svc.cluster.local/auth/realms/spezistudyplatform/protocol/openid-connect/userinfo"
+                validate_url = "http://keycloak.%(namespace)s.svc.cluster.local/auth/realms/spezistudyplatform/protocol/openid-connect/userinfo"
                 email_domains = ["*"]
                 upstreams = ["static://200"]
                 scope = "openid profile email groups"
