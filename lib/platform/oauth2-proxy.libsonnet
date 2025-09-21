@@ -211,6 +211,7 @@
               if config.mode == 'DEV' then |||
                 provider = "keycloak-oidc"
                 oidc_issuer_url = "http://keycloak.%(namespace)s.svc.cluster.local/auth/realms/spezistudyplatform"
+                skip_oidc_discovery = true
                 login_url = "https://%(domain)s/auth/realms/spezistudyplatform/protocol/openid-connect/auth"
                 redeem_url = "http://keycloak.%(namespace)s.svc.cluster.local/auth/realms/spezistudyplatform/protocol/openid-connect/token"
                 oidc_jwks_url = "http://keycloak.%(namespace)s.svc.cluster.local/auth/realms/spezistudyplatform/protocol/openid-connect/certs"
