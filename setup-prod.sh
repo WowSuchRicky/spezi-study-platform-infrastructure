@@ -8,6 +8,10 @@ GCP_PROJECT_ID="spezistudyplatform-dev"
 GCP_ZONE="us-west1-c"
 PRODUCTION_DOMAIN="platform.spezi.stanford.edu"
 STATIC_IP="34.168.131.83"
+KEYCLOAK_REALM="spezistudyplatform"
+KEYCLOAK_BASE_URL="http://localhost:8081/auth"
+KEYCLOAK_ADMIN_USERNAME="${KEYCLOAK_ADMIN_USERNAME:-admin}"
+KEYCLOAK_ADMIN_PASSWORD="${KEYCLOAK_ADMIN_PASSWORD:-admin123!}"
 
 # Get the directory of this script
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
@@ -31,6 +35,46 @@ cleanup() {
     fi
 }
 
+fetch_keycloak_client_secret() {
+    local base_url="$1"
+    local realm="$2"
+    local admin_user="$3"
+    local admin_password="$4"
+    local client_id="$5"
+
+    local token
+    token=$(curl -s -X POST "${base_url%/}/realms/master/protocol/openid-connect/token" \
+        -H "Content-Type: application/x-www-form-urlencoded" \
+        -d "client_id=admin-cli" \
+        -d "username=$admin_user" \
+        -d "password=$admin_password" \
+        -d "grant_type=password" | python3 -c 'import json, sys; data=json.load(sys.stdin); print(data.get("access_token", ""))')
+
+    if [ -z "$token" ]; then
+        error "Failed to authenticate with Keycloak admin API to retrieve client secret."
+    fi
+
+    local client_uuid
+    client_uuid=$(curl -s -H "Authorization: Bearer $token" \
+        "${base_url%/}/admin/realms/$realm/clients?clientId=$client_id" | \
+        python3 -c 'import json, sys; data=json.load(sys.stdin); print(data[0]["id"] if data else "")')
+
+    if [ -z "$client_uuid" ]; then
+        error "Unable to locate client '$client_id' in realm '$realm'."
+    fi
+
+    local secret
+    secret=$(curl -s -H "Authorization: Bearer $token" \
+        "${base_url%/}/admin/realms/$realm/clients/$client_uuid/client-secret" | \
+        python3 -c 'import json, sys; data=json.load(sys.stdin); print(data.get("value", ""))')
+
+    if [ -z "$secret" ]; then
+        error "Keycloak did not return a client secret for '$client_id'."
+    fi
+
+    echo "$secret"
+}
+
 # --- Prerequisites Check ---
 info "Checking prerequisites..."
 
@@ -49,6 +93,10 @@ fi
 
 if ! command -v tofu &> /dev/null && ! command -v terraform &> /dev/null; then
     error "tofu or terraform is not installed. Please install one of them first."
+fi
+
+if ! command -v python3 &> /dev/null; then
+    error "python3 is required for parsing Keycloak API responses."
 fi
 
 # --- 1. GCP Authentication & Setup ---
@@ -390,7 +438,7 @@ info "Waiting for Keycloak to be fully ready..."
 max_attempts=30
 attempt=0
 while [ $attempt -lt $max_attempts ]; do
-    if curl --output /dev/null --silent --head --fail http://localhost:8081/auth/; then
+    if curl --output /dev/null --silent --head --fail "$KEYCLOAK_BASE_URL/"; then
         info "Keycloak is ready!"
         break
     fi
@@ -413,8 +461,8 @@ fi
 info "Running Keycloak bootstrap with $TERRAFORM_CMD for production..."
 $TERRAFORM_CMD init
 $TERRAFORM_CMD apply \
-    -var="keycloak_url=http://localhost:8081/auth" \
-    -var="keycloak_password=admin123!" \
+    -var="keycloak_url=$KEYCLOAK_BASE_URL" \
+    -var="keycloak_password=$KEYCLOAK_ADMIN_PASSWORD" \
     -var="frontend_url=https://$PRODUCTION_DOMAIN" \
     -var="gcp_project_id=$GCP_PROJECT_ID" \
     -auto-approve
@@ -423,14 +471,15 @@ info "Keycloak bootstrap completed successfully!"
 
 # Store ArgoCD client secret in GCP Secret Manager
 info "Storing ArgoCD client secret in GCP Secret Manager..."
-ARGOCD_CLIENT_SECRET=$($TERRAFORM_CMD output -raw argocd_client_secret)
+ARGOCD_CLIENT_SECRET=$(fetch_keycloak_client_secret "$KEYCLOAK_BASE_URL" "$KEYCLOAK_REALM" "$KEYCLOAK_ADMIN_USERNAME" "$KEYCLOAK_ADMIN_PASSWORD" "argocd")
+
 echo "$ARGOCD_CLIENT_SECRET" | gcloud secrets create keycloak-argocd-client --data-file=- --project="$GCP_PROJECT_ID" || \
     echo "$ARGOCD_CLIENT_SECRET" | gcloud secrets versions add keycloak-argocd-client --data-file=- --project="$GCP_PROJECT_ID"
 info "ArgoCD client secret stored in GCP Secret Manager."
 
 # Get Google OAuth client ID for display (created automatically by Terraform)
 info "Google OAuth client will be created automatically by Terraform..."
-GOOGLE_CLIENT_ID=$($TERRAFORM_CMD output -raw google_oauth_client_id 2>/dev/null || echo "will-be-created-by-terraform")
+GOOGLE_CLIENT_ID=$(gcloud secrets versions access latest --secret=keycloak-google-sso-client-id --project="$GCP_PROJECT_ID" 2>/dev/null || echo "stored-in-secret-manager")
 info "Google OAuth credentials are automatically stored in GCP Secret Manager."
 
 cd "$SCRIPT_DIR"

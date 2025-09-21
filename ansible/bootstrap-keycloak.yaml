@@ -6,6 +6,7 @@
   vars:
     # Use local-dev version when LOCAL_DEV_MODE is set, otherwise use source version
     keycloak_tofu_directory: "{{ './tofu/keycloak-bootstrap/tf' if ansible_env.LOCAL_DEV_MODE is not defined else './tofu/keycloak-bootstrap/tf' }}"
+    kind_cluster_name: "{{ ansible_env.KIND_CLUSTER_NAME | default('spezi-study-platform', true) }}"
 
     # These two fields should match what is in kubernetes, as this playbook will retrieve it from there
     keycloak_secret_name: "keycloak"
@@ -76,68 +77,171 @@
       no_log: true # Keep this step quiet too
 
     # --- Detect Environment ---
-    - name: Get local machine IP for local development
+    - name: Detect local machine IP (shared helper script)
       ansible.builtin.shell: |
-        ifconfig | grep "inet " | grep -v 127.0.0.1 | head -1 | awk '{print $2}'
+        bash "{{ playbook_dir }}/../scripts/get-local-ip.sh"
       register: local_ip_result
+      changed_when: false
       failed_when: false
+
+    - name: Normalise detected IP output
+      ansible.builtin.set_fact:
+        detected_local_ip: "{{ local_ip_result.stdout | default('') | trim }}"
 
     - name: Set keycloak domain for local development
       ansible.builtin.set_fact:
-        keycloak_domain: "{{ local_ip_result.stdout }}.nip.io"
-      when: local_ip_result.stdout is defined and local_ip_result.stdout != ""
+        keycloak_domain: "{{ detected_local_ip }}.nip.io"
+      when: detected_local_ip | length > 0 and detected_local_ip != '127.0.0.1'
 
-    - name: Set default domain if KIND container not found
+    - name: Set default domain when local IP detection failed
       ansible.builtin.set_fact:
-        keycloak_domain: "platform.spezi.stanford.edu"
+        keycloak_domain: "{{ spezi_service_fqdn | default('platform.spezi.stanford.edu') }}"
       when: keycloak_domain is not defined
 
     - name: Debug detected domain
       ansible.builtin.debug:
         msg: "Detected keycloak_domain: {{ keycloak_domain | default('NOT SET') }}"
 
-    - name: Set Keycloak URL based on detected domain
+    - name: Set frontend URL based on detected domain
+      ansible.builtin.set_fact:
+        frontend_url: "https://spezi.{{ keycloak_domain }}"
+
+    - name: Set Keycloak URL for local dev via port-forward
+      when: keycloak_domain is search("nip.io")
+      ansible.builtin.set_fact:
+        keycloak_url: "http://127.0.0.1:8081/auth"
+
+    - name: Set Keycloak URL for non-local environments
+      when: keycloak_domain is not search("nip.io")
       ansible.builtin.set_fact:
         keycloak_url: "https://{{ keycloak_domain }}/auth"
 
-    - name: Debug final Keycloak URL
+    - name: Debug final Keycloak and frontend URLs
       ansible.builtin.debug:
-        msg: "Using keycloak_url: {{ keycloak_url }}"
+        msg:
+          - "Using keycloak_url: {{ keycloak_url }}"
+          - "Using frontend_url: {{ frontend_url | default('NOT SET') }}"
 
     # --- Run OpenTofu ---
-    - name: Run OpenTofu init in {{ keycloak_tofu_dir }}
+    - name: Execute OpenTofu configuration
       when: tofu_dir_stat.stat.exists and tofu_dir_stat.stat.isdir and tf_files_check.matched > 0
-      ansible.builtin.command: "tofu init -reconfigure"
-      args:
-        chdir: "{{ keycloak_tofu_dir }}"
-      changed_when: "'OpenTofu has been successfully initialized!' in init_result.stdout or 'successfully initialized!' in init_result.stdout" # Adjusted for Tofu output
-      register: init_result
+      block:
+        - name: Determine kubeconfig source path
+          ansible.builtin.set_fact:
+            source_kubeconfig_path: "{{ ansible_env.KUBECONFIG | default('~/.kube/config', true) }}"
 
-    - name: Run OpenTofu apply in {{ keycloak_tofu_dir }}
-      when: tofu_dir_stat.stat.exists and tofu_dir_stat.stat.isdir and tf_files_check.matched > 0
-      ansible.builtin.command: "tofu apply -auto-approve"
-      args:
-        chdir: "{{ keycloak_tofu_dir }}"
-      # Pass the pre-built dictionary containing the env var to the command
-      environment: 
-        TF_VAR_keycloak_client_id: "admin-cli"
-        TF_VAR_keycloak_username: "user"
-        TF_VAR_keycloak_password: "{{ keycloak_admin_password }}"
-        TF_VAR_keycloak_url: "{{ keycloak_url }}"
-      changed_when: "'Apply complete!' in apply_result.stdout"
-      register: apply_result # Register the result correctly
-      # Temporarily disable no_log to see the error
-      # no_log: true # Prevent environment variables (incl. password) from being logged
+        - name: Attempt to retrieve Kind kubeconfig
+          ansible.builtin.command: "kind get kubeconfig --name {{ kind_cluster_name }}"
+          register: kind_kubeconfig_result
+          changed_when: false
+          failed_when: false
 
-    # --- Display Tofu Apply output, for sanity ---
-    - name: Display Tofu Apply Standard Output
-      ansible.builtin.debug:
-        # Use 'msg' to print multiline stdout nicely
-        msg: "{{ apply_result.stdout.splitlines() }}"
-      when: apply_result.stdout is defined and apply_result.stdout | length > 0
+        - name: Use Kind kubeconfig when available
+          when: kind_kubeconfig_result.rc == 0 and kind_kubeconfig_result.stdout != ""
+          block:
+            - name: Create temporary Kind kubeconfig file
+              ansible.builtin.tempfile:
+                state: file
+                suffix: "-kind-kubeconfig"
+              register: tofu_kind_kubeconfig_file
 
-    - name: Display Tofu Apply Standard Error (if any)
-      ansible.builtin.debug:
-        # Use 'msg' to print multiline stderr nicely
-        msg: "{{ apply_result.stderr.splitlines() }}"
-      when: apply_result.stderr is defined and apply_result.stderr | length > 0
+            - name: Write Kind kubeconfig file
+              ansible.builtin.copy:
+                dest: "{{ tofu_kind_kubeconfig_file.path }}"
+                content: "{{ kind_kubeconfig_result.stdout }}"
+                mode: "0600"
+
+            - name: Use generated Kind kubeconfig as source
+              ansible.builtin.set_fact:
+                source_kubeconfig_path: "{{ tofu_kind_kubeconfig_file.path }}"
+                tofu_kind_kubeconfig_path: "{{ tofu_kind_kubeconfig_file.path }}"
+
+        - name: Create temporary kubeconfig for OpenTofu
+          ansible.builtin.tempfile:
+            state: file
+            suffix: "-tofu-kubeconfig"
+          register: tofu_kubeconfig_file
+
+        - name: Flatten kubeconfig for current context
+          ansible.builtin.command: kubectl config view --raw --minify --flatten
+          environment:
+            KUBECONFIG: "{{ tofu_kubeconfig_path }}"
+          register: flattened_kubeconfig
+
+        - name: Write temporary kubeconfig file
+          ansible.builtin.copy:
+            dest: "{{ tofu_kubeconfig_file.path }}"
+            content: "{{ flattened_kubeconfig.stdout }}"
+            mode: "0600"
+          no_log: true
+
+        - name: Set kubeconfig path for OpenTofu
+          ansible.builtin.set_fact:
+            tofu_kubeconfig_path: "{{ tofu_kubeconfig_file.path }}"
+
+        - name: Clear existing local OpenTofu state for Keycloak
+          when: keycloak_domain is search('nip.io')
+          ansible.builtin.file:
+            path: "{{ item }}"
+            state: absent
+          loop:
+            - "{{ keycloak_tofu_dir }}/terraform.tfstate"
+            - "{{ keycloak_tofu_dir }}/terraform.tfstate.backup"
+
+        - name: Run OpenTofu init in {{ keycloak_tofu_dir }}
+          ansible.builtin.command: "tofu init -reconfigure"
+          args:
+            chdir: "{{ keycloak_tofu_dir }}"
+          environment:
+            KUBECONFIG: "{{ source_kubeconfig_path }}"
+          changed_when: "'OpenTofu has been successfully initialized!' in init_result.stdout or 'successfully initialized!' in init_result.stdout"
+          register: init_result
+
+        - name: Run OpenTofu apply in {{ keycloak_tofu_dir }}
+          ansible.builtin.command: "tofu apply -auto-approve"
+          args:
+            chdir: "{{ keycloak_tofu_dir }}"
+          environment:
+            KUBECONFIG: "{{ tofu_kubeconfig_path }}"
+            TF_VAR_keycloak_client_id: "admin-cli"
+            TF_VAR_keycloak_username: "user"
+            TF_VAR_keycloak_password: "{{ keycloak_admin_password }}"
+            TF_VAR_keycloak_url: "{{ keycloak_url }}"
+            TF_VAR_frontend_url: "{{ frontend_url | default('https://spezi.platform.spezi.stanford.edu') }}"
+            TF_VAR_gcp_project_id: "{{ ansible_env.GCP_PROJECT_ID | default('local-dev', true) }}"
+            TF_VAR_enable_google_sso: "{{ ansible_env.ENABLE_GOOGLE_SSO | default('false', true) }}"
+            TF_VAR_enable_vault_secret_sync: "{{ ansible_env.ENABLE_VAULT_SECRET_SYNC | default('true', true) }}"
+            TF_VAR_kube_config_path: "{{ tofu_kubeconfig_path }}"
+          changed_when: "'Apply complete!' in apply_result.stdout"
+          register: apply_result
+
+        - name: Display Tofu Apply Standard Output
+          ansible.builtin.debug:
+            msg: "{{ apply_result.stdout.splitlines() }}"
+          when: apply_result.stdout is defined and apply_result.stdout | length > 0
+
+        - name: Display Tofu Apply Standard Error (if any)
+          ansible.builtin.debug:
+            msg: "{{ apply_result.stderr.splitlines() }}"
+          when: apply_result.stderr is defined and apply_result.stderr | length > 0
+      always:
+        - name: Remove temporary kubeconfig file
+          when: tofu_kubeconfig_path is defined
+          ansible.builtin.file:
+            path: "{{ tofu_kubeconfig_path }}"
+            state: absent
+
+        - name: Remove temporary Kind kubeconfig file
+          when: tofu_kind_kubeconfig_path is defined
+          ansible.builtin.file:
+            path: "{{ tofu_kind_kubeconfig_path }}"
+            state: absent
+
+        - name: Remove OpenTofu state artifacts after run
+          when: keycloak_domain is defined and keycloak_domain is search('nip.io')
+          ansible.builtin.file:
+            path: "{{ item }}"
+            state: absent
+          loop:
+            - "{{ keycloak_tofu_dir }}/terraform.tfstate"
+            - "{{ keycloak_tofu_dir }}/terraform.tfstate.backup"

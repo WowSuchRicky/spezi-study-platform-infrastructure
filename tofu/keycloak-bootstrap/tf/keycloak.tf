@@ -1,6 +1,6 @@
 # currently requires manual setup: https://registry.terraform.io/providers/mrparkers/keycloak/latest/docs
 provider "kubernetes" {
-  config_path = "~/.kube/config"
+  config_path = pathexpand(var.kube_config_path)
 }
 
 provider "keycloak" {
@@ -12,18 +12,18 @@ provider "keycloak" {
 }
 
 terraform {
-    required_providers {
-        keycloak = {
-            source = "registry.terraform.io/mrparkers/keycloak"
-            version = ">= 4.0.0"
-        }
-        random = {
-            source = "registry.terraform.io/hashicorp/random"
-            version = ">= 3.1.0"
-        }
-        kubernetes = {
-            source = "registry.terraform.io/hashicorp/kubernetes"
-            version = ">= 2.11.0"
-        }
+  required_providers {
+    keycloak = {
+      source  = "registry.terraform.io/mrparkers/keycloak"
+      version = ">= 4.0.0"
     }
+    random = {
+      source  = "registry.terraform.io/hashicorp/random"
+      version = ">= 3.1.0"
+    }
+    kubernetes = {
+      source  = "registry.terraform.io/hashicorp/kubernetes"
+      version = ">= 2.11.0"
+    }
+  }
 }

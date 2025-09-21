@@ -40,25 +40,13 @@
 # These secrets must be created manually as described above.
 
 data "google_secret_manager_secret_version" "google_sso_client_id" {
+  count   = var.enable_google_sso ? 1 : 0
   project = var.gcp_project_id
   secret  = "keycloak-google-sso-client-id"
 }
 
 data "google_secret_manager_secret_version" "google_sso_client_secret" {
+  count   = var.enable_google_sso ? 1 : 0
   project = var.gcp_project_id
   secret  = "keycloak-google-sso-client-secret"
-}
-
-# Outputs for use in other parts of the configuration (e.g., Keycloak).
-
-output "keycloak_google_sso_client_id" {
-  description = "Google OAuth Client ID for Keycloak SSO, fetched from Secret Manager."
-  value       = data.google_secret_manager_secret_version.google_sso_client_id.secret_data
-  sensitive   = true
-}
-
-output "keycloak_google_sso_client_secret" {
-  description = "Google OAuth Client Secret for Keycloak SSO, fetched from Secret Manager."
-  value       = data.google_secret_manager_secret_version.google_sso_client_secret.secret_data
-  sensitive   = true
 }

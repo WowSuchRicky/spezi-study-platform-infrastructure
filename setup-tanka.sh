@@ -3,6 +3,7 @@ set -e
 
 # --- Configuration ---
 KIND_CLUSTER_NAME="spezi-study-platform"
+FORCE_RECREATE_KIND=${FORCE_RECREATE_KIND:-1}
 # Get the directory of this script
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
@@ -10,6 +11,43 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 info() {
     echo "INFO: $1"
 }
+
+# --- Argument Parsing ---
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --FORCE_RECREATE_KIND=*)
+            FORCE_RECREATE_KIND="${1#*=}"
+            shift
+            continue
+            ;;
+        --FORCE_RECREATE_KIND)
+            shift
+            if [[ $# -gt 0 ]]; then
+                FORCE_RECREATE_KIND="$1"
+                shift
+            fi
+            continue
+            ;;
+        --force-recreate-kind=*)
+            FORCE_RECREATE_KIND="${1#*=}"
+            shift
+            continue
+            ;;
+        --force-recreate-kind)
+            shift
+            if [[ $# -gt 0 ]]; then
+                FORCE_RECREATE_KIND="$1"
+                shift
+            fi
+            continue
+            ;;
+        *)
+            info "Ignoring unrecognized option '$1'"
+            shift
+            continue
+            ;;
+    esac
+done
 
 # Detect local IP for nip.io domain
 LOCAL_IP="${LOCAL_IP:-$("$SCRIPT_DIR/scripts/get-local-ip.sh")}"
@@ -28,24 +66,31 @@ then
 
 
 # 1. Create KIND cluster
-info "Ensuring KIND cluster '$KIND_CLUSTER_NAME' is available"
+info "Ensuring KIND cluster '$KIND_CLUSTER_NAME' is available (FORCE_RECREATE_KIND=$FORCE_RECREATE_KIND)"
 if ! command -v kind &> /dev/null;
 then
     info "kind is not installed. Please install it first."
     exit 1
 fi
-if kind get clusters | grep -Fxq "$KIND_CLUSTER_NAME";
-then
-    if kubectl cluster-info --context "kind-$KIND_CLUSTER_NAME" >/dev/null 2>&1;
+
+if [ "$FORCE_RECREATE_KIND" = "1" ]; then
+    info "Force recreating KIND cluster '$KIND_CLUSTER_NAME' for a clean slate."
+    kind delete cluster --name "$KIND_CLUSTER_NAME" || true
+    kind create cluster --name "$KIND_CLUSTER_NAME" --config="$SCRIPT_DIR/local-dev/kind-config.yaml"
+else
+    if kind get clusters | grep -Fxq "$KIND_CLUSTER_NAME";
     then
-        info "KIND cluster '$KIND_CLUSTER_NAME' already exists and is reachable."
+        if kubectl cluster-info --context "kind-$KIND_CLUSTER_NAME" >/dev/null 2>&1;
+        then
+            info "KIND cluster '$KIND_CLUSTER_NAME' already exists and is reachable."
+        else
+            info "Stale KIND cluster '$KIND_CLUSTER_NAME' detected. Recreating..."
+            kind delete cluster --name "$KIND_CLUSTER_NAME" || true
+            kind create cluster --name "$KIND_CLUSTER_NAME" --config="$SCRIPT_DIR/local-dev/kind-config.yaml"
+        fi
     else
-        info "Stale KIND cluster '$KIND_CLUSTER_NAME' detected. Recreating..."
-        kind delete cluster --name "$KIND_CLUSTER_NAME" || true
         kind create cluster --name "$KIND_CLUSTER_NAME" --config="$SCRIPT_DIR/local-dev/kind-config.yaml"
     fi
-else
-    kind create cluster --name "$KIND_CLUSTER_NAME" --config="$SCRIPT_DIR/local-dev/kind-config.yaml"
 fi
 info "KIND cluster is ready."
 
@@ -260,6 +305,15 @@ fi
 # Bootstrap Keycloak realm and OAuth2 proxy client
 info "Bootstrapping Keycloak realm and OAuth2 proxy configuration..."
 
+info "Retrieving Keycloak admin password from Kubernetes secret..."
+KEYCLOAK_ADMIN_PASSWORD=$(kubectl get secret keycloak -n spezistudyplatform -o go-template='{{index .data "admin-password" | base64decode}}' 2>/dev/null | tr -d '\n' || true)
+
+if [ -z "$KEYCLOAK_ADMIN_PASSWORD" ]; then
+    info "Error: Unable to read Keycloak admin password from secret 'keycloak' in namespace 'spezistudyplatform'."
+    info "Hint: Ensure the Keycloak chart has finished reconciling and created the admin credentials."
+    exit 1
+fi
+
 # Port forward to access Keycloak
 kubectl port-forward -n spezistudyplatform svc/keycloak 8081:80 &
 PORT_FORWARD_PID=$!
@@ -296,8 +350,22 @@ else
     info "Using production domain: $EXTERNAL_DOMAIN"
 fi
 
+FRONTEND_URL="https://$EXTERNAL_DOMAIN"
+GCP_PROJECT_ID_VALUE="${GCP_PROJECT_ID:-${TF_VAR_gcp_project_id:-local-dev}}"
+if [ "$GCP_PROJECT_ID_VALUE" = "local-dev" ]; then
+    info "No GCP project provided; using placeholder 'local-dev' for Keycloak bootstrap."
+fi
+
 # Run Tofu bootstrap
 cd "$SCRIPT_DIR/tofu/keycloak-bootstrap/tf"
+
+if [ "$FORCE_RECREATE_KIND" = "1" ]; then
+    info "FORCE_RECREATE_KIND=1, removing existing Tofu state for a clean bootstrap."
+    rm terraform.tfstate* || true
+else
+    info "Preserving existing Tofu state (FORCE_RECREATE_KIND=$FORCE_RECREATE_KIND)."
+fi
+
 if ! command -v tofu &> /dev/null;
 then
     info "Warning: tofu is not installed. Skipping Keycloak bootstrap."
@@ -308,7 +376,11 @@ else
     tofu init
     tofu apply \
         -var="keycloak_url=http://localhost:8081/auth" \
-        -var="keycloak_password=admin123!" \
+        -var="keycloak_password=${KEYCLOAK_ADMIN_PASSWORD}" \
+        -var="frontend_url=${FRONTEND_URL}" \
+        -var="gcp_project_id=${GCP_PROJECT_ID_VALUE}" \
+        -var="enable_google_sso=false" \
+        -var="enable_vault_secret_sync=false" \
         -auto-approve
     info "Keycloak bootstrap completed successfully!"
 fi

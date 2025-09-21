@@ -25,12 +25,18 @@ variable "keycloak_url" {
 variable "frontend_url" {
   description = "Frontend URL for OAuth2 redirect URIs"
   type        = string
-  default     = "https://spezi.172.20.117.44.nip.io"  # Default to local-dev
+  default     = "https://spezi.172.20.117.44.nip.io" # Default to local-dev
 }
 
 variable "gcp_project_id" {
   description = "GCP project ID for OAuth client creation"
   type        = string
+}
+
+variable "enable_google_sso" {
+  description = "Whether to fetch Google SSO credentials from Google Secret Manager"
+  type        = bool
+  default     = false
 }
 
 variable "google_oauth_client_id" {
@@ -46,3 +52,14 @@ variable "google_oauth_client_secret" {
   sensitive   = true
 }
 
+variable "enable_vault_secret_sync" {
+  description = "Whether to push oauth2-proxy secrets into Vault via Kubernetes jobs"
+  type        = bool
+  default     = false
+}
+
+variable "kube_config_path" {
+  description = "Path to the kubeconfig file used by the Kubernetes provider"
+  type        = string
+  default     = "~/.kube/config"
+}

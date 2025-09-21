@@ -3,7 +3,7 @@ resource "keycloak_realm" "realm" {
   enabled = true
   # Note: frontend_url configuration needs to be set at Keycloak server level
   # through KEYCLOAK_FRONTEND_URL environment variable
-  
+
   # Set SSO session timeout to 24 hours (86400 seconds)
   sso_session_idle_timeout = "24h"
   sso_session_max_lifespan = "24h"
@@ -12,21 +12,21 @@ resource "keycloak_realm" "realm" {
 
 # configured per: https://oauth2-proxy.github.io/oauth2-proxy/configuration/providers/keycloak_oidc 
 resource "keycloak_openid_client" "oauth2_proxy_client" {
-  realm_id            = keycloak_realm.realm.id
-  client_id           = "oauth2-proxy"
+  realm_id  = keycloak_realm.realm.id
+  client_id = "oauth2-proxy"
 
-  name                = "oauth2-proxy"
-  enabled             = true
+  name    = "oauth2-proxy"
+  enabled = true
 
-  access_type         = "CONFIDENTIAL"
+  access_type = "CONFIDENTIAL"
   valid_redirect_uris = [
     "${var.frontend_url}/oauth2/callback"
   ]
 
-  client_secret       = random_password.oauth2_proxy_client_secret.result
-  direct_access_grants_enabled = false 
+  client_secret                = random_password.oauth2_proxy_client_secret.result
+  direct_access_grants_enabled = false
   standard_flow_enabled        = true
-  
+
   depends_on = [random_password.oauth2_proxy_client_secret]
 }
 
@@ -39,12 +39,12 @@ resource "keycloak_openid_client_scope" "groups_scope" {
 
 # Add groups scope mapper for OAuth2-proxy
 resource "keycloak_openid_group_membership_protocol_mapper" "oauth2_proxy_groups_mapper" {
-  realm_id         = keycloak_realm.realm.id
-  client_scope_id  = keycloak_openid_client_scope.groups_scope.id
-  name             = "groups"
+  realm_id        = keycloak_realm.realm.id
+  client_scope_id = keycloak_openid_client_scope.groups_scope.id
+  name            = "groups"
 
-  claim_name     = "groups"
-  full_path      = false
+  claim_name          = "groups"
+  full_path           = false
   add_to_id_token     = true
   add_to_access_token = true
   add_to_userinfo     = true
@@ -52,15 +52,15 @@ resource "keycloak_openid_group_membership_protocol_mapper" "oauth2_proxy_groups
 
 # Add roles mapper to groups scope (OAuth2-proxy checks roles in groups claim)
 resource "keycloak_openid_user_realm_role_protocol_mapper" "oauth2_proxy_roles_mapper" {
-  realm_id         = keycloak_realm.realm.id
-  client_scope_id  = keycloak_openid_client_scope.groups_scope.id
-  name             = "realm roles"
+  realm_id        = keycloak_realm.realm.id
+  client_scope_id = keycloak_openid_client_scope.groups_scope.id
+  name            = "realm roles"
 
-  claim_name                = "groups"
-  multivalued               = true
-  add_to_id_token          = true
-  add_to_access_token      = true
-  add_to_userinfo          = true
+  claim_name          = "groups"
+  multivalued         = true
+  add_to_id_token     = true
+  add_to_access_token = true
+  add_to_userinfo     = true
 }
 
 # Assign groups scope to oauth2-proxy client
@@ -79,19 +79,26 @@ resource "keycloak_role" "authorized_users" {
   description = "Users authorized to access the Spezi Study Platform"
 }
 
+# Create ArgoCD admin role so we can share it across users
+resource "keycloak_role" "argocd_admins" {
+  realm_id    = keycloak_realm.realm.id
+  name        = "ArgoCDAdmins"
+  description = "ArgoCD Administrators"
+}
+
 # Note: User creation for production should be done through proper user management processes
 # The following users are examples for local development only and should not be deployed to production
 
 # Test user 1 - authorized user
 resource "keycloak_user" "testuser" {
-  realm_id = keycloak_realm.realm.id
-  username = "testuser"
-  email    = "testuser@example.com"
+  realm_id       = keycloak_realm.realm.id
+  username       = "testuser"
+  email          = "testuser@example.com"
   email_verified = true
-  
+
   first_name = "Test"
   last_name  = "User"
-  
+
   initial_password {
     value     = "password123"
     temporary = false
@@ -100,25 +107,25 @@ resource "keycloak_user" "testuser" {
 
 # Test user 2 - unauthorized user  
 resource "keycloak_user" "testuser2" {
-  realm_id = keycloak_realm.realm.id
-  username = "testuser2"
-  email    = "testuser2@example.com"
+  realm_id       = keycloak_realm.realm.id
+  username       = "testuser2"
+  email          = "testuser2@example.com"
   email_verified = true
-  
+
   first_name = "Test"
   last_name  = "User2"
-  
+
   initial_password {
     value     = "password456"
     temporary = false
   }
 }
 
-# Assign authorized role to testuser
+# Assign Spezi and ArgoCD roles to testuser for local dev convenience
 resource "keycloak_user_roles" "testuser_roles" {
   realm_id = keycloak_realm.realm.id
   user_id  = keycloak_user.testuser.id
-  
+
   role_ids = [
     keycloak_role.authorized_users.id,
     keycloak_role.argocd_admins.id
@@ -128,9 +135,9 @@ resource "keycloak_user_roles" "testuser_roles" {
 # Note: testuser2 intentionally does not get the authorized role
 
 resource "keycloak_user" "newadmin" {
-  realm_id = keycloak_realm.realm.id
-  username = "newadmin"
-  email    = "newadmin@example.com"
+  realm_id       = keycloak_realm.realm.id
+  username       = "newadmin"
+  email          = "newadmin@example.com"
   email_verified = true
 
   first_name = "New"
@@ -146,13 +153,13 @@ resource "keycloak_user" "newadmin" {
 
 # ArgoCD OIDC Client Configuration (supports both web UI and CLI)
 resource "keycloak_openid_client" "argocd_client" {
-  realm_id            = keycloak_realm.realm.id
-  client_id           = "argocd"
+  realm_id  = keycloak_realm.realm.id
+  client_id = "argocd"
 
-  name                = "ArgoCD"
-  enabled             = true
+  name    = "ArgoCD"
+  enabled = true
 
-  access_type         = "PUBLIC"
+  access_type = "PUBLIC"
   valid_redirect_uris = [
     "${var.frontend_url}/argo/auth/callback",
     "${var.frontend_url}/argo/auth/login",
@@ -166,32 +173,14 @@ resource "keycloak_openid_client" "argocd_client" {
   standard_flow_enabled        = true
 }
 
-# Create ArgoCD admin role
-resource "keycloak_role" "argocd_admins" {
-  realm_id    = keycloak_realm.realm.id
-  name        = "ArgoCDAdmins"
-  description = "ArgoCD Administrators"
-}
-
-# Assign ArgoCD admin role to testuser
-resource "keycloak_user_roles" "testuser_argocd_roles" {
-  realm_id = keycloak_realm.realm.id
-  user_id  = keycloak_user.testuser.id
-  
-  role_ids = [
-    keycloak_role.authorized_users.id,
-    keycloak_role.argocd_admins.id
-  ]
-}
-
 # Add groups mapper to standard groups scope for ArgoCD
 resource "keycloak_openid_group_membership_protocol_mapper" "argocd_groups_mapper" {
-  realm_id         = keycloak_realm.realm.id
-  client_scope_id  = keycloak_openid_client_scope.groups_scope.id
-  name             = "argocd-groups"
+  realm_id        = keycloak_realm.realm.id
+  client_scope_id = keycloak_openid_client_scope.groups_scope.id
+  name            = "argocd-groups"
 
-  claim_name     = "groups"
-  full_path      = false
+  claim_name          = "groups"
+  full_path           = false
   add_to_id_token     = true
   add_to_access_token = true
   add_to_userinfo     = true
@@ -199,15 +188,15 @@ resource "keycloak_openid_group_membership_protocol_mapper" "argocd_groups_mappe
 
 # Add roles mapper to groups scope for ArgoCD
 resource "keycloak_openid_user_realm_role_protocol_mapper" "argocd_roles_mapper" {
-  realm_id         = keycloak_realm.realm.id
-  client_scope_id  = keycloak_openid_client_scope.groups_scope.id
-  name             = "argocd-realm-roles"
+  realm_id        = keycloak_realm.realm.id
+  client_scope_id = keycloak_openid_client_scope.groups_scope.id
+  name            = "argocd-realm-roles"
 
-  claim_name                = "groups"
-  multivalued               = true
-  add_to_id_token          = true
-  add_to_access_token      = true
-  add_to_userinfo          = true
+  claim_name          = "groups"
+  multivalued         = true
+  add_to_id_token     = true
+  add_to_access_token = true
+  add_to_userinfo     = true
 }
 
 # Assign groups scope to ArgoCD client
@@ -227,6 +216,8 @@ resource "random_password" "oauth2_proxy_client_secret" {
 
 
 resource "kubernetes_secret" "oauth2_proxy_secret_update" {
+  count = var.enable_vault_secret_sync ? 1 : 0
+
   metadata {
     name      = "oauth2-proxy-secret-update"
     namespace = "vault"
@@ -237,16 +228,18 @@ resource "kubernetes_secret" "oauth2_proxy_secret_update" {
   }
 
   type = "Opaque"
-  
+
   depends_on = [random_password.oauth2_proxy_client_secret]
 }
 
 resource "kubernetes_job_v1" "vault_oauth2_proxy_secret_update" {
+  count = var.enable_vault_secret_sync ? 1 : 0
+
   metadata {
     name      = "vault-oauth2-proxy-secret-update"
     namespace = "vault"
   }
-  
+
   spec {
     template {
       metadata {}
@@ -277,18 +270,12 @@ resource "kubernetes_job_v1" "vault_oauth2_proxy_secret_update" {
         volume {
           name = "secret-volume"
           secret {
-            secret_name = kubernetes_secret.oauth2_proxy_secret_update.metadata[0].name
+            secret_name = kubernetes_secret.oauth2_proxy_secret_update[0].metadata[0].name
           }
         }
       }
     }
   }
-  
-  depends_on = [kubernetes_secret.oauth2_proxy_secret_update]
-}
 
-output "argocd_client_secret" {
-  description = "The client secret for the ArgoCD Keycloak client."
-  value       = keycloak_openid_client.argocd_client.client_secret
-  sensitive   = true
+  depends_on = [kubernetes_secret.oauth2_proxy_secret_update]
 }
