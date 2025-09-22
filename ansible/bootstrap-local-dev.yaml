@@ -167,6 +167,14 @@
       environment:
         KUBECONFIG: "{{ kubeconfig_kind_path | default(omit) }}"
 
+    - name: Ensure ArgoCD admin credentials are predictable for local dev
+      ansible.builtin.shell: |
+        kubectl patch secret argocd-secret -n argocd --type=merge \
+          -p '{"stringData":{"admin.password":"$2b$12$EsSh4YiPE4OnfXlYMq0H5OfEP4yBfSbgg0QsQRXLCgZwlynuJcYqO","admin.passwordMtime":"2025-01-01T00:00:00Z"}}'
+      changed_when: false
+      environment:
+        KUBECONFIG: "{{ kubeconfig_kind_path | default(omit) }}"
+
     - name: Best-effort wait for key namespaces pods to be ready
       vars:
         key_namespaces:
