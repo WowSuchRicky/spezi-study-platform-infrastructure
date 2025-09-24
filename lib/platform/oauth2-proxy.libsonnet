@@ -58,6 +58,87 @@
     };
     {
       oauth2_proxy_secret: secretObject,
+      oauth2_proxy_error_template: {
+        apiVersion: 'v1',
+        kind: 'ConfigMap',
+        metadata: {
+          name: 'oauth2-proxy-error-template',
+          namespace: config.namespace,
+        },
+        data: {
+          'error.html': |||
+            <!DOCTYPE html>
+            <html lang="en">
+              <head>
+                <meta charset="utf-8" />
+                <title>Access Requires Approval</title>
+                <style>
+                  body {
+                    margin: 0;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                    background: #f6f7fb;
+                    color: #1b1f23;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    min-height: 100vh;
+                  }
+                  .card {
+                    background: #fff;
+                    padding: 2.5rem;
+                    max-width: 520px;
+                    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+                    border-radius: 16px;
+                    text-align: center;
+                  }
+                  h1 {
+                    font-size: 1.75rem;
+                    margin-bottom: 0.75rem;
+                  }
+                  p {
+                    margin-top: 0.5rem;
+                    line-height: 1.5;
+                    color: #374151;
+                  }
+                  .status {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 0.35rem 0.85rem;
+                    font-weight: 600;
+                    border-radius: 999px;
+                    background: #fef3c7;
+                    color: #92400e;
+                    margin-bottom: 1rem;
+                  }
+                  a {
+                    color: #1d4ed8;
+                    text-decoration: none;
+                    font-weight: 600;
+                  }
+                  a:hover {
+                    text-decoration: underline;
+                  }
+                </style>
+              </head>
+              <body>
+                <main class="card">
+                  <div class="status">{{ .StatusCode }} {{ .Title }}</div>
+                  <h1>Access Pending Approval</h1>
+                  <p>
+                    Thanks for signing in, but your account doesn't have access to the
+                    Spezi Study Platform yet.
+                  </p>
+                  <p>
+                    Please reach out to the platform administrator to request access. If
+                    this is unexpected, close this window and try signing in again.
+                  </p>
+                </main>
+              </body>
+            </html>
+          |||,
+        },
+      },
       // PushSecret for oauth2-proxy client-secret (only for GCP Secret Manager)
       oauth2_proxy_client_secret_push: if config.externalSecrets.provider == 'gcpsm' then {
         apiVersion: 'external-secrets.io/v1alpha1',
@@ -247,14 +328,29 @@
             '--set-xauthrequest=true',
             '--code-challenge-method=S256',
             '--reverse-proxy=true',
+            '--custom-error-template=/templates/error.html',
+            '--standard-logging=true',
           ] + (
             if config.mode == 'DEV' then
               ['--insecure-oidc-skip-issuer-verification=true']
             else
               []
           ),
-          extraVolumes: [],
-          extraVolumeMounts: [],
+          extraVolumes: [
+            {
+              name: 'oauth2-proxy-templates',
+              configMap: {
+                name: 'oauth2-proxy-error-template',
+              },
+            },
+          ],
+          extraVolumeMounts: [
+            {
+              name: 'oauth2-proxy-templates',
+              mountPath: '/templates',
+              readOnly: true,
+            },
+          ],
           redis: {
             enabled: false,
           },
