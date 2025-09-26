@@ -133,7 +133,7 @@
         spec: {
           errors: {
             status: [
-              '401',
+              '401-403',
             ],
             service: {
               name: 'oauth2-proxy',
