@@ -328,7 +328,7 @@
             '--set-xauthrequest=true',
             '--code-challenge-method=S256',
             '--reverse-proxy=true',
-            '--custom-error-template=/templates/error.html',
+            '--custom-templates-dir=/templates',
             '--standard-logging=true',
           ] + (
             if config.mode == 'DEV' then
