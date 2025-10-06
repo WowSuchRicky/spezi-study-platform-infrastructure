@@ -1,8 +1,10 @@
 *secret.yaml
 .terraform
+.terraform-local
 .terraform.lock.hcl
 .tf
 *.tfstate
+*.tfstate.*
 *.tfstate.backup
 SpeziStudyPlatformDev.json
 gcp-service-account-key.json

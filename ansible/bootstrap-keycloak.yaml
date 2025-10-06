@@ -14,8 +14,10 @@
     # This should match the variable name expected in your Keycloak provider block
     tofu_password_var_name: "keycloak_password"
 
-    # Do not edit any of the variables below:
+    # Do not manually edit any of the variables below as they're used for logic/functions:
     keycloak_tofu_dir: "{{ keycloak_tofu_directory | realpath }}"
+    keycloak_state_bucket: "{{ spezi_service_tf_state_bucket | default(spezi_service_name + '-tf-state-prod') }}"
+    keycloak_state_prefix: "terraform/state/keycloak-bootstrap"
 
 
   tasks:
@@ -64,6 +66,22 @@
         - "'admin-password' in keycloak_secret_result.resources[0].data"
       no_log: true # Prevent password from being logged in Ansible output
 
+    - name: Extract Keycloak admin username when present
+      when:
+        - keycloak_secret_result.resources | length > 0
+        - "'admin-username' in keycloak_secret_result.resources[0].data"
+      ansible.builtin.set_fact:
+        keycloak_admin_username: "{{ keycloak_secret_result.resources[0].data['admin-username'] | b64decode }}"
+
+    - name: Default Keycloak admin username when secret is missing field
+      when: keycloak_admin_username is not defined
+      ansible.builtin.set_fact:
+        keycloak_admin_username: 'user'
+
+    - name: Show Keycloak admin username detected from secret
+      ansible.builtin.debug:
+        msg: "Using Keycloak admin username: {{ keycloak_admin_username }}"
+
     - name: Fail if admin password could not be extracted
       ansible.builtin.fail:
         msg: "Could not find 'admin-password' key in secret {{ keycloak_secret_name }} in namespace {{ keycloak_secret_namespace }}."
@@ -76,8 +94,13 @@
         tofu_environment: "{{ {'TF_VAR_' + tofu_password_var_name : keycloak_admin_password} }}"
       no_log: true # Keep this step quiet too
 
+    - name: Determine deployment mode (local dev vs production)
+      ansible.builtin.set_fact:
+        is_local_dev: "{{ (ansible_env.LOCAL_DEV_MODE | default('false')) | bool }}"
+
     # --- Detect Environment ---
     - name: Detect local machine IP (shared helper script)
+      when: is_local_dev | bool
       ansible.builtin.shell: |
         bash "{{ playbook_dir }}/../scripts/get-local-ip.sh"
       register: local_ip_result
@@ -85,13 +108,22 @@
       failed_when: false
 
     - name: Normalise detected IP output
+      when: is_local_dev | bool
       ansible.builtin.set_fact:
         detected_local_ip: "{{ local_ip_result.stdout | default('') | trim }}"
+
+    - name: Ensure detected_local_ip has a default value when not in local dev mode
+      when: not is_local_dev | bool
+      ansible.builtin.set_fact:
+        detected_local_ip: ""
 
     - name: Set keycloak domain for local development
       ansible.builtin.set_fact:
         keycloak_domain: "{{ detected_local_ip }}.nip.io"
-      when: detected_local_ip | length > 0 and detected_local_ip != '127.0.0.1'
+      when:
+        - is_local_dev | bool
+        - detected_local_ip | length > 0
+        - detected_local_ip != '127.0.0.1'
 
     - name: Set default domain when local IP detection failed
       ansible.builtin.set_fact:
@@ -104,15 +136,27 @@
 
     - name: Set frontend URL based on detected domain
       ansible.builtin.set_fact:
-        frontend_url: "https://spezi.{{ keycloak_domain }}"
+        frontend_url: "{{ 'https://spezi.' + keycloak_domain if is_local_dev | bool else 'https://' + keycloak_domain }}"
+
+    - name: Determine Google SSO default toggle
+      ansible.builtin.set_fact:
+        enable_google_sso_default: "{{ 'false' if is_local_dev | bool else 'true' }}"
+
+    - name: Determine test user creation toggle
+      ansible.builtin.set_fact:
+        create_test_users_default: "{{ 'true' if is_local_dev | bool else 'false' }}"
+
+    - name: Determine Keycloak backend mode
+      ansible.builtin.set_fact:
+        use_remote_backend: "{{ (not is_local_dev | bool) | bool }}"
 
     - name: Set Keycloak URL for local dev via port-forward
-      when: keycloak_domain is search("nip.io")
+      when: is_local_dev | bool
       ansible.builtin.set_fact:
         keycloak_url: "http://127.0.0.1:8081/auth"
 
     - name: Set Keycloak URL for non-local environments
-      when: keycloak_domain is not search("nip.io")
+      when: not is_local_dev | bool
       ansible.builtin.set_fact:
         keycloak_url: "https://{{ keycloak_domain }}/auth"
 
@@ -180,7 +224,7 @@
             tofu_kubeconfig_path: "{{ tofu_kubeconfig_file.path }}"
 
         - name: Clear existing local OpenTofu state for Keycloak
-          when: keycloak_domain is search('nip.io')
+          when: is_local_dev | bool
           ansible.builtin.file:
             path: "{{ item }}"
             state: absent
@@ -188,8 +232,22 @@
             - "{{ keycloak_tofu_dir }}/terraform.tfstate"
             - "{{ keycloak_tofu_dir }}/terraform.tfstate.backup"
 
-        - name: Run OpenTofu init in {{ keycloak_tofu_dir }}
-          ansible.builtin.command: "tofu init -reconfigure"
+        - name: Run OpenTofu init locally for development
+          when: not use_remote_backend | bool
+          ansible.builtin.command: "tofu init -reconfigure -backend=false"
+          args:
+            chdir: "{{ keycloak_tofu_dir }}"
+          environment:
+            KUBECONFIG: "{{ source_kubeconfig_path }}"
+          changed_when: "'OpenTofu has been successfully initialized!' in init_result.stdout or 'successfully initialized!' in init_result.stdout"
+          register: init_result
+
+        - name: Run OpenTofu init with remote state
+          when: use_remote_backend | bool
+          ansible.builtin.command: >-
+            tofu init -migrate-state -reconfigure
+            -backend-config="bucket={{ keycloak_state_bucket }}"
+            -backend-config="prefix={{ keycloak_state_prefix }}"
           args:
             chdir: "{{ keycloak_tofu_dir }}"
           environment:
@@ -204,13 +262,14 @@
           environment:
             KUBECONFIG: "{{ tofu_kubeconfig_path }}"
             TF_VAR_keycloak_client_id: "admin-cli"
-            TF_VAR_keycloak_username: "user"
+            TF_VAR_keycloak_username: "{{ keycloak_admin_username }}"
             TF_VAR_keycloak_password: "{{ keycloak_admin_password }}"
             TF_VAR_keycloak_url: "{{ keycloak_url }}"
-            TF_VAR_frontend_url: "{{ frontend_url | default('https://spezi.platform.spezi.stanford.edu') }}"
-            TF_VAR_gcp_project_id: "{{ ansible_env.GCP_PROJECT_ID | default('local-dev', true) }}"
-            TF_VAR_enable_google_sso: "{{ ansible_env.ENABLE_GOOGLE_SSO | default('false', true) }}"
+            TF_VAR_frontend_url: "{{ frontend_url | default('https://' + keycloak_domain, true) }}"
+            TF_VAR_gcp_project_id: "{{ ansible_env.GCP_PROJECT_ID | default(spezi_service_gcp_project_id | default('local-dev'), true) }}"
+            TF_VAR_enable_google_sso: "{{ ansible_env.ENABLE_GOOGLE_SSO | default(enable_google_sso_default, true) }}"
             TF_VAR_enable_vault_secret_sync: "{{ ansible_env.ENABLE_VAULT_SECRET_SYNC | default('true', true) }}"
+            TF_VAR_create_test_users: "{{ ansible_env.CREATE_TEST_USERS | default(create_test_users_default, true) }}"
             TF_VAR_kube_config_path: "{{ tofu_kubeconfig_path }}"
           changed_when: "'Apply complete!' in apply_result.stdout"
           register: apply_result
@@ -238,7 +297,7 @@
             state: absent
 
         - name: Remove OpenTofu state artifacts after run
-          when: keycloak_domain is defined and keycloak_domain is search('nip.io')
+          when: is_local_dev | bool
           ansible.builtin.file:
             path: "{{ item }}"
             state: absent

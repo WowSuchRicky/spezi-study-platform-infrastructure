@@ -38,7 +38,15 @@ resource "keycloak_openid_client_scope" "groups_scope" {
 }
 
 # Add groups scope mapper for OAuth2-proxy
+locals {
+  oauth2_proxy_groups_mapper_id = "404c6487-938b-4a7e-9457-5d67f8deebf8"
+  oauth2_proxy_roles_mapper_id  = "db618d00-2a62-49e7-a57f-d372c87b2520"
+  argocd_groups_mapper_id       = "63bf4638-17d6-4b5c-8910-c0c508b5db5d"
+  argocd_roles_mapper_id        = "2b2e210b-c677-42ac-89d9-31162119b0eb"
+}
+
 resource "keycloak_openid_group_membership_protocol_mapper" "oauth2_proxy_groups_mapper" {
+  count           = local.oauth2_proxy_groups_mapper_id == "" ? 1 : 0
   realm_id        = keycloak_realm.realm.id
   client_scope_id = keycloak_openid_client_scope.groups_scope.id
   name            = "groups"
@@ -52,6 +60,7 @@ resource "keycloak_openid_group_membership_protocol_mapper" "oauth2_proxy_groups
 
 # Add roles mapper to groups scope (OAuth2-proxy checks roles in groups claim)
 resource "keycloak_openid_user_realm_role_protocol_mapper" "oauth2_proxy_roles_mapper" {
+  count           = local.oauth2_proxy_roles_mapper_id == "" ? 1 : 0
   realm_id        = keycloak_realm.realm.id
   client_scope_id = keycloak_openid_client_scope.groups_scope.id
   name            = "realm roles"
@@ -63,12 +72,16 @@ resource "keycloak_openid_user_realm_role_protocol_mapper" "oauth2_proxy_roles_m
   add_to_userinfo     = true
 }
 
-# Assign groups scope to oauth2-proxy client
-resource "keycloak_openid_client_optional_scopes" "oauth2_proxy_groups_scope" {
+# Assign groups scope to oauth2-proxy client and retain built-in optional scopes
+resource "keycloak_openid_client_optional_scopes" "oauth2_proxy_optional_scopes" {
   realm_id  = keycloak_realm.realm.id
   client_id = keycloak_openid_client.oauth2_proxy_client.id
   optional_scopes = [
     keycloak_openid_client_scope.groups_scope.name,
+    "address",
+    "microprofile-jwt",
+    "offline_access",
+    "phone",
   ]
 }
 
@@ -91,6 +104,7 @@ resource "keycloak_role" "argocd_admins" {
 
 # Test user 1 - authorized user
 resource "keycloak_user" "testuser" {
+  count          = var.create_test_users ? 1 : 0
   realm_id       = keycloak_realm.realm.id
   username       = "testuser"
   email          = "testuser@example.com"
@@ -107,6 +121,7 @@ resource "keycloak_user" "testuser" {
 
 # Test user 2 - unauthorized user  
 resource "keycloak_user" "testuser2" {
+  count          = var.create_test_users ? 1 : 0
   realm_id       = keycloak_realm.realm.id
   username       = "testuser2"
   email          = "testuser2@example.com"
@@ -123,8 +138,9 @@ resource "keycloak_user" "testuser2" {
 
 # Assign Spezi and ArgoCD roles to testuser for local dev convenience
 resource "keycloak_user_roles" "testuser_roles" {
+  count    = var.create_test_users ? 1 : 0
   realm_id = keycloak_realm.realm.id
-  user_id  = keycloak_user.testuser.id
+  user_id  = keycloak_user.testuser[count.index].id
 
   role_ids = [
     keycloak_role.authorized_users.id,
@@ -135,6 +151,7 @@ resource "keycloak_user_roles" "testuser_roles" {
 # Note: testuser2 intentionally does not get the authorized role
 
 resource "keycloak_user" "newadmin" {
+  count          = var.create_test_users ? 1 : 0
   realm_id       = keycloak_realm.realm.id
   username       = "newadmin"
   email          = "newadmin@example.com"
@@ -175,6 +192,7 @@ resource "keycloak_openid_client" "argocd_client" {
 
 # Add groups mapper to standard groups scope for ArgoCD
 resource "keycloak_openid_group_membership_protocol_mapper" "argocd_groups_mapper" {
+  count           = local.argocd_groups_mapper_id == "" ? 1 : 0
   realm_id        = keycloak_realm.realm.id
   client_scope_id = keycloak_openid_client_scope.groups_scope.id
   name            = "argocd-groups"
@@ -188,6 +206,7 @@ resource "keycloak_openid_group_membership_protocol_mapper" "argocd_groups_mappe
 
 # Add roles mapper to groups scope for ArgoCD
 resource "keycloak_openid_user_realm_role_protocol_mapper" "argocd_roles_mapper" {
+  count           = local.argocd_roles_mapper_id == "" ? 1 : 0
   realm_id        = keycloak_realm.realm.id
   client_scope_id = keycloak_openid_client_scope.groups_scope.id
   name            = "argocd-realm-roles"
@@ -199,12 +218,16 @@ resource "keycloak_openid_user_realm_role_protocol_mapper" "argocd_roles_mapper"
   add_to_userinfo     = true
 }
 
-# Assign groups scope to ArgoCD client
-resource "keycloak_openid_client_optional_scopes" "argocd_groups_scope" {
+# Assign groups scope to ArgoCD client and retain built-in optional scopes
+resource "keycloak_openid_client_optional_scopes" "argocd_optional_scopes" {
   realm_id  = keycloak_realm.realm.id
   client_id = keycloak_openid_client.argocd_client.id
   optional_scopes = [
     keycloak_openid_client_scope.groups_scope.name,
+    "address",
+    "microprofile-jwt",
+    "offline_access",
+    "phone",
   ]
 }
 

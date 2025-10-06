@@ -262,3 +262,5 @@
       ansible.builtin.command: ansible-playbook "{{ playbook_dir }}/bootstrap-keycloak.yaml"
       register: keycloak_bootstrap_result
       failed_when: keycloak_bootstrap_result.rc != 0
+      environment:
+        LOCAL_DEV_MODE: "0"

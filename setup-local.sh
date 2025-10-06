@@ -166,13 +166,13 @@ while [ $attempt -lt $max_attempts ]; do
     if [ "$app_exists" -eq 0 ]; then
         app_status=$(kubectl get application root -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null)
         health_status=$(kubectl get application root -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null)
-        
+
         # Default status to "Waiting" if kubectl returns an empty string
         app_status=${app_status:-"Waiting"}
         health_status=${health_status:-"Waiting"}
 
         info "Root application sync status: $app_status, health: $health_status"
-        
+
         if [ "$app_status" = "Synced" ]; then
             set -e  # Re-enable exit on error
             info "Root application is synced! Child applications are now being created."
@@ -181,7 +181,7 @@ while [ $attempt -lt $max_attempts ]; do
     else
         info "Root application not found yet"
     fi
-    
+
     info "Waiting for root application to sync... (attempt $((attempt+1))/$max_attempts)"
     sleep 10
     ((attempt++))
@@ -208,12 +208,12 @@ while [ $attempt -lt $max_attempts ]; do
         if [ "$app_exists" -eq 0 ]; then
             app_status=$(kubectl get application "$app" -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null)
             health_status=$(kubectl get application "$app" -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null)
-            
+
             app_status=${app_status:-"Unknown"}
             health_status=${health_status:-"Unknown"}
-            
+
             info "Application $app: sync=$app_status, health=$health_status"
-            
+
             if [ "$app_status" != "Synced" ] || [ "$health_status" != "Healthy" ]; then
                 all_healthy=false
             fi
@@ -222,13 +222,13 @@ while [ $attempt -lt $max_attempts ]; do
             all_healthy=false
         fi
     done
-    
+
     if [ "$all_healthy" = true ]; then
         set -e  # Re-enable exit on error
         info "All wave 0 applications are healthy!"
         break
     fi
-    
+
     info "Waiting for wave 0 applications to be healthy... (attempt $((attempt+1))/$max_attempts)"
     sleep 15
     ((attempt++))
@@ -248,12 +248,12 @@ while [ $attempt -lt $max_attempts ]; do
     set +e
     namespace_exists=$(kubectl get namespace spezistudyplatform >/dev/null 2>&1; echo $?)
     set -e
-    
+
     if [ "$namespace_exists" -eq 0 ]; then
         info "Namespace spezistudyplatform found!"
         break
     fi
-    
+
     info "Waiting for namespace to be created... (attempt $((attempt+1))/$max_attempts)"
     sleep 15
     ((attempt++))
@@ -289,7 +289,7 @@ while [ $attempt -lt $max_attempts ]; do
     else
         info "Waiting for Keycloak statefulset to be created..."
     fi
-    
+
     info "Waiting for Keycloak to be ready... (attempt $((attempt+1))/$max_attempts)"
     sleep 15
     ((attempt++))
@@ -341,8 +341,9 @@ fi
 
 # Detect external domain for Keycloak frontend URL
 info "Detecting external domain for Keycloak configuration..."
-LOCAL_IP=$(ifconfig | grep "inet " | grep -v 127.0.0.1 | head -1 | awk '{print $2}' 2>/dev/null || echo "")
-if [ -n "$LOCAL_IP" ]; then
+LOCAL_IP="${LOCAL_IP:-$(bash "$SCRIPT_DIR/scripts/get-local-ip.sh" || echo "")}"
+LOCAL_IP=$(echo "$LOCAL_IP" | tr -d '\n')
+if [ -n "$LOCAL_IP" ] && [ "$LOCAL_IP" != "127.0.0.1" ]; then
     EXTERNAL_DOMAIN="spezi.${LOCAL_IP}.nip.io"
     info "Using local development domain: $EXTERNAL_DOMAIN"
 else
@@ -359,9 +360,13 @@ fi
 # Run Tofu bootstrap
 cd "$SCRIPT_DIR/tofu/keycloak-bootstrap/tf"
 
+LOCAL_TF_DATA_DIR=".terraform-local"
+LOCAL_TF_STATE_FILE="terraform.tfstate.local"
+
 if [ "$FORCE_RECREATE_KIND" = "1" ]; then
     info "FORCE_RECREATE_KIND=1, removing existing Tofu state for a clean bootstrap."
-    rm terraform.tfstate* || true
+    rm -rf "$LOCAL_TF_DATA_DIR" || true
+    rm -f terraform.tfstate* "$LOCAL_TF_STATE_FILE" "$LOCAL_TF_STATE_FILE".backup || true
 else
     info "Preserving existing Tofu state (FORCE_RECREATE_KIND=$FORCE_RECREATE_KIND)."
 fi
@@ -370,17 +375,20 @@ if ! command -v tofu &> /dev/null;
 then
     info "Warning: tofu is not installed. Skipping Keycloak bootstrap."
     info "Please install tofu and run manually:"
-    info "cd tofu/keycloak-bootstrap/tf && tofu init && tofu apply"
+    info "cd tofu/keycloak-bootstrap/tf && tofu init -backend=false -reconfigure && tofu apply"
 else
     info "Running Keycloak bootstrap with Tofu..."
-    tofu init
-    tofu apply \
+    TF_DATA_DIR="$LOCAL_TF_DATA_DIR" tofu init -backend=false -reconfigure
+    TF_DATA_DIR="$LOCAL_TF_DATA_DIR" tofu apply \
+        -state="$LOCAL_TF_STATE_FILE" \
+        -state-out="$LOCAL_TF_STATE_FILE" \
         -var="keycloak_url=http://localhost:8081/auth" \
         -var="keycloak_password=${KEYCLOAK_ADMIN_PASSWORD}" \
         -var="frontend_url=${FRONTEND_URL}" \
         -var="gcp_project_id=${GCP_PROJECT_ID_VALUE}" \
         -var="enable_google_sso=false" \
         -var="enable_vault_secret_sync=false" \
+        -var="create_test_users=true" \
         -auto-approve
     info "Keycloak bootstrap completed successfully!"
 fi

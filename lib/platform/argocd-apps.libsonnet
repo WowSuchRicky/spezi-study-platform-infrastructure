@@ -54,7 +54,7 @@
     local envPath = '.';
     local envPrefix = if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'prod' else 'local-dev';
     // Note: PushSecrets removed - using Vault instead of GCP Secret Manager for now
-    // TODO: Re-add PushSecret ignore differences when switching back to GCP Secret Manager
+    // TODO: Re-add PushSecret ignore differences when switching back to GCP Secret Manager.
     local pushSecretIgnoreDifferences = [];
     std.objectValues({
       // Wave 0

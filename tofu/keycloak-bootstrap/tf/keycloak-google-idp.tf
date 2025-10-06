@@ -39,12 +39,23 @@ resource "keycloak_oidc_identity_provider" "google" {
 }
 
 # Identity Provider Mapper for email
+locals {
+  google_idp_mappers = {
+    "email-mapper"          = "47fd1684-d95f-42a5-b0d2-db6fafc1475a"
+    "first-name-mapper"     = "ec3e5137-9aea-489b-ba34-516d0acc92fc"
+    "last-name-mapper"      = "64c79ba8-648c-42d2-a396-439bf04aaa1b"
+    "username-mapper"       = "9568ff67-b6bd-472b-9747-1d599e536652"
+    "email-verified-mapper" = "0ec84edd-68fc-4ce7-843e-ec6df04b9c11"
+  }
+}
+
 resource "keycloak_custom_identity_provider_mapper" "google_email_mapper" {
-  count                    = length(keycloak_oidc_identity_provider.google)
+  count                    = local.google_idp_enabled && local.google_idp_mappers["email-mapper"] == "" ? 1 : 0
   realm                    = keycloak_realm.realm.id
   name                     = "email-mapper"
-  identity_provider_alias  = keycloak_oidc_identity_provider.google[count.index].alias
+  identity_provider_alias  = "google"
   identity_provider_mapper = "oidc-user-attribute-idp-mapper"
+  depends_on               = [keycloak_oidc_identity_provider.google]
 
   extra_config = {
     "syncMode"       = "INHERIT"
@@ -55,11 +66,12 @@ resource "keycloak_custom_identity_provider_mapper" "google_email_mapper" {
 
 # Identity Provider Mapper for first name
 resource "keycloak_custom_identity_provider_mapper" "google_first_name_mapper" {
-  count                    = length(keycloak_oidc_identity_provider.google)
+  count                    = local.google_idp_enabled && local.google_idp_mappers["first-name-mapper"] == "" ? 1 : 0
   realm                    = keycloak_realm.realm.id
   name                     = "first-name-mapper"
-  identity_provider_alias  = keycloak_oidc_identity_provider.google[count.index].alias
+  identity_provider_alias  = "google"
   identity_provider_mapper = "oidc-user-attribute-idp-mapper"
+  depends_on               = [keycloak_oidc_identity_provider.google]
 
   extra_config = {
     "syncMode"       = "INHERIT"
@@ -70,11 +82,12 @@ resource "keycloak_custom_identity_provider_mapper" "google_first_name_mapper" {
 
 # Identity Provider Mapper for last name
 resource "keycloak_custom_identity_provider_mapper" "google_last_name_mapper" {
-  count                    = length(keycloak_oidc_identity_provider.google)
+  count                    = local.google_idp_enabled && local.google_idp_mappers["last-name-mapper"] == "" ? 1 : 0
   realm                    = keycloak_realm.realm.id
   name                     = "last-name-mapper"
-  identity_provider_alias  = keycloak_oidc_identity_provider.google[count.index].alias
+  identity_provider_alias  = "google"
   identity_provider_mapper = "oidc-user-attribute-idp-mapper"
+  depends_on               = [keycloak_oidc_identity_provider.google]
 
   extra_config = {
     "syncMode"       = "INHERIT"
@@ -85,11 +98,12 @@ resource "keycloak_custom_identity_provider_mapper" "google_last_name_mapper" {
 
 # Identity Provider Mapper for username (use email as username)
 resource "keycloak_custom_identity_provider_mapper" "google_username_mapper" {
-  count                    = length(keycloak_oidc_identity_provider.google)
+  count                    = local.google_idp_enabled && local.google_idp_mappers["username-mapper"] == "" ? 1 : 0
   realm                    = keycloak_realm.realm.id
   name                     = "username-mapper"
-  identity_provider_alias  = keycloak_oidc_identity_provider.google[count.index].alias
+  identity_provider_alias  = "google"
   identity_provider_mapper = "oidc-username-idp-mapper"
+  depends_on               = [keycloak_oidc_identity_provider.google]
 
   extra_config = {
     "syncMode" = "INHERIT"
@@ -99,11 +113,12 @@ resource "keycloak_custom_identity_provider_mapper" "google_username_mapper" {
 
 # Identity Provider Mapper for email_verified (maps provider claim into Keycloak user.emailVerified)
 resource "keycloak_custom_identity_provider_mapper" "google_email_verified_mapper" {
-  count                    = length(keycloak_oidc_identity_provider.google)
+  count                    = local.google_idp_enabled && local.google_idp_mappers["email-verified-mapper"] == "" ? 1 : 0
   realm                    = keycloak_realm.realm.id
   name                     = "email-verified-mapper"
-  identity_provider_alias  = keycloak_oidc_identity_provider.google[count.index].alias
+  identity_provider_alias  = "google"
   identity_provider_mapper = "oidc-user-attribute-idp-mapper"
+  depends_on               = [keycloak_oidc_identity_provider.google]
 
   extra_config = {
     "syncMode" = "INHERIT"

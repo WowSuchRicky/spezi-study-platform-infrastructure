@@ -58,6 +58,12 @@ variable "enable_vault_secret_sync" {
   default     = false
 }
 
+variable "create_test_users" {
+  description = "Whether to provision example Keycloak users"
+  type        = bool
+  default     = false
+}
+
 variable "kube_config_path" {
   description = "Path to the kubeconfig file used by the Kubernetes provider"
   type        = string

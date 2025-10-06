@@ -8,10 +8,12 @@ GCP_PROJECT_ID="spezistudyplatform-dev"
 GCP_ZONE="us-west1-c"
 PRODUCTION_DOMAIN="platform.spezi.stanford.edu"
 STATIC_IP="34.168.131.83"
+TF_STATE_BUCKET="${TF_STATE_BUCKET:-spezistudyplatform-tf-state-prod}"
+TF_STATE_PREFIX="${TF_STATE_PREFIX:-terraform/state/keycloak-bootstrap}"
 KEYCLOAK_REALM="spezistudyplatform"
 KEYCLOAK_BASE_URL="http://localhost:8081/auth"
-KEYCLOAK_ADMIN_USERNAME="${KEYCLOAK_ADMIN_USERNAME:-admin}"
-KEYCLOAK_ADMIN_PASSWORD="${KEYCLOAK_ADMIN_PASSWORD:-admin123!}"
+KEYCLOAK_ADMIN_USERNAME="${KEYCLOAK_ADMIN_USERNAME:-}"
+KEYCLOAK_ADMIN_PASSWORD="${KEYCLOAK_ADMIN_PASSWORD:-}"
 
 # Get the directory of this script
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
@@ -73,6 +75,133 @@ fetch_keycloak_client_secret() {
     fi
 
     echo "$secret"
+}
+
+get_keycloak_admin_token() {
+    local response
+    response=$(curl -s -w '\n%{http_code}' -X POST "${KEYCLOAK_BASE_URL%/}/realms/master/protocol/openid-connect/token" \
+        -H 'Content-Type: application/x-www-form-urlencoded' \
+        --data-urlencode "client_id=admin-cli" \
+        --data-urlencode "username=$KEYCLOAK_ADMIN_USERNAME" \
+        --data-urlencode "password=$KEYCLOAK_ADMIN_PASSWORD" \
+        --data-urlencode 'grant_type=password')
+
+    local status token_json
+    status=$(echo "$response" | tail -n1)
+    token_json=$(echo "$response" | head -n-1)
+
+    if [ "$status" != "200" ] || [ -z "$token_json" ]; then
+        echo ""
+        return 1
+    fi
+
+    python3 -c 'import json,sys; data=json.load(sys.stdin); print(data.get("access_token", ""))' <<< "$token_json"
+}
+
+get_keycloak_client_uuid() {
+    local client_id="$1"
+    local token="$2"
+    if [ -z "$token" ]; then
+        echo ""
+        return 0
+    fi
+    local response status body
+    response=$(curl -s -w '\n%{http_code}' -H "Authorization: Bearer $token" \
+        "${KEYCLOAK_BASE_URL%/}/admin/realms/${KEYCLOAK_REALM}/clients?clientId=${client_id}") || return 0
+    status=$(echo "$response" | tail -n1)
+    body=$(echo "$response" | head -n-1)
+    if [ "$status" != "200" ] || [ -z "$body" ]; then
+        info "  Failed to fetch client '$client_id' (status: $status)"
+        echo ""
+        return 0
+    fi
+    printf '%s' "$body" | python3 - <<'PY'
+import json, sys
+raw = sys.stdin.read()
+try:
+    data = json.loads(raw)
+except json.JSONDecodeError:
+    print("")
+    raise SystemExit(0)
+if isinstance(data, list) and data:
+    print(data[0].get("id", ""))
+else:
+    print("")
+PY
+}
+
+get_keycloak_client_scope_id() {
+    local scope_name="$1"
+    local token="$2"
+    if [ -z "$token" ]; then
+        echo ""
+        return 0
+    fi
+    local response status body
+    response=$(curl -s -w '\n%{http_code}' -H "Authorization: Bearer $token" \
+        "${KEYCLOAK_BASE_URL%/}/admin/realms/${KEYCLOAK_REALM}/client-scopes") || return 0
+    status=$(echo "$response" | tail -n1)
+    body=$(echo "$response" | head -n-1)
+    if [ "$status" != "200" ] || [ -z "$body" ]; then
+        info "  Failed to fetch client scopes (status: $status)"
+        echo ""
+        return 0
+    fi
+    printf '%s' "$body" | python3 - "$scope_name" <<'PY'
+import json, sys
+scope_name = sys.argv[1]
+try:
+    data = json.load(sys.stdin)
+except json.JSONDecodeError:
+    print("")
+    raise SystemExit(0)
+for scope in data:
+    if scope.get("name") == scope_name:
+        print(scope.get("id", ""))
+        break
+else:
+    print("")
+PY
+}
+
+keycloak_identity_provider_exists() {
+    local alias="$1"
+    local token="$2"
+    if [ -z "$token" ]; then
+        return 1
+    fi
+    local status
+    status=$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $token" \
+        "${KEYCLOAK_BASE_URL%/}/admin/realms/${KEYCLOAK_REALM}/identity-provider/instances/${alias}")
+    [ "$status" = "200" ]
+}
+
+get_keycloak_role_id() {
+    local role_name="$1"
+    local token="$2"
+    if [ -z "$token" ]; then
+        echo ""
+        return 0
+    fi
+    local response status body
+    response=$(curl -s -w '\n%{http_code}' -H "Authorization: Bearer $token" \
+        "${KEYCLOAK_BASE_URL%/}/admin/realms/${KEYCLOAK_REALM}/roles/${role_name}") || return 0
+    status=$(echo "$response" | tail -n1)
+    body=$(echo "$response" | head -n-1)
+    if [ "$status" != "200" ] || [ -z "$body" ]; then
+        info "  Failed to fetch role '$role_name' (status: $status)"
+        echo ""
+        return 0
+    fi
+    printf '%s' "$body" | python3 - <<'PY'
+import json, sys
+try:
+    data = json.load(sys.stdin)
+except json.JSONDecodeError:
+    print("")
+    raise SystemExit(0)
+print(data.get("id", ""))
+PY
 }
 
 # --- Prerequisites Check ---
@@ -451,6 +580,35 @@ if [ $attempt -eq $max_attempts ]; then
     error "Keycloak is not ready after waiting."
 fi
 
+# Fetch admin password from Kubernetes secret when not provided
+if [ -z "$KEYCLOAK_ADMIN_PASSWORD" ]; then
+    KEYCLOAK_ADMIN_PASSWORD=$(kubectl get secret keycloak -n spezistudyplatform -o jsonpath="{.data['admin-password']}" 2>/dev/null | base64 --decode | tr -d '\n')
+    if [ -z "$KEYCLOAK_ADMIN_PASSWORD" ]; then
+        error "Unable to retrieve Keycloak admin password from secret. Set KEYCLOAK_ADMIN_PASSWORD env var or ensure the secret exists."
+    fi
+fi
+
+if [ -z "$KEYCLOAK_ADMIN_USERNAME" ]; then
+    KEYCLOAK_ADMIN_USERNAME=$(kubectl get secret keycloak -n spezistudyplatform -o jsonpath="{.data['admin-username']}" 2>/dev/null | base64 --decode | tr -d '\n' || true)
+fi
+
+# Ensure we always have a usable admin username (Bitnami chart defaults to "user")
+KEYCLOAK_ADMIN_USERNAME=${KEYCLOAK_ADMIN_USERNAME:-user}
+
+info "Using Keycloak admin username from secret: $KEYCLOAK_ADMIN_USERNAME"
+
+KEYCLOAK_ADMIN_TOKEN=$(get_keycloak_admin_token)
+if [ -z "$KEYCLOAK_ADMIN_TOKEN" ]; then
+    error "Failed to authenticate to Keycloak using provided admin credentials."
+fi
+
+if [ "${RESET_KEYCLOAK_STATE:-0}" = "1" ]; then
+    info "RESET_KEYCLOAK_STATE=1, removing existing Terraform state before Keycloak bootstrap."
+    gsutil rm -f "gs://${TF_STATE_BUCKET}/${TF_STATE_PREFIX}/default.tfstate" >/dev/null 2>&1 || true
+    gsutil rm -f "gs://${TF_STATE_BUCKET}/${TF_STATE_PREFIX}/default.tfstate.backup" >/dev/null 2>&1 || true
+    rm -rf "$SCRIPT_DIR/tofu/keycloak-bootstrap/tf/.terraform" "$SCRIPT_DIR/tofu/keycloak-bootstrap/tf/terraform.tfstate"* >/dev/null 2>&1 || true
+fi
+
 # Run Tofu bootstrap for production
 cd "$SCRIPT_DIR/tofu/keycloak-bootstrap/tf"
 TERRAFORM_CMD="tofu"
@@ -459,13 +617,49 @@ if ! command -v tofu &> /dev/null; then
 fi
 
 info "Running Keycloak bootstrap with $TERRAFORM_CMD for production..."
-$TERRAFORM_CMD init
+export TF_VAR_keycloak_password="$KEYCLOAK_ADMIN_PASSWORD"
+export TF_VAR_keycloak_username="$KEYCLOAK_ADMIN_USERNAME"
+export TF_VAR_keycloak_client_id="admin-cli"
+export TF_VAR_keycloak_url="$KEYCLOAK_BASE_URL"
+export TF_VAR_gcp_project_id="$GCP_PROJECT_ID"
+export TF_VAR_enable_google_sso="true"
+export TF_VAR_create_test_users="false"
+
+$TERRAFORM_CMD init \
+    -migrate-state \
+    -backend-config="bucket=$TF_STATE_BUCKET" \
+    -backend-config="prefix=$TF_STATE_PREFIX"
+
+if command -v gsutil >/dev/null 2>&1; then
+    LOCK_OBJECT="gs://${TF_STATE_BUCKET}/${TF_STATE_PREFIX}/default.tflock"
+    if gsutil ls "$LOCK_OBJECT" >/dev/null 2>&1; then
+        info "Found existing remote state lock at $LOCK_OBJECT; attempting to remove it before import"
+        gsutil rm "$LOCK_OBJECT" >/dev/null 2>&1 || true
+    else
+        info "No existing remote state lock found at $LOCK_OBJECT before import"
+    fi
+fi
+
+# Manual imports for existing Keycloak configuration
+# (A temporary workaround while cleaning up state)
+info "Skipping automatic import (temporary)"
+
+if command -v gsutil >/dev/null 2>&1; then
+    LOCK_OBJECT="gs://${TF_STATE_BUCKET}/${TF_STATE_PREFIX}/default.tflock"
+    if gsutil ls "$LOCK_OBJECT" >/dev/null 2>&1; then
+        info "Ensuring remote state lock is cleared before apply ($LOCK_OBJECT)"
+        gsutil rm "$LOCK_OBJECT" >/dev/null 2>&1 || true
+    fi
+fi
+
 $TERRAFORM_CMD apply \
     -var="keycloak_url=$KEYCLOAK_BASE_URL" \
-    -var="keycloak_password=$KEYCLOAK_ADMIN_PASSWORD" \
     -var="frontend_url=https://$PRODUCTION_DOMAIN" \
     -var="gcp_project_id=$GCP_PROJECT_ID" \
+    -var="enable_google_sso=true" \
     -auto-approve
+
+unset TF_VAR_keycloak_password TF_VAR_keycloak_username TF_VAR_keycloak_client_id TF_VAR_keycloak_url TF_VAR_gcp_project_id TF_VAR_enable_google_sso TF_VAR_create_test_users
 
 info "Keycloak bootstrap completed successfully!"
 
