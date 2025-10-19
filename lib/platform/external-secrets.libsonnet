@@ -251,6 +251,7 @@
           kind: 'ClusterSecretStore',
           metadata: {
             name: 'vault-backend',
+            namespace: '',
           },
           spec: {
             provider: {
@@ -292,6 +293,7 @@
           kind: 'ClusterSecretStore',
           metadata: {
             name: 'gcpsm-secret-store',
+            namespace: '',
           },
           spec: {
             provider: {
