@@ -39,11 +39,11 @@ function(staticIP='34.168.131.83') {
     caCrt: null,
     externalSecrets+: {
       enabled: true,
-      provider: 'vault',  // TODO: Switch to 'gcpsm' when ready to use GCP Secret Manager
-      // gcp: {
-      //   projectId: 'spezistudyplatform-dev', 
-      //   serviceAccountKeySecret: 'gcp-sa-key',
-      // },
+      provider: 'gcpsm',
+      gcp: {
+        projectId: 'spezistudyplatform-dev',
+        serviceAccountKeySecret: 'gcp-sa-key',
+      },
     },
   },
   

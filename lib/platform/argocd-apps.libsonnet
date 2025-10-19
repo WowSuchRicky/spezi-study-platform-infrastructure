@@ -53,9 +53,15 @@
   withConfig(config)::
     local envPath = '.';
     local envPrefix = if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'prod' else 'local-dev';
-    // Note: PushSecrets removed - using Vault instead of GCP Secret Manager for now
-    // TODO: Re-add PushSecret ignore differences when switching back to GCP Secret Manager.
-    local pushSecretIgnoreDifferences = [];
+    // Ignore PushSecret status churn only when External Secrets is backed by GCP Secret Manager
+    local pushSecretIgnoreDifferences =
+      if std.get(std.get(config, 'externalSecrets', {}), 'provider', '') == 'gcpsm' then [
+        {
+          group: 'external-secrets.io',
+          kind: 'PushSecret',
+          jsonPointers: ['/status'],
+        },
+      ] else [];
     std.objectValues({
       // Wave 0
       'namespace-app': app('namespace', 0, config, envPath, envPrefix),
