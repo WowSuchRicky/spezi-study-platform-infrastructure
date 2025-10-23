@@ -12,14 +12,10 @@ function(staticIP='34.168.131.83') {
     // External Secrets configuration (disabled by default)
     externalSecrets: {
       enabled: false,
-      provider: null, // 'vault' for local-dev, 'gcpsm' for production
+      provider: 'vault',
       vault: {
         server: 'http://vault.vault.svc.cluster.local:8200',
         rootToken: 'dev-only-token', // Only for development
-      },
-      gcp: {
-        projectId: null, // Must be set for production
-        serviceAccountKeySecret: null, // Must be set for production
       },
     },
     
@@ -39,11 +35,6 @@ function(staticIP='34.168.131.83') {
     caCrt: null,
     externalSecrets+: {
       enabled: true,
-      provider: 'gcpsm',
-      gcp: {
-        projectId: 'spezistudyplatform-dev',
-        serviceAccountKeySecret: 'gcp-sa-key',
-      },
     },
   },
   

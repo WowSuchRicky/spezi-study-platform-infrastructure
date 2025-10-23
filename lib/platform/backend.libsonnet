@@ -16,7 +16,7 @@
         spec: {
           refreshInterval: '15s',
           secretStoreRef: {
-            name: if config.externalSecrets.provider == 'gcpsm' then 'gcpsm-secret-store' else 'vault-backend',
+            name: 'vault-backend',
             kind: 'ClusterSecretStore',
           },
           target: {
@@ -37,47 +37,6 @@
           ],
         },
       },
-
-      // PushSecret for backend OAuth secret (only for GCP Secret Manager)
-      backend_oauth_push_secret: if config.externalSecrets.provider == 'gcpsm' then {
-        apiVersion: 'external-secrets.io/v1alpha1',
-        kind: 'PushSecret',
-        metadata: {
-          name: 'backend-oauth-push-secret',
-          namespace: 'external-secrets-system',
-          annotations: {
-            'argocd.argoproj.io/compare-options': 'IgnoreExtraneous',
-          },
-        },
-        spec: {
-          updatePolicy: 'Replace',
-          refreshInterval: '24h',
-          secretStoreRefs: [
-            {
-              name: 'gcpsm-secret-store',
-              kind: 'ClusterSecretStore',
-            },
-          ],
-          selector: {
-            generatorRef: {
-              apiVersion: 'generators.external-secrets.io/v1alpha1',
-              kind: 'Password',
-              name: 'oauth-secret-generator',
-            },
-          },
-          data: [
-            {
-              match: {
-                secretKey: 'password',
-                remoteRef: {
-                  remoteKey: 'spezistudyplatform-backend',
-                  property: 'OAUTH_CLIENT_SECRET',
-                },
-              },
-            },
-          ],
-        },
-      } else {},
 
       backend_config: k.core.v1.configMap.new('spezistudyplatform-backend-config', {
         PORT: '3003',

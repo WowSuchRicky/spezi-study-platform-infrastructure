@@ -53,15 +53,6 @@
   withConfig(config)::
     local envPath = '.';
     local envPrefix = if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'prod' else 'local-dev';
-    // Ignore PushSecret status churn only when External Secrets is backed by GCP Secret Manager
-    local pushSecretIgnoreDifferences =
-      if std.get(std.get(config, 'externalSecrets', {}), 'provider', '') == 'gcpsm' then [
-        {
-          group: 'external-secrets.io',
-          kind: 'PushSecret',
-          jsonPointers: ['/status'],
-        },
-      ] else [];
     std.objectValues({
       // Wave 0
       'namespace-app': app('namespace', 0, config, envPath, envPrefix),
@@ -113,13 +104,13 @@
       'cert-manager-app': app('cert-manager', 1, config, envPath, envPrefix),
       'external-secrets-app': app('external-secrets', 1, config, envPath, envPrefix),
 
-      // Wave 2 - Apps with PushSecrets ignore all PushSecret differences
-      'cnpg-app': app('cloudnative-pg', 2, config, envPath, envPrefix, pushSecretIgnoreDifferences),
-      'auth-app': app('auth', 2, config, envPath, envPrefix, pushSecretIgnoreDifferences),
+      // Wave 2
+      'cnpg-app': app('cloudnative-pg', 2, config, envPath, envPrefix),
+      'auth-app': app('auth', 2, config, envPath, envPrefix),
 
-      // Wave 3 - Apps with PushSecrets ignore all PushSecret differences  
-      'backend-app': app('backend', 3, config, envPath, envPrefix, pushSecretIgnoreDifferences),
-      'frontend-app': app('frontend', 3, config, envPath, envPrefix, pushSecretIgnoreDifferences),
-      'argocd-app': app('argocd', 3, config, envPath, envPrefix, pushSecretIgnoreDifferences),
+      // Wave 3  
+      'backend-app': app('backend', 3, config, envPath, envPrefix),
+      'frontend-app': app('frontend', 3, config, envPath, envPrefix),
+      'argocd-app': app('argocd', 3, config, envPath, envPrefix),
     }),
 }

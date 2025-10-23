@@ -15,7 +15,7 @@
       spec: {
         refreshInterval: '15s',
         secretStoreRef: {
-          name: if config.externalSecrets.provider == 'gcpsm' then 'gcpsm-secret-store' else 'vault-backend',
+          name: 'vault-backend',
           kind: 'ClusterSecretStore',
         },
         target: {
@@ -139,126 +139,6 @@
           |||,
         },
       },
-      // PushSecret for oauth2-proxy client-secret (only for GCP Secret Manager)
-      oauth2_proxy_client_secret_push: if config.externalSecrets.provider == 'gcpsm' then {
-        apiVersion: 'external-secrets.io/v1alpha1',
-        kind: 'PushSecret',
-        metadata: {
-          name: 'oauth2-proxy-client-secret-push',
-          namespace: 'external-secrets-system',
-          annotations: {
-            'argocd.argoproj.io/compare-options': 'IgnoreExtraneous',
-          },
-        },
-        spec: {
-          updatePolicy: 'Replace',
-          refreshInterval: '24h',
-          secretStoreRefs: [
-            {
-              name: 'gcpsm-secret-store',
-              kind: 'ClusterSecretStore',
-            },
-          ],
-          selector: {
-            generatorRef: {
-              apiVersion: 'generators.external-secrets.io/v1alpha1',
-              kind: 'Password',
-              name: 'oauth-secret-generator',
-            },
-          },
-          data: [
-            {
-              match: {
-                secretKey: 'password',
-                remoteRef: {
-                  remoteKey: 'oauth2-proxy-secret',
-                  property: 'client-secret',
-                },
-              },
-            },
-          ],
-        },
-      } else {},
-      // PushSecret for oauth2-proxy cookie-secret (only for GCP Secret Manager)
-      oauth2_proxy_cookie_secret_push: if config.externalSecrets.provider == 'gcpsm' then {
-        apiVersion: 'external-secrets.io/v1alpha1',
-        kind: 'PushSecret',
-        metadata: {
-          name: 'oauth2-proxy-cookie-secret-push',
-          namespace: 'external-secrets-system',
-          annotations: {
-            'argocd.argoproj.io/compare-options': 'IgnoreExtraneous',
-          },
-        },
-        spec: {
-          updatePolicy: 'Replace',
-          refreshInterval: '24h',
-          secretStoreRefs: [
-            {
-              name: 'gcpsm-secret-store',
-              kind: 'ClusterSecretStore',
-            },
-          ],
-          selector: {
-            generatorRef: {
-              apiVersion: 'generators.external-secrets.io/v1alpha1',
-              kind: 'Password',
-              name: 'cookie-secret-generator',
-            },
-          },
-          data: [
-            {
-              match: {
-                secretKey: 'password',
-                remoteRef: {
-                  remoteKey: 'oauth2-proxy-secret',
-                  property: 'cookie-secret',
-                },
-              },
-            },
-          ],
-        },
-      } else {},
-      // PushSecret for oauth2-proxy client-id (static value, only for GCP Secret Manager)
-      oauth2_proxy_client_id_push: if config.externalSecrets.provider == 'gcpsm' then {
-        apiVersion: 'external-secrets.io/v1alpha1',
-        kind: 'PushSecret',
-        metadata: {
-          name: 'oauth2-proxy-client-id-push',
-          namespace: 'external-secrets-system',
-          annotations: {
-            'argocd.argoproj.io/compare-options': 'IgnoreExtraneous',
-          },
-        },
-        spec: {
-          updatePolicy: 'Replace',
-          refreshInterval: '24h',
-          secretStoreRefs: [
-            {
-              name: 'gcpsm-secret-store',
-              kind: 'ClusterSecretStore',
-            },
-          ],
-          selector: {
-            generatorRef: {
-              apiVersion: 'generators.external-secrets.io/v1alpha1',
-              kind: 'Fake',
-              name: 'oauth2-proxy-client-id-generator',
-            },
-          },
-          data: [
-            {
-              match: {
-                secretKey: 'client-id',
-                remoteRef: {
-                  remoteKey: 'oauth2-proxy-secret',
-                  property: 'client-id',
-                },
-              },
-            },
-          ],
-        },
-      } else {},
     } + (
       if config.mode == 'PRODUCTION' then {
         'oauth2-proxy-ca-secret': {

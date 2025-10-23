@@ -1,7 +1,6 @@
 {
   withConfig(config)::
-    if config.externalSecrets.enabled then
-      (if config.externalSecrets.provider == 'vault' then {
+    if config.externalSecrets.enabled then {
         // HashiCorp Vault for development
         vault: {
           apiVersion: 'v1',
@@ -286,113 +285,5 @@
         },
 
         
-      } else if config.externalSecrets.provider == 'gcpsm' then {
-        // GCP Secret Manager for production
-        'gcp-secret-store': {
-          apiVersion: 'external-secrets.io/v1',
-          kind: 'ClusterSecretStore',
-          metadata: {
-            name: 'gcpsm-secret-store',
-            namespace: '',
-          },
-          spec: {
-            provider: {
-              gcpsm: {
-                projectID: config.externalSecrets.gcp.projectId,
-                auth: {
-                  secretRef: {
-                    secretAccessKeySecretRef: {
-                      name: config.externalSecrets.gcp.serviceAccountKeySecret,
-                      namespace: 'external-secrets-system',
-                      key: 'secret-access-credentials',
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-
-        // Password generators for automatic secret creation
-        'oauth-secret-generator': {
-          apiVersion: 'generators.external-secrets.io/v1alpha1',
-          kind: 'Password',
-          metadata: {
-            name: 'oauth-secret-generator',
-            namespace: 'external-secrets-system',
-          },
-          spec: {
-            length: 32,
-            digits: 5,
-            symbols: 5,
-            symbolCharacters: '-_$@',
-            noUpper: false,
-            allowRepeat: true,
-          },
-        },
-
-        'db-password-generator': {
-          apiVersion: 'generators.external-secrets.io/v1alpha1',
-          kind: 'Password',
-          metadata: {
-            name: 'db-password-generator',
-            namespace: 'external-secrets-system',
-          },
-          spec: {
-            length: 20,
-            digits: 3,
-            symbols: 3,
-            symbolCharacters: '!@#$',
-            noUpper: false,
-            allowRepeat: true,
-          },
-        },
-
-        'cookie-secret-generator': {
-          apiVersion: 'generators.external-secrets.io/v1alpha1',
-          kind: 'Password',
-          metadata: {
-            name: 'cookie-secret-generator',
-            namespace: 'external-secrets-system',
-          },
-          spec: {
-            length: 32,
-            digits: 0,
-            symbols: 0,
-            noUpper: false,
-            allowRepeat: true,
-          },
-        },
-
-        // Fake generators for static values
-        'oauth2-proxy-client-id-generator': {
-          apiVersion: 'generators.external-secrets.io/v1alpha1',
-          kind: 'Fake',
-          metadata: {
-            name: 'oauth2-proxy-client-id-generator',
-            namespace: 'external-secrets-system',
-          },
-          spec: {
-            data: {
-              'client-id': 'oauth2-proxy',
-            },
-          },
-        },
-
-        'postgres-username-generator': {
-          apiVersion: 'generators.external-secrets.io/v1alpha1',
-          kind: 'Fake',
-          metadata: {
-            name: 'postgres-username-generator',
-            namespace: 'external-secrets-system',
-          },
-          spec: {
-            data: {
-              username: 'spezistudyplatform',
-            },
-          },
-        },
-        
-      } else {})
-    else {}
+    } else {}
 }
