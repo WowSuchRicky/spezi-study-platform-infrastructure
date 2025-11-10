@@ -1,4 +1,4 @@
-function(staticIP='34.168.131.83') {
+function(staticIP='34.168.138.135') {
   // Base configuration that can be customized per environment
   base:: {
     namespace: 'spezistudyplatform',

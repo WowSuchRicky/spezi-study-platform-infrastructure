@@ -12,7 +12,7 @@ spezi_service_fqdn: platform.spezi.stanford.edu
 
 # Static IP (if it already exists) for the service:
 # for now, get this from GCP after the terraform steps and insert it here manually before doing the kube provisioning. 
-spezi_service_static_ip: 34.168.131.83
+spezi_service_static_ip: 34.168.138.135
 
 spezi_service_admin_email: replace-me@stanford.edu
 spezi_service_repo_url: "https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git"

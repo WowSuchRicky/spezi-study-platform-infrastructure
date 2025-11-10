@@ -9,6 +9,16 @@
   register: gcp_project
   changed_when: false
 
+- name: Ensure Terraform backend config for remote state
+  when: terraform_backend_config is defined and terraform_backend_config | length > 0
+  ansible.builtin.copy:
+    dest: "{{ terraform_directory }}/backend.tf"
+    content: |
+      terraform {
+        backend "gcs" {}
+      }
+    mode: "0644"
+
 - name: Terraform Init & Apply (with backend config)
   community.general.terraform:
     project_path: "{{ terraform_directory }}"
@@ -20,6 +30,12 @@
   register: tf_apply_result
   environment:
     GOOGLE_APPLICATION_CREDENTIALS: "{{ gcp_credentials_file }}"
+
+- name: Remove temporary Terraform backend config
+  when: terraform_backend_config is defined and terraform_backend_config | length > 0
+  ansible.builtin.file:
+    path: "{{ terraform_directory }}/backend.tf"
+    state: absent
 
 - name: Set Terraform output as Ansible facts
   set_fact:

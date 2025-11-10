@@ -94,6 +94,12 @@ else
 fi
 info "KIND cluster is ready."
 
+# Ensure downstream tools talk to the freshly created cluster.
+KUBECONFIG_FILE="$SCRIPT_DIR/.kind-kubeconfig"
+info "Writing kubeconfig to $KUBECONFIG_FILE"
+kind get kubeconfig --name "$KIND_CLUSTER_NAME" > "$KUBECONFIG_FILE"
+export KUBECONFIG="$KUBECONFIG_FILE"
+
 # 2. Install Argo CD
 info "Installing Argo CD..."
 kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
@@ -256,7 +262,7 @@ while [ $attempt -lt $max_attempts ]; do
 
     info "Waiting for namespace to be created... (attempt $((attempt+1))/$max_attempts)"
     sleep 15
-    ((attempt++))
+    ((++attempt))  # pre-increment keeps set -e from exiting on zero status
 done
 
 if [ $attempt -eq $max_attempts ]; then
@@ -302,6 +308,105 @@ if [ $attempt -eq $max_attempts ]; then
     exit 1
 fi
 
+info "Waiting for auth application to be healthy..."
+# Wait for critical wave 2 applications to be healthy before proceeding
+wave2_apps=("local-dev-auth")
+max_attempts=30
+attempt=0
+
+while [ $attempt -lt $max_attempts ]; do
+    # Temporarily disable exit on error for the entire loop iteration
+    set +e
+    all_healthy=true
+    for app in "${wave2_apps[@]}"; do
+        app_exists=$(kubectl get application "$app" -n argocd >/dev/null 2>&1; echo $?)
+        if [ "$app_exists" -eq 0 ]; then
+            app_status=$(kubectl get application "$app" -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null)
+            health_status=$(kubectl get application "$app" -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null)
+
+            app_status=${app_status:-"Unknown"}
+            health_status=${health_status:-"Unknown"}
+
+            info "Application $app: sync=$app_status, health=$health_status"
+
+            if [ "$app_status" != "Synced" ] || [ "$health_status" != "Healthy" ]; then
+                all_healthy=false
+            fi
+        else
+            info "Application $app not found yet"
+            all_healthy=false
+        fi
+    done
+
+    if [ "$all_healthy" = true ]; then
+        set -e  # Re-enable exit on error
+        info "All wave 2 applications are healthy!"
+        break
+    fi
+
+    info "Waiting for wave 2 applications to be healthy... (attempt $((attempt+1))/$max_attempts)"
+    sleep 15
+    ((attempt++))
+    set -e  # Re-enable exit on error at the very end of loop iteration
+done
+
+if [ $attempt -eq $max_attempts ]; then
+    info "Warning: Not all wave 2 applications are healthy. Proceeding anyway..."
+fi
+
+info "Waiting for Argo CD application to be healthy..."
+wave3_apps=("local-dev-argocd")
+max_attempts=30
+attempt=0
+
+while [ $attempt -lt $max_attempts ]; do
+    set +e
+    all_healthy=true
+    for app in "${wave3_apps[@]}"; do
+        app_exists=$(kubectl get application "$app" -n argocd >/dev/null 2>&1; echo $?)
+        if [ "$app_exists" -eq 0 ]; then
+            app_status=$(kubectl get application "$app" -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null)
+            health_status=$(kubectl get application "$app" -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null)
+
+            app_status=${app_status:-"Unknown"}
+            health_status=${health_status:-"Unknown"}
+
+            info "Application $app: sync=$app_status, health=$health_status"
+
+            if [ "$app_status" != "Synced" ] || [ "$health_status" != "Healthy" ]; then
+                all_healthy=false
+            fi
+        else
+            info "Application $app not found yet"
+            all_healthy=false
+        fi
+    done
+
+    if [ "$all_healthy" = true ]; then
+        set -e
+        info "Argo CD application is healthy!"
+        break
+    fi
+
+    info "Waiting for Argo CD application to be healthy... (attempt $((attempt+1))/$max_attempts)"
+    sleep 15
+    ((attempt++))
+    set -e  # Re-enable exit on error at the very end of loop iteration
+
+done
+
+if [ $attempt -eq $max_attempts ]; then
+    info "Warning: Argo CD application is not healthy. Proceeding anyway..."
+fi
+
+if kubectl -n argocd get deployment argocd-server >/dev/null 2>&1; then
+    info "Restarting Argo CD server to pick up configuration updates..."
+    kubectl -n argocd rollout restart deployment argocd-server >/dev/null
+    kubectl -n argocd rollout status deployment argocd-server --timeout=180s >/dev/null || true
+else
+    info "Argo CD server deployment not available yet; skipping restart."
+fi
+
 # Bootstrap Keycloak realm and OAuth2 proxy client
 info "Bootstrapping Keycloak realm and OAuth2 proxy configuration..."
 
@@ -331,7 +436,7 @@ then
     fi
     info "Waiting for Keycloak to be ready... (attempt $((attempt+1))/$max_attempts)"
     sleep 10
-    ((attempt++))
+    ((++attempt))  # pre-increment keeps retries alive under set -e
 done
 
 if [ $attempt -eq $max_attempts ]; then
@@ -391,6 +496,77 @@ else
         -var="create_test_users=true" \
         -auto-approve
     info "Keycloak bootstrap completed successfully!"
+
+    VAULT_ROOT_TOKEN="${VAULT_ROOT_TOKEN:-dev-only-token}"
+    if command -v jq >/dev/null 2>&1; then
+        OAUTH2_PROXY_CLIENT_SECRET="$(jq -r '.resources[] | select(.type=="random_password" and .name=="oauth2_proxy_client_secret") | .instances[0].attributes.result' "$LOCAL_TF_STATE_FILE" 2>/dev/null || echo "")"
+        if [ -n "$OAUTH2_PROXY_CLIENT_SECRET" ] && [ "$OAUTH2_PROXY_CLIENT_SECRET" != "null" ]; then
+            VAULT_POD="$(kubectl -n vault get pods -l app=vault -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
+            if [ -n "$VAULT_POD" ]; then
+                info "Syncing oauth2-proxy credential into Vault..."
+                kubectl -n vault exec "$VAULT_POD" -- env VAULT_TOKEN="$VAULT_ROOT_TOKEN" VAULT_ADDR="http://127.0.0.1:8200" vault kv put secret/oauth2-proxy-secret \
+                    client-id=oauth2-proxy \
+                    client-secret="$OAUTH2_PROXY_CLIENT_SECRET" \
+                    cookie-secret=local-dev-cookie-secret-32-chars >/dev/null
+                info "Vault oauth2-proxy secret updated to match Keycloak."
+
+                expected_secret="$OAUTH2_PROXY_CLIENT_SECRET"
+                secret_attempt=0
+                secret_max_attempts=30
+                info "Waiting for oauth2-proxy Kubernetes secret to reflect updated credentials..."
+                while [ $secret_attempt -lt $secret_max_attempts ]; do
+                    set +e
+                    secret_value_b64=$(kubectl -n spezistudyplatform get secret oauth2-proxy-secret -o jsonpath='{.data.client-secret}' 2>/dev/null)
+                    secret_status=$?
+                    set -e
+
+                    if [ $secret_status -eq 0 ] && [ -n "$secret_value_b64" ]; then
+                        decoded_secret=$(echo "$secret_value_b64" | base64 --decode 2>/dev/null || echo "")
+                        if [ -z "$decoded_secret" ]; then
+                            decoded_secret=$(echo "$secret_value_b64" | base64 -d 2>/dev/null || echo "")
+                        fi
+                        if [ "$decoded_secret" = "$expected_secret" ]; then
+                            info "oauth2-proxy Kubernetes secret now matches Keycloak credentials."
+                            break
+                        fi
+                    fi
+
+                    info "Waiting for oauth2-proxy secret sync... (attempt $((secret_attempt+1))/$secret_max_attempts)"
+                    sleep 5
+                    ((++secret_attempt))  # pre-increment to avoid set -e exiting on zero status
+                done
+
+                if [ $secret_attempt -eq $secret_max_attempts ]; then
+                    info "Warning: oauth2-proxy secret did not update in time; continuing without restarting the deployment."
+                else
+                    deploy_attempt=0
+                    deploy_max_attempts=24
+                    while [ $deploy_attempt -lt $deploy_max_attempts ]; do
+                        if kubectl -n spezistudyplatform get deployment oauth2-proxy >/dev/null 2>&1; then
+                            info "Restarting oauth2-proxy deployment to pick up new credentials..."
+                            kubectl -n spezistudyplatform rollout restart deployment/oauth2-proxy >/dev/null
+                            kubectl -n spezistudyplatform rollout status deployment/oauth2-proxy --timeout=120s >/dev/null || true
+                            break
+                        fi
+
+                        info "Waiting for oauth2-proxy deployment before restart... (attempt $((deploy_attempt+1))/$deploy_max_attempts)"
+                        sleep 5
+                        ((++deploy_attempt))  # pre-increment keeps status non-zero under set -e
+                    done
+
+                    if [ $deploy_attempt -eq $deploy_max_attempts ]; then
+                        info "Warning: oauth2-proxy deployment not available; it will use the updated secret on first start."
+                    fi
+                fi
+            else
+                info "Warning: unable to locate Vault pod; skipping oauth2-proxy secret sync."
+            fi
+        else
+            info "Warning: could not read oauth2-proxy secret from Tofu state; skipping sync."
+        fi
+    else
+        info "Warning: jq not found on PATH; skipping oauth2-proxy secret sync."
+    fi
 fi
 
 cd "$SCRIPT_DIR"

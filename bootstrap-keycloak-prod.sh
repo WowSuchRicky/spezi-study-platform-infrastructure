@@ -24,10 +24,15 @@ error() {
 
 trap 'cleanup' EXIT
 
+BACKEND_FILE=""
+
 cleanup() {
     info "Cleaning up..."
     if [ -n "$PORT_FORWARD_PID" ] && ps -p $PORT_FORWARD_PID > /dev/null; then
         kill $PORT_FORWARD_PID
+    fi
+    if [ -n "$BACKEND_FILE" ] && [ -f "$BACKEND_FILE" ]; then
+        rm -f "$BACKEND_FILE"
     fi
 }
 
@@ -111,6 +116,13 @@ if ! command -v tofu &> /dev/null; then
     TERRAFORM_CMD="terraform"
 fi
 
+BACKEND_FILE="$PWD/backend-prod.tf"
+cat > "$BACKEND_FILE" <<'EOF'
+terraform {
+  backend "gcs" {}
+}
+EOF
+
 info "Running Keycloak bootstrap with $TERRAFORM_CMD for production..."
 # Export sensitive vars before running Terraform so both init and apply can use them
 export TF_VAR_keycloak_password="$KEYCLOAK_ADMIN_PASSWORD"
@@ -161,6 +173,8 @@ $TERRAFORM_CMD apply \
     -var="gcp_project_id=${GCP_PROJECT_ID}" \
     -var="enable_google_sso=true" \
     -auto-approve
+
+rm -f "$BACKEND_FILE"
 
 unset TF_VAR_keycloak_password TF_VAR_keycloak_username TF_VAR_keycloak_client_id TF_VAR_create_test_users
 

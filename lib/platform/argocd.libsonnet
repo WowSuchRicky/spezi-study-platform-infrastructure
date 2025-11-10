@@ -1,6 +1,19 @@
 {
   local k = import 'k.libsonnet',
   withConfig(config)::
+    local oidcConfig = |||
+      name: Keycloak
+      issuer: https://%(domain)s/auth/realms/spezistudyplatform
+      clientId: argocd
+      redirectURI: https://%(domain)s/argo/auth/callback
+      enablePKCEAuthentication: true
+      insecure: true
+      requestedScopes: ["openid", "profile", "email", "groups"]
+      requestedIDTokenClaims:
+        groups:
+          essential: true
+      cliClientId: argocd
+    ||| % { domain: config.domain };
     {
       // ArgoCD Ingress Route with OAuth2-proxy integration
       argocd_oauth_middleware: {
@@ -114,21 +127,8 @@
         // come back and clean this up eventually. It's not harmful, just ugly!
         data: {
           'url': 'https://' + config.domain + '/argo',
-        } + (if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then {
-          'oidc.config': |||
-            name: Keycloak
-            issuer: https://%(domain)s/auth/realms/spezistudyplatform
-            clientId: argocd
-            redirectURI: https://%(domain)s/argo/auth/callback
-            enablePKCEAuthentication: true
-            insecure: true
-            requestedScopes: ["openid", "profile", "email", "groups"]
-            requestedIDTokenClaims:
-              groups:
-                essential: true
-            cliClientId: argocd
-          ||| % { domain: config.domain },
-        } else {} ) + {
+          'oidc.config': oidcConfig,
+        } + {
           'resource.customizations.ignoreResourceUpdates.ConfigMap': |||
             jqPathExpressions:
               - '.metadata.annotations."cluster-autoscaler.kubernetes.io/last-updated"'

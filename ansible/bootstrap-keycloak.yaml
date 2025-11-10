@@ -242,6 +242,16 @@
           changed_when: "'OpenTofu has been successfully initialized!' in init_result.stdout or 'successfully initialized!' in init_result.stdout"
           register: init_result
 
+        - name: Write backend configuration for remote state
+          when: use_remote_backend | bool
+          ansible.builtin.copy:
+            dest: "{{ keycloak_tofu_dir }}/backend.tf"
+            content: |
+              terraform {
+                backend "gcs" {}
+              }
+            mode: "0644"
+
         - name: Run OpenTofu init with remote state
           when: use_remote_backend | bool
           ansible.builtin.command: >-
@@ -294,6 +304,12 @@
           when: tofu_kind_kubeconfig_path is defined
           ansible.builtin.file:
             path: "{{ tofu_kind_kubeconfig_path }}"
+            state: absent
+
+        - name: Remove temporary backend configuration file
+          when: use_remote_backend | bool
+          ansible.builtin.file:
+            path: "{{ keycloak_tofu_dir }}/backend.tf"
             state: absent
 
         - name: Remove OpenTofu state artifacts after run

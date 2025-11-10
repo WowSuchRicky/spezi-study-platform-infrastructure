@@ -7,16 +7,22 @@ GKE_CLUSTER_NAME="spezistudyplatform-dev-gke"
 GCP_PROJECT_ID="spezistudyplatform-dev"
 GCP_ZONE="us-west1-c"
 PRODUCTION_DOMAIN="platform.spezi.stanford.edu"
-STATIC_IP="34.168.131.83"
+STATIC_IP="34.168.138.135"
 TF_STATE_BUCKET="${TF_STATE_BUCKET:-spezistudyplatform-tf-state-prod}"
 TF_STATE_PREFIX="${TF_STATE_PREFIX:-terraform/state/keycloak-bootstrap}"
+SERVICE_ACCOUNT_EMAIL="${SERVICE_ACCOUNT_EMAIL:-spezistudyplatform-dev-svc@${GCP_PROJECT_ID}.iam.gserviceaccount.com}"
 KEYCLOAK_REALM="spezistudyplatform"
 KEYCLOAK_BASE_URL="http://localhost:8081/auth"
 KEYCLOAK_ADMIN_USERNAME="${KEYCLOAK_ADMIN_USERNAME:-}"
 KEYCLOAK_ADMIN_PASSWORD="${KEYCLOAK_ADMIN_PASSWORD:-}"
+SPEZI_SERVICE_NAME="${SPEZI_SERVICE_NAME:-spezistudyplatform}"
+GKE_TF_STATE_PREFIX="${GKE_TF_STATE_PREFIX:-gke/${SPEZI_SERVICE_NAME}}"
+ACTION="setup"
+AUTO_APPROVED=0
 
 # Get the directory of this script
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+CREDENTIALS_FILE="${CREDENTIALS_FILE:-$SCRIPT_DIR/gcp-service-account-key.json}"
 
 # --- Helper Functions ---
 info() {
@@ -28,12 +34,31 @@ error() {
     exit 1
 }
 
+usage() {
+    cat <<'EOF'
+Usage: ./setup-prod.sh [options]
+
+Options:
+  --teardown, --destroy   Destroy production infrastructure instead of provisioning it.
+  --yes, -y               Auto-approve prompts for destructive actions.
+  -h, --help              Show this help message.
+
+Environment variables such as TF_STATE_BUCKET, TF_STATE_PREFIX, and
+SPEZI_SERVICE_NAME may be used to override defaults.
+EOF
+}
+
 trap 'cleanup' EXIT
+
+BACKEND_FILE=""
 
 cleanup() {
     info "Cleaning up..."
     if [ -n "$PORT_FORWARD_PID" ] && ps -p $PORT_FORWARD_PID > /dev/null; then
         kill $PORT_FORWARD_PID
+    fi
+    if [ -n "$BACKEND_FILE" ] && [ -f "$BACKEND_FILE" ]; then
+        rm -f "$BACKEND_FILE"
     fi
 }
 
@@ -204,29 +229,166 @@ print(data.get("id", ""))
 PY
 }
 
+check_prereqs() {
+    info "Checking prerequisites..."
+
+    if ! command -v gcloud &> /dev/null; then
+        error "gcloud CLI is not installed. Please install it first."
+    fi
+
+    if ! command -v kubectl &> /dev/null; then
+        if [ "$ACTION" = "setup" ]; then
+            error "kubectl is not installed. Please install it first."
+        else
+            info "kubectl is not installed. Continuing teardown without it."
+        fi
+    fi
+
+    if ! command -v ansible-playbook &> /dev/null; then
+        if [ "$ACTION" = "setup" ]; then
+            error "ansible is not installed. Please install it first."
+        else
+            info "ansible-playbook is not installed. Skipping (not required for teardown)."
+        fi
+    fi
+
+    if ! command -v tofu &> /dev/null && ! command -v terraform &> /dev/null; then
+        error "tofu or terraform is not installed. Please install one of them first."
+    fi
+
+    if [ "$ACTION" = "setup" ] && ! command -v python3 &> /dev/null; then
+        error "python3 is required for parsing Keycloak API responses."
+    fi
+}
+
+destroy_gke_infrastructure() {
+    info "Destroying GKE infrastructure with Terraform..."
+
+    local terraform_dir="$SCRIPT_DIR/tofu/gke"
+    if [ ! -d "$terraform_dir" ]; then
+        error "Terraform directory for GKE not found at $terraform_dir"
+    fi
+
+    local terraform_cmd="tofu"
+    if ! command -v tofu &> /dev/null; then
+        terraform_cmd="terraform"
+    fi
+
+    pushd "$terraform_dir" >/dev/null
+
+    local backend_file="$PWD/backend-prod.tf"
+    cat > "$backend_file" <<'EOF'
+terraform {
+  backend "gcs" {}
+}
+EOF
+    BACKEND_FILE="$backend_file"
+
+    info "Initializing Terraform backend for GKE teardown..."
+    $terraform_cmd init \
+        -migrate-state \
+        -backend-config="bucket=$TF_STATE_BUCKET" \
+        -backend-config="prefix=$GKE_TF_STATE_PREFIX"
+
+    if command -v gsutil >/dev/null 2>&1; then
+        local lock_object="gs://${TF_STATE_BUCKET}/${GKE_TF_STATE_PREFIX}/default.tflock"
+        if gsutil ls "$lock_object" >/dev/null 2>&1; then
+            info "Clearing remote state lock at $lock_object..."
+            gsutil rm "$lock_object" >/dev/null 2>&1 || true
+        fi
+    fi
+
+    if [ "$AUTO_APPROVED" -ne 1 ]; then
+        local response
+        read -r -p "This will destroy the production GKE cluster and associated resources. Proceed? [y/N] " response || response=""
+        case "$response" in
+            [yY][eE][sS]|[yY])
+                info "Proceeding with Terraform destroy..."
+                ;;
+            *)
+                info "Teardown cancelled by user; leaving resources intact."
+                rm -f "$backend_file"
+                BACKEND_FILE=""
+                popd >/dev/null
+                return 1
+                ;;
+        esac
+    else
+        info "Auto-approve enabled; skipping confirmation prompt."
+    fi
+
+    if ! $terraform_cmd destroy -auto-approve; then
+        rm -f "$backend_file"
+        BACKEND_FILE=""
+        popd >/dev/null
+        error "Terraform destroy failed for GKE."
+    fi
+
+    rm -f "$backend_file"
+    BACKEND_FILE=""
+    popd >/dev/null
+
+    info "GKE infrastructure destroyed successfully."
+    return 0
+}
+
+teardown_prod() {
+    check_prereqs
+
+    info "Preparing to tear down production infrastructure..."
+
+    if ! gcloud auth list --filter=status:ACTIVE --format="value(account)" | grep -q "."; then
+        info "No active gcloud authentication found. Please authenticate:"
+        gcloud auth login
+    fi
+
+    info "Setting GCP project to $GCP_PROJECT_ID"
+    gcloud config set project "$GCP_PROJECT_ID"
+
+    if [ ! -f "$CREDENTIALS_FILE" ]; then
+        error "Service account key not found at $CREDENTIALS_FILE. Run setup-prod.sh first or set CREDENTIALS_FILE."
+    fi
+
+    info "Activating service account for infrastructure operations..."
+    gcloud auth activate-service-account --key-file="$CREDENTIALS_FILE"
+
+    export GOOGLE_APPLICATION_CREDENTIALS="$CREDENTIALS_FILE"
+
+    if destroy_gke_infrastructure; then
+        info "Production teardown complete. GKE resources have been destroyed."
+    else
+        info "Teardown cancelled. Infrastructure remains in place."
+    fi
+}
+
+# --- Argument Parsing ---
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --teardown|--destroy|teardown|destroy)
+            ACTION="teardown"
+            shift
+            ;;
+        --yes|-y|--auto-approve)
+            AUTO_APPROVED=1
+            shift
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            error "Unrecognized option '$1'"
+            ;;
+    esac
+done
+
+if [ "$ACTION" = "teardown" ]; then
+    teardown_prod
+    exit 0
+fi
+
 # --- Prerequisites Check ---
-info "Checking prerequisites..."
-
-# Check required tools
-if ! command -v gcloud &> /dev/null; then
-    error "gcloud CLI is not installed. Please install it first."
-fi
-
-if ! command -v kubectl &> /dev/null; then
-    error "kubectl is not installed. Please install it first."
-fi
-
-if ! command -v ansible-playbook &> /dev/null; then
-    error "ansible is not installed. Please install it first."
-fi
-
-if ! command -v tofu &> /dev/null && ! command -v terraform &> /dev/null; then
-    error "tofu or terraform is not installed. Please install one of them first."
-fi
-
-if ! command -v python3 &> /dev/null; then
-    error "python3 is required for parsing Keycloak API responses."
-fi
+check_prereqs
 
 # --- 1. GCP Authentication & Setup ---
 info "Setting up GCP authentication and configuration..."
@@ -249,9 +411,6 @@ gcloud services enable cloudresourcemanager.googleapis.com --project="$GCP_PROJE
 gcloud services enable iap.googleapis.com --project="$GCP_PROJECT_ID"
 
 # Create or verify service account key
-SERVICE_ACCOUNT_EMAIL="spezistudyplatform-dev-svc@${GCP_PROJECT_ID}.iam.gserviceaccount.com"
-CREDENTIALS_FILE="$SCRIPT_DIR/gcp-service-account-key.json"
-
 info "Setting up service account key for: $SERVICE_ACCOUNT_EMAIL"
 
 # Create service account key if credentials file doesn't exist
@@ -503,6 +662,7 @@ while [ $attempt -lt $max_attempts ]; do
     info "Waiting for namespace to be created... (attempt $((attempt+1))/$max_attempts)"
     sleep 15
     ((attempt++))
+    set -e
 done
 
 if [ $attempt -eq $max_attempts ]; then
@@ -574,6 +734,7 @@ while [ $attempt -lt $max_attempts ]; do
     info "Waiting for Keycloak to be ready... (attempt $((attempt+1))/$max_attempts)"
     sleep 10
     ((attempt++))
+    set -e
 done
 
 if [ $attempt -eq $max_attempts ]; then
@@ -615,6 +776,13 @@ TERRAFORM_CMD="tofu"
 if ! command -v tofu &> /dev/null; then
     TERRAFORM_CMD="terraform"
 fi
+
+BACKEND_FILE="$PWD/backend-prod.tf"
+cat > "$BACKEND_FILE" <<'EOF'
+terraform {
+  backend "gcs" {}
+}
+EOF
 
 info "Running Keycloak bootstrap with $TERRAFORM_CMD for production..."
 export TF_VAR_keycloak_password="$KEYCLOAK_ADMIN_PASSWORD"
@@ -659,6 +827,9 @@ $TERRAFORM_CMD apply \
     -var="enable_google_sso=true" \
     -auto-approve
 
+rm -f "$BACKEND_FILE"
+BACKEND_FILE=""
+
 unset TF_VAR_keycloak_password TF_VAR_keycloak_username TF_VAR_keycloak_client_id TF_VAR_keycloak_url TF_VAR_gcp_project_id TF_VAR_enable_google_sso TF_VAR_create_test_users
 
 info "Keycloak bootstrap completed successfully!"
@@ -675,6 +846,59 @@ info "ArgoCD client secret stored in GCP Secret Manager."
 info "Google OAuth client will be created automatically by Terraform..."
 GOOGLE_CLIENT_ID=$(gcloud secrets versions access latest --secret=keycloak-google-sso-client-id --project="$GCP_PROJECT_ID" 2>/dev/null || echo "stored-in-secret-manager")
 info "Google OAuth credentials are automatically stored in GCP Secret Manager."
+
+info "Ensuring Argo CD application is healthy before finalizing..."
+wave3_apps=("prod-argocd")
+max_attempts=30
+attempt=0
+
+while [ $attempt -lt $max_attempts ]; do
+    set +e
+    all_healthy=true
+    for app in "${wave3_apps[@]}"; do
+        app_exists=$(kubectl get application "$app" -n argocd >/dev/null 2>&1; echo $?)
+        if [ "$app_exists" -eq 0 ]; then
+            app_status=$(kubectl get application "$app" -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null)
+            health_status=$(kubectl get application "$app" -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null)
+
+            app_status=${app_status:-"Unknown"}
+            health_status=${health_status:-"Unknown"}
+
+            info "Application $app: sync=$app_status, health=$health_status"
+
+            if [ "$app_status" != "Synced" ] || [ "$health_status" != "Healthy" ]; then
+                all_healthy=false
+            fi
+        else
+            info "Application $app not found yet"
+            all_healthy=false
+        fi
+    done
+
+    if [ "$all_healthy" = true ]; then
+        set -e
+        info "Argo CD application is healthy!"
+        break
+    fi
+
+    info "Waiting for Argo CD application to be healthy... (attempt $((attempt+1))/$max_attempts)"
+    sleep 15
+    ((attempt++))
+    set -e  # Re-enable exit on error at the very end of loop iteration
+
+done
+
+if [ $attempt -eq $max_attempts ]; then
+    info "Warning: Argo CD application is not healthy. Proceeding anyway..."
+fi
+
+if kubectl -n argocd get deployment argocd-server >/dev/null 2>&1; then
+    info "Restarting Argo CD server to pick up configuration updates..."
+    kubectl -n argocd rollout restart deployment argocd-server >/dev/null
+    kubectl -n argocd rollout status deployment argocd-server --timeout=180s >/dev/null || true
+else
+    info "Argo CD server deployment not available yet; skipping restart."
+fi
 
 cd "$SCRIPT_DIR"
 

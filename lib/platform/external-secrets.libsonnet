@@ -114,7 +114,7 @@
                     command: [
                       'sh',
                       '-c',
-                      'sleep 10 && vault kv put secret/spezistudyplatform-backend OAUTH_CLIENT_SECRET=Tmd2RUFQcFJaTzA5MENWcDEybHdNUDFyVzVDcTdJQ2EK || true',
+                      'sleep 10 && (vault kv get secret/spezistudyplatform-backend >/dev/null 2>&1 || vault kv put secret/spezistudyplatform-backend OAUTH_CLIENT_SECRET=Tmd2RUFQcFJaTzA5MENWcDEybHdNUDFyVzVDcTdJQ2EK) || true',
                     ],
                     env: [
                       {
@@ -151,7 +151,7 @@
                     command: [
                       'sh',
                       '-c',
-                      'sleep 10 && vault kv put secret/spezistudyplatform-frontend OAUTH_CLIENT_SECRET=dummy-frontend-secret || true',
+                      'sleep 10 && (vault kv get secret/spezistudyplatform-frontend >/dev/null 2>&1 || vault kv put secret/spezistudyplatform-frontend OAUTH_CLIENT_SECRET=dummy-frontend-secret) || true',
                     ],
                     env: [
                       {
@@ -188,7 +188,7 @@
                     command: [
                       'sh',
                       '-c',
-                      'sleep 10 && vault kv put secret/spezistudyplatform-postgres-credentials username=spezistudyplatform password=spezistudyplatform1!2@ || true',
+                      'sleep 10 && (vault kv get secret/spezistudyplatform-postgres-credentials >/dev/null 2>&1 || vault kv put secret/spezistudyplatform-postgres-credentials username=spezistudyplatform password=spezistudyplatform1!2@) || true',
                     ],
                     env: [
                       {
@@ -225,7 +225,7 @@
                     command: [
                       'sh',
                       '-c',
-                      'sleep 10 && vault kv put secret/oauth2-proxy-secret client-id=oauth2-proxy client-secret=c4h7rptpKNYyHOpuH780CXEGyLvYmo6A cookie-secret=local-dev-cookie-secret-32-chars || true',
+                      'sleep 10 && (vault kv get secret/oauth2-proxy-secret >/dev/null 2>&1 || vault kv put secret/oauth2-proxy-secret client-id=oauth2-proxy client-secret=c4h7rptpKNYyHOpuH780CXEGyLvYmo6A cookie-secret=local-dev-cookie-secret-32-chars) || true',
                     ],
                     env: [
                       {
