@@ -10,9 +10,13 @@ variable "gke_num_nodes" {
   description = "number of gke nodes"
 }
 
-# Static IP address for GKE
+# Static IP address for GKE (kept between rebuilds to preserve DNS)
 resource "google_compute_address" "ip_address" {
   name = "spezistudyplatform-dev-static-ip"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "google_container_cluster" "primary" {

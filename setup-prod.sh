@@ -317,11 +317,35 @@ EOF
         info "Auto-approve enabled; skipping confirmation prompt."
     fi
 
-    if ! $terraform_cmd destroy -auto-approve; then
+    local destroy_targets=()
+    local has_targets=0
+    local state_resources
+    if state_resources=$($terraform_cmd state list 2>/dev/null); then
+        while IFS= read -r resource; do
+            [ -z "$resource" ] && continue
+            if [ "$resource" = "google_compute_address.ip_address" ]; then
+                info "Preserving static IP resource ($resource); it will remain allocated."
+                continue
+            fi
+            destroy_targets+=("-target=$resource")
+            has_targets=1
+        done <<< "$state_resources"
+    else
         rm -f "$backend_file"
         BACKEND_FILE=""
         popd >/dev/null
-        error "Terraform destroy failed for GKE."
+        error "Unable to read Terraform state; aborting teardown to avoid deleting the static IP."
+    fi
+
+    if [ "$has_targets" -eq 0 ]; then
+        info "No Terraform-managed resources require teardown (static IP retained)."
+    else
+        if ! $terraform_cmd destroy -auto-approve "${destroy_targets[@]}"; then
+            rm -f "$backend_file"
+            BACKEND_FILE=""
+            popd >/dev/null
+            error "Terraform destroy failed for GKE."
+        fi
     fi
 
     rm -f "$backend_file"
