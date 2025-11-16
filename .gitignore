@@ -8,3 +8,15 @@
 *.tfstate.backup
 SpeziStudyPlatformDev.json
 gcp-service-account-key.json
+
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.python-version
+.ruff_cache/
+.pytest_cache/
+*.egg-info/
+.mypy_cache/
+.coverage
+.kind-kubeconfig

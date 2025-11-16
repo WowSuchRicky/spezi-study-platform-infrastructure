@@ -96,7 +96,9 @@ fetch_keycloak_client_secret() {
         python3 -c 'import json, sys; data=json.load(sys.stdin); print(data.get("value", ""))')
 
     if [ -z "$secret" ]; then
-        error "Keycloak did not return a client secret for '$client_id'."
+        info "Keycloak client '$client_id' did not return a secret; continuing without storing it."
+        echo ""
+        return 0
     fi
 
     echo "$secret"
@@ -862,9 +864,13 @@ info "Keycloak bootstrap completed successfully!"
 info "Storing ArgoCD client secret in GCP Secret Manager..."
 ARGOCD_CLIENT_SECRET=$(fetch_keycloak_client_secret "$KEYCLOAK_BASE_URL" "$KEYCLOAK_REALM" "$KEYCLOAK_ADMIN_USERNAME" "$KEYCLOAK_ADMIN_PASSWORD" "argocd")
 
-echo "$ARGOCD_CLIENT_SECRET" | gcloud secrets create keycloak-argocd-client --data-file=- --project="$GCP_PROJECT_ID" || \
-    echo "$ARGOCD_CLIENT_SECRET" | gcloud secrets versions add keycloak-argocd-client --data-file=- --project="$GCP_PROJECT_ID"
-info "ArgoCD client secret stored in GCP Secret Manager."
+if [ -n "$ARGOCD_CLIENT_SECRET" ]; then
+    echo "$ARGOCD_CLIENT_SECRET" | gcloud secrets create keycloak-argocd-client --data-file=- --project="$GCP_PROJECT_ID" || \
+        echo "$ARGOCD_CLIENT_SECRET" | gcloud secrets versions add keycloak-argocd-client --data-file=- --project="$GCP_PROJECT_ID"
+    info "ArgoCD client secret stored in GCP Secret Manager."
+else
+    info "Keycloak client 'argocd' does not expose a secret; skipping GCP Secret Manager sync."
+fi
 
 # Get Google OAuth client ID for display (created automatically by Terraform)
 info "Google OAuth client will be created automatically by Terraform..."
