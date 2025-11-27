@@ -150,6 +150,11 @@ class TestIntegration(unittest.TestCase):
                 raise unittest.SkipTest("Could not determine local IP. Please provide --base-url.")
             cls.CONFIG.base_url = f"https://spezi.{local_ip}.nip.io"
 
+        if not cls.CONFIG.keycloak_base_url:
+            cls.CONFIG.keycloak_base_url = f"{cls.CONFIG.base_url}/auth"
+        if not cls.CONFIG.argocd_base_url:
+            cls.CONFIG.argocd_base_url = f"{cls.CONFIG.base_url}/argo"
+
         logging.info(f"Running integration tests against {cls.CONFIG.base_url}")
 
     def setUp(self):
@@ -275,8 +280,6 @@ class TestIntegration(unittest.TestCase):
 
     def test_keycloak_openid_configuration(self):
         """Checks if Keycloak's OIDC discovery endpoint is healthy and returns valid JSON."""
-        if not self.CONFIG.keycloak_base_url:
-            self.skipTest("Keycloak URL not provided")
         url = f"{self.CONFIG.keycloak_base_url.rstrip('/')}/realms/{self.CONFIG.keycloak_realm}/.well-known/openid-configuration"
         resp = self._fetch_page(url)
         self.assertEqual(resp.status, 200)
@@ -295,8 +298,6 @@ class TestIntegration(unittest.TestCase):
 
     def test_argocd_health(self):
         """Checks if the Argo CD health endpoint is reachable and reports a healthy status."""
-        if not self.CONFIG.argocd_base_url:
-            self.skipTest("Argo CD URL not provided")
         health_url = urllib.parse.urljoin(self.CONFIG.argocd_base_url.rstrip("/") + "/", self.CONFIG.argocd_health_path.lstrip("/"))
         resp = self._fetch_page(health_url)
         self.assertEqual(resp.status, 200)
@@ -308,8 +309,6 @@ class TestIntegration(unittest.TestCase):
 
     def test_argocd_login_entrypoint(self):
         """Verifies that the Argo CD entrypoint requires authentication."""
-        if not self.CONFIG.argocd_base_url:
-            self.skipTest("Argo CD URL not provided")
         resp = self._fetch_page(self.CONFIG.argocd_base_url.rstrip("/"))
         self.assertIn(resp.status, {200, 302, 303})
 
@@ -396,8 +395,7 @@ def main(argv=None):
     )
     parser.add_argument(
         "--keycloak-base-url",
-        default=None,
-        help="Base URL for Keycloak (e.g., https://keycloak.127.0.0.1.nip.io/auth). If omitted, Keycloak health checks are skipped.",
+        help="Base URL for Keycloak. If omitted, it will be derived from the base URL.",
     )
     parser.add_argument(
         "--keycloak-realm",
@@ -406,8 +404,7 @@ def main(argv=None):
     )
     parser.add_argument(
         "--argocd-base-url",
-        default=None,
-        help="Base URL for Argo CD (e.g., https://argocd.127.0.0.1.nip.io). If omitted, Argo CD health checks are skipped.",
+        help="Base URL for Argo CD. If omitted, it will be derived from the base URL.",
     )
     parser.add_argument(
         "--argocd-health-path",
