@@ -53,6 +53,7 @@
               port: 8080,
             },
             initialDelaySeconds: 120,
+            timeoutSeconds: 5,
           },
           resources: {
             limits: {
