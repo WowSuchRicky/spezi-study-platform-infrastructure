@@ -883,6 +883,16 @@ class LocalEnvironmentSetup(EnvironmentSetupBase):
         logging.info(
             "Port-forward the UI with: kubectl port-forward svc/argocd-server -n argocd 8080:443"
         )
+        logging.info(
+            "access: ArgoCD         -> https://spezi.172.20.117.44.nip.io/argo"
+        )
+        logging.info(
+            "access: Main App       -> https://spezi.172.20.117.44.nip.io"
+        )
+        logging.info(
+            "access: Keycloak Admin -> https://spezi.172.20.117.44.nip.io/admin"
+        )
+        
 
 
 class ProductionEnvironmentSetup(EnvironmentSetupBase):

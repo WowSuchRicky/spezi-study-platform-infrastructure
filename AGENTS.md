@@ -21,7 +21,7 @@ Run everything through the Python helper; it encapsulates the latest behavior th
 ```bash
 python3 tools/spezi_setup/spezi_setup.py local \
   --kind-cluster-name spezi-study-platform \
-  --no-force-recreate-kind  # optional if you want to reuse the cluster
+  --force-recreate-kind  # optional if you want to rebuild the cluster from scratch
 ```
 Key facts:
 - Creates/updates the KIND cluster, installs Argo CD, applies the Jsonnet root app, and bootstraps Keycloak via OpenTofu.

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 LOCAL_DEFAULTS: dict[str, object | None] = {
     "kind_cluster_name": "spezi-study-platform",
-    "force_recreate_kind": True,
+    "force_recreate_kind": False,
     "local_ip": None,  # auto-detect via helper script when left as None
     "gcp_project_id": None,  # falls back to env vars or "local-dev"
 }

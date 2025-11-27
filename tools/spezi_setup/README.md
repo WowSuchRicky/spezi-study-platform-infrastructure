@@ -44,7 +44,7 @@ Common flows:
 
 * **Local KIND environment**
   ```bash
-  python tools/spezi_setup/spezi_setup.py local --no-force-recreate-kind
+  python tools/spezi_setup/spezi_setup.py local --force-recreate-kind  # optional to rebuild the cluster
   ```
 * **Production GKE environment**
   ```bash
