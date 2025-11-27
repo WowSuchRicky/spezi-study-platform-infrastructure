@@ -250,7 +250,6 @@
           kind: 'ClusterSecretStore',
           metadata: {
             name: 'vault-backend',
-            namespace: '',
           },
           spec: {
             provider: {
