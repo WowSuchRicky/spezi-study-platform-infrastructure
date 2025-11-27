@@ -22,9 +22,12 @@ PROD_DEFAULTS: dict[str, object | None] = {
     "tf_state_prefix": "terraform/state/keycloak-bootstrap",
     "gke_tf_state_prefix": "gke/spezistudyplatform",
     "service_account_email": None,
+    # None here means it will load from the default place (./gcp-service-account-key.json)
     "credentials_file": None,
     "keycloak_realm": "spezistudyplatform",
+    # note, this base_url is only used to configure keycloak itself at bootstrap time
     "keycloak_base_url": "http://localhost:8081/auth",
+    # None here means it will be auto-generated during setup.
     "keycloak_admin_username": None,
     "keycloak_admin_password": None,
     "auto_approve": False,
