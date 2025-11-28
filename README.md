@@ -1,31 +1,93 @@
-# spezistudyplatform
+# Spezi Study Platform Infrastructure
 
-<!-- markdown-link-check-disable-next-line -->
-[Live Deployment](https://${SPEZI_DOMAIN})
+This repository contains the infrastructure definitions for the Spezi Study Platform, managed with a GitOps approach using ArgoCD and Tanka.
 
-## Prerequisites:
-* kubeseal (`brew install kubeseal`)
-* Google Cloud SDK/CLI (`brew install google-cloud-sdk`)
+## Prerequisites
 
-## Optional/Nice-to-have:
-* [Optional] K9S (`brew install k9s`), highly recommended to manage the cluster via CLI with a nice TUI.
+Before you begin, ensure you have the following tools installed:
 
-Note: The Ansible playbooks use the `kubernetes.core.k8s` module. Install control-node Python deps with:
+- **kind**: For running local Kubernetes clusters.
+- **kubectl**: For interacting with Kubernetes clusters.
+- **tofu** (or **terraform**): For infrastructure as code provisioning.
+- **kubeseal**: For managing sealed secrets. (`brew install kubeseal`)
+- **Google Cloud SDK/CLI**: Required for production deployments. (`brew install google-cloud-sdk`)
 
-```bash
-python -m pip install -r ansible/requirements.txt
-```
+### Python Dependencies
 
-## Integration Test
-
-After bootstrapping either the local KIND or production environment you can
-verify the oauth2-proxy/Keycloak flow end-to-end with:
+This project uses Python for setup and integration testing. Install the required packages using pip:
 
 ```bash
-python tools/run_integration_tests.py --base-url https://spezi.127.0.0.1.nip.io
+python3 -m pip install -r ansible/requirements.txt
 ```
 
-Override `--username/--password` if you customised the test user credentials.
-Pass `--insecure` for nip.io/self-signed certificates.
-The script also ensures the default unauthorized test user (testuser2/password456) cannot access the whoami endpoint. Override --unauthorized-username/--unauthorized-password if you changed those accounts.
-The test harness also exercises an invalid/nonexistent account via --invalid-username/--invalid-password flags.
+## Local Development
+
+To set up a complete local development environment, run the unified setup script:
+
+```bash
+python3 tools/spezi_setup/spezi_setup.py local
+```
+
+This script will:
+
+1.  Create a local Kubernetes cluster using **KIND**.
+2.  Install and configure **ArgoCD**.
+3.  Deploy all platform applications (e.g., backend, frontend, auth).
+4.  Bootstrap **Keycloak** with a default realm and test users.
+
+Upon completion, you will see access instructions for ArgoCD and other services.
+
+### Forcing a Clean Setup
+
+If you need to start fresh, you can force the script to recreate the KIND cluster:
+
+```bash
+python3 tools/spezi_setup/spezi_setup.py local --force-recreate-kind
+```
+
+## Integration Tests
+
+After setting up the local environment, you can run the end-to-end integration tests to verify the authentication and routing functionality.
+
+The test script is automatically configured by the local setup process. To run the tests:
+
+```bash
+python3 tools/run_integration_tests.py --insecure
+```
+
+The `--insecure` flag is required to handle the self-signed certificates used in the local `nip.io` domain.
+
+The script will test:
+-   Login with an authorized user (`testuser`/`password123`).
+-   Denial of an unauthorized user (`testuser2`/`password456`).
+-   Rejection of invalid credentials.
+
+You can customize the test credentials using command-line arguments (e.g., `--username`, `--password`).
+
+## Production Environment
+
+The setup script also supports provisioning and managing a production environment on Google Kubernetes Engine (GKE).
+
+### Setup
+
+To provision the production infrastructure, use the `prod` command:
+
+```bash
+python3 tools/spezi_setup/spezi_setup.py prod --action setup [OPTIONS]
+```
+
+This requires additional configuration, such as GCP project ID, domain, and credentials. Run `python3 tools/spezi_setup/spezi_setup.py prod --help` for a full list of options.
+
+### Teardown
+
+To tear down the production infrastructure:
+
+```bash
+python3 tools/spezi_setup/spezi_setup.py prod --action teardown [OPTIONS]
+```
+
+**Caution**: This is a destructive operation and will remove the GKE cluster and associated resources.
+
+## Optional Tools
+
+- **k9s**: A terminal-based UI to manage your Kubernetes cluster. (`brew install k9s`)
