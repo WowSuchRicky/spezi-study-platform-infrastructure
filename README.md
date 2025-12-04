@@ -2,14 +2,16 @@
 
 This repository contains the infrastructure definitions for the Spezi Study Platform, managed with a GitOps approach using ArgoCD and Tanka.
 
+The repo has been tested to work on unix-based distros, specifically WSL2 and macOS. For anything else, YMMV.
+
 ## Prerequisites
+(Note that we assume [Homebrew](https://brew.sh/) is installed prior to installing the rest of these, but you are welcome to install them however you wish)
 
 Before you begin, ensure you have the following tools installed:
 
-- **kind**: For running local Kubernetes clusters.
-- **kubectl**: For interacting with Kubernetes clusters.
-- **tofu** (or **terraform**): For infrastructure as code provisioning.
-- **kubeseal**: For managing sealed secrets. (`brew install kubeseal`)
+- **kind**: For running local Kubernetes clusters. (`brew install kind`)
+- **kubectl**: For interacting with Kubernetes clusters. (`brew install kubernetes-cli`)
+- **tofu** (or **terraform**): For infrastructure as code provisioning. (`brew install opentofu`)
 - **Google Cloud SDK/CLI**: Required for production deployments. (`brew install google-cloud-sdk`)
 
 ### Python Dependencies
