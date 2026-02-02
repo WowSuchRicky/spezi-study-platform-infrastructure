@@ -68,7 +68,8 @@ You can customize the test credentials using command-line arguments (e.g., `--us
 
 ## Production Environment
 
-The setup script also supports provisioning and managing a production environment on Google Kubernetes Engine (GKE).
+The setup script also supports provisioning and managing a production environment on Google Kubernetes Engine (GKE). 
+NOTE: This requires production (GCP) json keys, which are obtained from the GCP console or CLI.
 
 ### Setup
 
