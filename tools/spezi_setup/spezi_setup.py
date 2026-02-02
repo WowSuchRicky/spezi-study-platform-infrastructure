@@ -200,7 +200,7 @@ class EnvironmentSetupBase:
         # Script lives under tools/spezi_setup; assets reside at repo root.
         self.script_dir = Path(__file__).resolve().parents[2]
         self.runner = ShellRunner(cwd=self.script_dir)
-        self.repo_url = "https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git"
+        self.repo_url = "https://github.com/StanfordSpezi/spezi-study-platform-infrastructure.git"
         self.port_forward_procs: List[subprocess.Popen] = []
         signal.signal(signal.SIGINT, self._handle_signal)
         signal.signal(signal.SIGTERM, self._handle_signal)

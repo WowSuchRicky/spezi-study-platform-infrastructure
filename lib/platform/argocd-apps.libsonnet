@@ -12,7 +12,7 @@
     spec: {
       project: 'default',
       source: {
-        repoURL: 'https://github.com/WowSuchRicky/spezi-study-platform-infrastructure.git',
+        repoURL: 'https://github.com/StanfordSpezi/spezi-study-platform-infrastructure.git',
         path: envPath,
         targetRevision: std.get(config, 'gitBranch', if std.get(config, 'mode', 'DEV') == 'PRODUCTION' then 'main' else 'main'),
         plugin: {
