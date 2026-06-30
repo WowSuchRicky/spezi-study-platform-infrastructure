@@ -6,10 +6,10 @@
 # SPDX-License-Identifier: MIT
 #
 
-project_id   = "spezistudyplatform-dev"
+project_id   = "app-name-placeholder-dev"
 region       = "us-west1"
-cluster_name = "spezistudyplatform-dev"
-domain       = "platform.spezi.stanford.edu"
+cluster_name = "app-name-placeholder-dev"
+domain       = "domain-placeholder"
 
 # Restrict kubectl access to specific CIDRs (recommended for production)
 # authorized_networks = [

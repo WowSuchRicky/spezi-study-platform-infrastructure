@@ -8,9 +8,32 @@ SPDX-License-Identifier: MIT
 
 -->
 
-# Spezi Study Platform Infrastructure
+# Spezi Study Platform Infrastructure Template
 
-GitOps infrastructure for the Spezi Study Platform, managing deployment of the [Server](https://github.com/StanfordSpezi/SpeziStudyPlatform-Server) and [Web](https://github.com/StanfordSpezi/SpeziStudyPlatform-Web) applications alongside supporting services (Keycloak, PostgreSQL, Traefik) across local and production environments. Built with ArgoCD, Kustomize, Helm, and OpenTofu.
+A GitOps infrastructure template for Spezi-based study platforms: ArgoCD, Kustomize, Helm, and OpenTofu, with a backend service, a frontend, PostgreSQL, Keycloak, and Traefik already wired together across local (KIND) and production (GKE) environments.
+
+**This repo does not work as checked in.** Every namespace, ConfigMap, Secret, Keycloak realm, GCP project/cluster name, and image reference is a `__PLACEHOLDER__` token (see [`infrastructure/base/namespace.yaml`](infrastructure/base/namespace.yaml) for an example). You render it into your own app before anything will deploy — `make dev` and `make prod-bootstrap` both refuse to run until you have.
+
+## Step 0: Render the Template
+
+```bash
+tools/init-project.sh <your-app-name> \
+  --registry-org <your-github-or-registry-org> \
+  --repo-url <url-of-your-fork> \
+  --domain <your-prod-domain>
+```
+
+This rewrites every placeholder in the repo to real values in one pass (dry-run with `--dry-run` first if you want to preview). Any flag you omit leaves that placeholder in place — useful if you want to try `make validate` locally before deciding on a registry or domain, but `make dev`/`make prod-bootstrap` will block until all of them are filled in. Run `tools/init-project.sh --help` for details, and see "Manual follow-ups" in its output for the handful of things (README prose, CONTRIBUTORS.md, your own Server/Web app repos) it intentionally doesn't touch.
+
+Once rendered:
+
+```bash
+git diff --stat   # review what changed
+make validate     # confirm all Kustomize overlays still build
+make lint         # kubeconform schema validation
+```
+
+To scaffold an additional backend/frontend workload beyond the included server + web pattern, follow the `spezi-new-app` skill (`.claude/skills/spezi-new-app/`, for Claude Code users) or read it directly — it documents the base/dev/prod Kustomize + NetworkPolicy wiring this repo expects for every workload.
 
 ## Prerequisites
 
@@ -25,6 +48,8 @@ Install via [Homebrew](https://brew.sh/) or your preferred package manager:
 | [kubeconform](https://github.com/yannh/kubeconform) | `brew install kubeconform`    | Schema validation          |
 
 ## Quick Start
+
+Once the template is rendered (Step 0 above):
 
 ```bash
 make dev            # Create KIND cluster, bootstrap ArgoCD + all services
@@ -59,18 +84,7 @@ All dev users share the password `password123`:
 
 ## Docker Development
 
-For running backing services (PostgreSQL, Keycloak) without Kubernetes, see the [Docker setup guide](docker/README.md). This is the recommended approach when developing the [Server](https://github.com/StanfordSpezi/SpeziStudyPlatform-Server) or [Web](https://github.com/StanfordSpezi/SpeziStudyPlatform-Web) repositories locally.
-
-## Using This as a Starter Template
-
-This repo is also a working reference for standing up backend/infra (ArgoCD + Kustomize + Helm + OpenTofu, with Postgres, Keycloak, and Traefik wired together) for a new Spezi-based study platform.
-
-To fork it for a new app:
-
-1. Fork/copy the repo.
-2. Run `tools/rename-project.sh <new-app-name> [--registry-org <org>] [--repo-url <url>] [--domain <domain>]` to rewrite the ~240 hardcoded `spezistudyplatform` identifiers (namespace, ConfigMaps, Secrets, Keycloak realm, GCP project/cluster names, image refs) to your app name in one pass. It prints a dry-run-able file list and a list of manual follow-ups (README prose, CONTRIBUTORS.md, etc.) it intentionally leaves alone.
-3. Run `make validate && make lint` to confirm the renamed overlays still build.
-4. Use the `spezi-new-app` skill (`.claude/skills/spezi-new-app/`, for Claude Code users) to add additional backend/frontend workloads beyond the included server + web pattern.
+For running backing services (PostgreSQL, Keycloak) without Kubernetes, see the [Docker setup guide](docker/README.md). This is the recommended approach when developing your own server/web applications locally. The template must be rendered first (Step 0) — `docker-compose.yml` and `.env.example` both contain the same placeholders.
 
 ## Contributing
 
@@ -78,12 +92,12 @@ We welcome contributions! Please read our [contributing guidelines](https://gith
 
 ## License
 
-This project is licensed under the MIT License. See [Licenses](https://github.com/StanfordSpezi/SpeziStudyPlatform-Infrastructure/tree/main/LICENSES) for more information.
+This project is licensed under the MIT License. See [Licenses](LICENSES) for more information.
 
 ## Contributors
 
-This project is developed as part of the Stanford Byers Center for Biodesign at Stanford University.
-See [CONTRIBUTORS.md](https://github.com/StanfordSpezi/SpeziStudyPlatform-Infrastructure/tree/main/CONTRIBUTORS.md) for a full list of all contributors.
+This template originates from the Stanford Byers Center for Biodesign at Stanford University.
+See [CONTRIBUTORS.md](CONTRIBUTORS.md) for a full list of all contributors.
 
 ![Stanford Byers Center for Biodesign Logo](https://raw.githubusercontent.com/StanfordBDHG/.github/main/assets/biodesign-footer-light.png#gh-light-mode-only)
 ![Stanford Byers Center for Biodesign Logo](https://raw.githubusercontent.com/StanfordBDHG/.github/main/assets/biodesign-footer-dark.png#gh-dark-mode-only)

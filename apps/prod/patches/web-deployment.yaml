@@ -9,8 +9,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: spezistudyplatform-web
-  namespace: spezistudyplatform
+  name: app-name-placeholder-web
+  namespace: app-name-placeholder
 spec:
   replicas: 2
   strategy:
@@ -21,8 +21,8 @@ spec:
   template:
     spec:
       containers:
-        - name: spezistudyplatform-web-container
-          image: ghcr.io/stanfordspezi/spezistudyplatform-web:main
+        - name: app-name-placeholder-web-container
+          image: ghcr.io/registry-org-placeholder/app-name-placeholder-web:main
           imagePullPolicy: IfNotPresent
           resources:
             requests:

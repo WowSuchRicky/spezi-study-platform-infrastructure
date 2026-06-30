@@ -10,7 +10,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: keycloak-config-cli
-  namespace: spezistudyplatform
+  namespace: app-name-placeholder
 spec:
   backoffLimit: 10
   template:

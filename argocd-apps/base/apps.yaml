@@ -16,12 +16,12 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/StanfordSpezi/spezi-study-platform-infrastructure.git
+    repoURL: repo-url-placeholder
     path: apps/dev
     targetRevision: main
   destination:
     server: https://kubernetes.default.svc
-    namespace: spezistudyplatform
+    namespace: app-name-placeholder
   syncPolicy:
     automated:
       prune: true

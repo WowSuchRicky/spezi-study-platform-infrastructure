@@ -9,8 +9,8 @@
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  name: spezistudyplatform-db
-  namespace: spezistudyplatform
+  name: app-name-placeholder-db
+  namespace: app-name-placeholder
 spec:
   imageName: ghcr.io/cloudnative-pg/postgresql:17.2-2-bullseye
   instances: 1
@@ -19,7 +19,7 @@ spec:
   enableSuperuserAccess: false
   bootstrap:
     initdb:
-      database: spezistudyplatform
-      owner: spezistudyplatform
+      database: app-name-placeholder
+      owner: app-name-placeholder
       secret:
-        name: spezistudyplatform-postgres-credentials
+        name: app-name-placeholder-postgres-credentials

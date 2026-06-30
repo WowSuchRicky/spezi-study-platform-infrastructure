@@ -16,12 +16,20 @@ Pick whichever is the closer shape for the new workload and follow these
 steps. Use `<name>` as the new workload's short identifier (e.g. `worker`,
 `admin`).
 
+Check `infrastructure/base/namespace.yaml` first: if it still says
+`app-name-placeholder`, this repo is an unrendered template and every new resource
+you write should use that same placeholder (`app-name-placeholder`,
+`app-name-pascal-placeholder`, `app-name-kebab-placeholder`, `registry-org-placeholder`), exactly
+like the existing `server`/`web` manifests — not a literal name. If it's a
+real name, this is a rendered fork; use that real name instead.
+
 ## 1. Create `apps/base/<name>/`
 
 Copy the closer-matching existing directory (`server/` or `web/`) and adjust:
 
 - `deployment.yaml` — rename `metadata.name`, `spec.selector.matchLabels.app`,
-  container name, and `image:` (use `ghcr.io/<org>/<app>-<name>:latest`).
+  container name, and `image:` (use `ghcr.io/registry-org-placeholder/app-name-placeholder-<name>:latest`
+  on the template, or the rendered equivalent on a fork).
   Keep `securityContext` hardening (`runAsNonRoot`, `allowPrivilegeEscalation:
   false`, dropped capabilities) — every workload in this repo runs that way.
 - `service.yaml` — rename `metadata.name` and `spec.selector.app`.
@@ -35,9 +43,9 @@ Copy the closer-matching existing directory (`server/` or `web/`) and adjust:
 - `kustomization.yaml` — list the files you created (see
   `apps/base/server/kustomization.yaml` for the shape).
 
-All resources go in the platform's single namespace (check
-`infrastructure/base/namespace.yaml` for the current name) — this repo does
-not split workloads across namespaces.
+All resources go in the platform's single namespace (`app-name-placeholder` on the
+template, or whatever `infrastructure/base/namespace.yaml` says on a
+rendered fork) — this repo does not split workloads across namespaces.
 
 ## 2. Register the new directory
 

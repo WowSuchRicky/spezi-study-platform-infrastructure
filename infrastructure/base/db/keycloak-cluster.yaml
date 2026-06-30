@@ -10,7 +10,7 @@ apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
   name: keycloak-db
-  namespace: spezistudyplatform
+  namespace: app-name-placeholder
 spec:
   imageName: ghcr.io/cloudnative-pg/postgresql:17.2-2-bullseye
   instances: 1

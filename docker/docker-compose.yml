@@ -104,7 +104,7 @@ services:
     restart: "no"
 
   server:
-    image: ghcr.io/stanfordspezi/spezistudyplatform-server:main
+    image: ghcr.io/registry-org-placeholder/app-name-placeholder-server:main
     command: ["serve", "--env", "production", "--hostname", "0.0.0.0", "--port", "8080"]
     environment:
       APP_ENVIRONMENT: ${APP_ENVIRONMENT}
@@ -134,7 +134,7 @@ services:
       - '8080:8080'
 
   server-migrate:
-    image: ghcr.io/stanfordspezi/spezistudyplatform-server:main
+    image: ghcr.io/registry-org-placeholder/app-name-placeholder-server:main
     command: ["migrate", "--yes"]
     environment:
       APP_ENVIRONMENT: ${APP_ENVIRONMENT}
@@ -157,7 +157,7 @@ services:
       - migrate
 
   web:
-    image: ghcr.io/stanfordspezi/spezistudyplatform-web:main
+    image: ghcr.io/registry-org-placeholder/app-name-placeholder-web:main
     environment:
       VITE_API_BASE_PATH: ${VITE_API_BASE_PATH}
       VITE_KEYCLOAK_URL: ${VITE_KEYCLOAK_URL}

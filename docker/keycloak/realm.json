@@ -1,5 +1,5 @@
 {
-  "realm": "spezistudyplatform",
+  "realm": "app-name-placeholder",
   "enabled": true,
   "ssoSessionIdleTimeout": 86400,
   "ssoSessionMaxLifespan": 86400,
@@ -26,29 +26,29 @@
   "roles": {
     "realm": [
       {
-        "name": "default-roles-spezistudyplatform",
+        "name": "default-roles-app-name-placeholder",
         "description": "Composite role for default realm roles",
         "composite": true,
-        "composites": { "realm": ["spezistudyplatform-participant"] },
+        "composites": { "realm": ["app-name-placeholder-participant"] },
         "clientRole": false
       },
       {
-        "name": "spezistudyplatform-researcher",
+        "name": "app-name-placeholder-researcher",
         "description": "Researchers authorized to manage studies",
         "clientRole": false
       },
       {
-        "name": "spezistudyplatform-participant",
+        "name": "app-name-placeholder-participant",
         "description": "Participants in Spezi studies via mobile app",
         "clientRole": false
       }
     ]
   },
   "defaultRole": {
-    "name": "default-roles-spezistudyplatform",
+    "name": "default-roles-app-name-placeholder",
     "description": "Composite role for default realm roles",
     "composite": true,
-    "composites": { "realm": ["spezistudyplatform-participant"] },
+    "composites": { "realm": ["app-name-placeholder-participant"] },
     "clientRole": false
   },
   "clientScopes": [
@@ -129,7 +129,7 @@
       "optionalClientScopes": ["address", "microprofile-jwt", "offline_access", "phone"]
     },
     {
-      "clientId": "spezistudyplatform-web",
+      "clientId": "app-name-placeholder-web",
       "name": "Spezi Study Platform Web",
       "enabled": true,
       "publicClient": true,
@@ -158,7 +158,7 @@
       ]
     },
     {
-      "clientId": "spezistudyplatform-server",
+      "clientId": "app-name-placeholder-server",
       "name": "Spezi Study Platform Server",
       "enabled": true,
       "publicClient": false,
@@ -172,7 +172,7 @@
       "optionalClientScopes": ["address", "microprofile-jwt", "offline_access", "phone"]
     },
     {
-      "clientId": "spezistudyplatform-app",
+      "clientId": "app-name-placeholder-app",
       "name": "Spezi Study Mobile App",
       "enabled": true,
       "publicClient": true,
@@ -200,9 +200,9 @@
   },
   "users": [
     {
-      "username": "service-account-spezistudyplatform-server",
+      "username": "service-account-app-name-placeholder-server",
       "enabled": true,
-      "serviceAccountClientId": "spezistudyplatform-server",
+      "serviceAccountClientId": "app-name-placeholder-server",
       "clientRoles": {
         "realm-management": ["query-groups", "view-users"]
       }
@@ -213,7 +213,7 @@
       "emailVerified": true,
       "enabled": true,
       "credentials": [{ "type": "password", "value": "password123", "temporary": false }],
-      "realmRoles": ["spezistudyplatform-researcher"],
+      "realmRoles": ["app-name-placeholder-researcher"],
       "groups": ["/Stanford Biodesign Digital Health/admin"]
     },
     {
@@ -222,7 +222,7 @@
       "emailVerified": true,
       "enabled": true,
       "credentials": [{ "type": "password", "value": "password123", "temporary": false }],
-      "realmRoles": ["spezistudyplatform-researcher"],
+      "realmRoles": ["app-name-placeholder-researcher"],
       "groups": ["/Stanford Biodesign Digital Health/researcher"]
     },
     {
@@ -231,7 +231,7 @@
       "emailVerified": true,
       "enabled": true,
       "credentials": [{ "type": "password", "value": "password123", "temporary": false }],
-      "realmRoles": ["spezistudyplatform-participant"]
+      "realmRoles": ["app-name-placeholder-participant"]
     }
   ]
 }

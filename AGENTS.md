@@ -10,9 +10,20 @@ SPDX-License-Identifier: MIT
 
 Guidance for AI coding assistants (Claude, ChatGPT, Gemini, etc.) contributing to this repository. Read this first so you can follow the conventions and tooling the rest of the team expects.
 
+## This Repo Is a Template
+
+This repo ships as a placeholder template, not a deployable app. Every namespace, ConfigMap, Secret, Keycloak realm/role, GCP project/cluster name, and image reference is one of: `app-name-placeholder`, `app-name-pascal-placeholder`, `app-name-kebab-placeholder`, `registry-org-placeholder`, `repo-url-placeholder`, `domain-placeholder`.
+
+- `make validate` / `make lint` pass against the unrendered template (they only check Kustomize syntax/schema).
+- `make dev` / `make prod-bootstrap` refuse to run until every placeholder is rendered — `tools/setup.py` scans all tracked files for leftover `__PLACEHOLDER__` tokens before doing anything else.
+- To render: `tools/init-project.sh <app-name> [--registry-org ...] [--repo-url ...] [--domain ...]`. It's idempotent and dry-run-able (`--dry-run`).
+- Do not hand-edit placeholders into real values piecemeal, and do not "genericize away" placeholders that are already there — both `tools/init-project.sh` and `tools/setup.py`'s guard assume the full, consistent set of tokens above. If asked to add a new naming dimension (e.g. a second environment-specific value), add a new `__TOKEN__`, wire it through both scripts, and document it here.
+- `tools/init-project.sh` and `tools/setup.py` each exclude themselves (and each other) from placeholder scanning/rendering — they necessarily contain the literal token strings in their own usage text and detection regex. Keep that exclusion in sync if you rename either script.
+- To scaffold an additional backend/frontend workload beyond the existing server + web pattern, follow `.claude/skills/spezi-new-app/SKILL.md` (base/dev/prod Kustomize wiring + NetworkPolicy + ingress) — write new resources using the same placeholder tokens, not literal names.
+
 ## Architecture Overview
 
-The Spezi Study Platform uses a GitOps workflow where Argo CD manages Kubernetes resources via native Helm and Kustomize support (no plugins). Both dev and prod use the same deployment mechanism: ArgoCD app-of-apps.
+This template uses a GitOps workflow where Argo CD manages Kubernetes resources via native Helm and Kustomize support (no plugins). Both dev and prod use the same deployment mechanism: ArgoCD app-of-apps.
 
 ### Directory structure
 
@@ -91,7 +102,7 @@ Use `make help` to see all available targets. Key targets:
 ```bash
 kubectl get applications -n argocd
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d
-kubectl port-forward -n spezistudyplatform svc/keycloak 8081:80
+kubectl port-forward -n <your-app-name> svc/keycloak 8081:80
 ```
 
 ## Keycloak Notes
@@ -100,10 +111,6 @@ kubectl port-forward -n spezistudyplatform svc/keycloak 8081:80
 - Realm configuration (clients, roles, scopes, test users) is managed by a keycloak-config-cli Job in `infrastructure/dev/keycloak-realm-import-job.yaml` (runs as ArgoCD PostSync hook).
 - Client secrets are injected via ExternalSecrets from Vault into the Job's environment variables.
 - For prod config enforcement, a keycloak-config-cli Job with ArgoCD PreSync hook exists in `infrastructure/prod/keycloak-config-cli-job.yaml`.
-
-## Using as a Template
-
-This repo intentionally hardcodes `spezistudyplatform` / `SpeziStudyPlatform` naming throughout (namespace, ConfigMaps, Secrets, Keycloak realm/roles, GCP project/cluster names, image refs). Do not "genericize" it in place. If asked to fork this repo for a different study/app, use `tools/rename-project.sh <new-name>` (dry-run-able) rather than manual find-and-replace, then `make validate && make lint`. To scaffold an additional backend/frontend workload beyond the existing server + web pattern, follow `.claude/skills/spezi-new-app/SKILL.md` (base/dev/prod Kustomize wiring + NetworkPolicy + ingress).
 
 ## Prerequisites for Contributors
 

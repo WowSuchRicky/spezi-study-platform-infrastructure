@@ -10,7 +10,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: default-deny-ingress
-  namespace: spezistudyplatform
+  namespace: app-name-placeholder
 spec:
   podSelector: {}
   policyTypes:
@@ -20,7 +20,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: default-deny-egress
-  namespace: spezistudyplatform
+  namespace: app-name-placeholder
 spec:
   podSelector: {}
   policyTypes:
@@ -30,7 +30,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-dns-egress
-  namespace: spezistudyplatform
+  namespace: app-name-placeholder
 spec:
   podSelector: {}
   policyTypes:
@@ -50,7 +50,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-external-to-traefik
-  namespace: spezistudyplatform
+  namespace: app-name-placeholder
 spec:
   podSelector:
     matchLabels:
@@ -68,15 +68,15 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-traefik-to-apps
-  namespace: spezistudyplatform
+  namespace: app-name-placeholder
 spec:
   podSelector:
     matchExpressions:
       - key: app
         operator: In
         values:
-          - spezistudyplatform-server
-          - spezistudyplatform-web
+          - app-name-placeholder-server
+          - app-name-placeholder-web
   policyTypes:
     - Ingress
   ingress:
@@ -92,7 +92,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-traefik-to-keycloak
-  namespace: spezistudyplatform
+  namespace: app-name-placeholder
 spec:
   podSelector:
     matchLabels:
@@ -112,18 +112,18 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-server-to-db
-  namespace: spezistudyplatform
+  namespace: app-name-placeholder
 spec:
   podSelector:
     matchLabels:
-      cnpg.io/cluster: spezistudyplatform-db
+      cnpg.io/cluster: app-name-placeholder-db
   policyTypes:
     - Ingress
   ingress:
     - from:
         - podSelector:
             matchLabels:
-              app: spezistudyplatform-server
+              app: app-name-placeholder-server
       ports:
         - protocol: TCP
           port: 5432
@@ -132,7 +132,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-keycloak-to-db
-  namespace: spezistudyplatform
+  namespace: app-name-placeholder
 spec:
   podSelector:
     matchLabels:
@@ -152,7 +152,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-server-to-keycloak
-  namespace: spezistudyplatform
+  namespace: app-name-placeholder
 spec:
   podSelector:
     matchLabels:
@@ -163,7 +163,7 @@ spec:
     - from:
         - podSelector:
             matchLabels:
-              app: spezistudyplatform-server
+              app: app-name-placeholder-server
       ports:
         - protocol: TCP
           port: 8080
@@ -179,7 +179,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-cnpg-to-k8s-api
-  namespace: spezistudyplatform
+  namespace: app-name-placeholder
 spec:
   podSelector:
     matchExpressions:
@@ -202,7 +202,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-cnpg-operator-to-instances
-  namespace: spezistudyplatform
+  namespace: app-name-placeholder
 spec:
   podSelector:
     matchExpressions:
@@ -226,18 +226,18 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-server-to-db-egress
-  namespace: spezistudyplatform
+  namespace: app-name-placeholder
 spec:
   podSelector:
     matchLabels:
-      app: spezistudyplatform-server
+      app: app-name-placeholder-server
   policyTypes:
     - Egress
   egress:
     - to:
         - podSelector:
             matchLabels:
-              cnpg.io/cluster: spezistudyplatform-db
+              cnpg.io/cluster: app-name-placeholder-db
       ports:
         - protocol: TCP
           port: 5432
@@ -246,11 +246,11 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-server-to-keycloak-egress
-  namespace: spezistudyplatform
+  namespace: app-name-placeholder
 spec:
   podSelector:
     matchLabels:
-      app: spezistudyplatform-server
+      app: app-name-placeholder-server
   policyTypes:
     - Egress
   egress:
@@ -266,7 +266,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-keycloak-to-db-egress
-  namespace: spezistudyplatform
+  namespace: app-name-placeholder
 spec:
   podSelector:
     matchLabels:
@@ -286,7 +286,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-config-cli-to-keycloak
-  namespace: spezistudyplatform
+  namespace: app-name-placeholder
 spec:
   podSelector:
     matchLabels:
@@ -306,7 +306,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-traefik-egress
-  namespace: spezistudyplatform
+  namespace: app-name-placeholder
 spec:
   podSelector:
     matchLabels:
@@ -320,8 +320,8 @@ spec:
               - key: app
                 operator: In
                 values:
-                  - spezistudyplatform-server
-                  - spezistudyplatform-web
+                  - app-name-placeholder-server
+                  - app-name-placeholder-web
                   - keycloak
       ports:
         - protocol: TCP
@@ -350,7 +350,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-config-cli-to-keycloak-egress
-  namespace: spezistudyplatform
+  namespace: app-name-placeholder
 spec:
   podSelector:
     matchLabels:

@@ -9,14 +9,14 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: spezistudyplatform-server-config
-  namespace: spezistudyplatform
+  name: app-name-placeholder-server-config
+  namespace: app-name-placeholder
 data:
-  DATABASE_HOST: spezistudyplatform-db-rw
-  DATABASE_NAME: spezistudyplatform
-  KEYCLOAK_URL: http://keycloak.spezistudyplatform.svc.cluster.local/auth
-  KEYCLOAK_REALM: spezistudyplatform
-  KEYCLOAK_CLIENT_ID: spezistudyplatform-server
-  KEYCLOAK_RESEARCHER_ROLE: spezistudyplatform-researcher
-  KEYCLOAK_PARTICIPANT_ROLE: spezistudyplatform-participant
+  DATABASE_HOST: app-name-placeholder-db-rw
+  DATABASE_NAME: app-name-placeholder
+  KEYCLOAK_URL: http://keycloak.app-name-placeholder.svc.cluster.local/auth
+  KEYCLOAK_REALM: app-name-placeholder
+  KEYCLOAK_CLIENT_ID: app-name-placeholder-server
+  KEYCLOAK_RESEARCHER_ROLE: app-name-placeholder-researcher
+  KEYCLOAK_PARTICIPANT_ROLE: app-name-placeholder-participant
   APP_ENVIRONMENT: development

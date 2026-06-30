@@ -9,8 +9,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: spezistudyplatform-server
-  namespace: spezistudyplatform
+  name: app-name-placeholder-server
+  namespace: app-name-placeholder
 spec:
   replicas: 2
   strategy:
@@ -21,12 +21,12 @@ spec:
   template:
     spec:
       initContainers:
-        - name: spezistudyplatform-server-migrate
-          image: ghcr.io/stanfordspezi/spezistudyplatform-server:main
+        - name: app-name-placeholder-server-migrate
+          image: ghcr.io/registry-org-placeholder/app-name-placeholder-server:main
           imagePullPolicy: Always
       containers:
-        - name: spezistudyplatform-server-container
-          image: ghcr.io/stanfordspezi/spezistudyplatform-server:main
+        - name: app-name-placeholder-server-container
+          image: ghcr.io/registry-org-placeholder/app-name-placeholder-server:main
           imagePullPolicy: Always
           resources:
             requests:

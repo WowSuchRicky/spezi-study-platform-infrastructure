@@ -9,10 +9,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: spezistudyplatform-web-config
-  namespace: spezistudyplatform
+  name: app-name-placeholder-web-config
+  namespace: app-name-placeholder
 data:
-  VITE_API_BASE_PATH: https://platform.spezi.stanford.edu
-  VITE_KEYCLOAK_URL: https://platform.spezi.stanford.edu/auth
-  VITE_KEYCLOAK_REALM: spezistudyplatform
-  VITE_KEYCLOAK_CLIENT_ID: spezistudyplatform-web
+  VITE_API_BASE_PATH: https://domain-placeholder
+  VITE_KEYCLOAK_URL: https://domain-placeholder/auth
+  VITE_KEYCLOAK_REALM: app-name-placeholder
+  VITE_KEYCLOAK_CLIENT_ID: app-name-placeholder-web

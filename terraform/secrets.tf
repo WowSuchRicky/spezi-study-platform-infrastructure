@@ -9,7 +9,7 @@
 locals {
   secrets = {
     "server-db-credentials" = {
-      placeholder = jsonencode({ username = "spezistudyplatform", password = "spezistudyplatform" })
+      placeholder = jsonencode({ username = "app-name-placeholder", password = "app-name-placeholder" })
     }
     "keycloak-db-credentials" = {
       placeholder = jsonencode({ username = "keycloak", password = "keycloak" })

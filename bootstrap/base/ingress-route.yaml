@@ -31,4 +31,4 @@ spec:
           port: 80
           scheme: h2c
   tls:
-    secretName: spezistudyplatform-main-tls-secret
+    secretName: app-name-placeholder-main-tls-secret

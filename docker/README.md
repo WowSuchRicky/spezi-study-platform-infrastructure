@@ -8,12 +8,9 @@ SPDX-License-Identifier: MIT
 
 # Docker Local Development
 
-Local development environment for the Spezi Study Platform. Provides backing services (PostgreSQL, Keycloak) and optionally runs the full stack using published container images.
+Local development environment for your Spezi-based study platform. Provides backing services (PostgreSQL, Keycloak) and optionally runs the full stack using published container images for your server and web applications.
 
-Used by:
-
-- [SpeziStudyPlatform-Server](https://github.com/StanfordSpezi/SpeziStudyPlatform-Server)
-- [SpeziStudyPlatform-Web](https://github.com/StanfordSpezi/SpeziStudyPlatform-Web)
+This is part of the infrastructure template and must be rendered before use — see [Step 0 in the root README](../README.md#step-0-render-the-template). `docker-compose.yml` and `.env.example` both reference `__PLACEHOLDER__` image names until then.
 
 ## Setup
 

@@ -9,7 +9,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: spezistudyplatform-server-config
-  namespace: spezistudyplatform
+  name: app-name-placeholder-server-config
+  namespace: app-name-placeholder
 data:
   APP_ENVIRONMENT: development

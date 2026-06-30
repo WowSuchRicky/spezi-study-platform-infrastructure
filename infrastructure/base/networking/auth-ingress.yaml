@@ -10,7 +10,7 @@ apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   name: auth-ingress
-  namespace: spezistudyplatform
+  namespace: app-name-placeholder
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
@@ -26,4 +26,4 @@ spec:
       middlewares:
         - name: keycloak-headers
   tls:
-    secretName: spezistudyplatform-main-tls-secret
+    secretName: app-name-placeholder-main-tls-secret

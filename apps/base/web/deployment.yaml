@@ -9,26 +9,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: spezistudyplatform-web
-  namespace: spezistudyplatform
+  name: app-name-placeholder-web
+  namespace: app-name-placeholder
   labels:
-    app: spezistudyplatform-web
+    app: app-name-placeholder-web
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: spezistudyplatform-web
+      app: app-name-placeholder-web
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: spezistudyplatform-web
+        app: app-name-placeholder-web
     spec:
-      serviceAccountName: spezistudyplatform-web
+      serviceAccountName: app-name-placeholder-web
       containers:
-        - name: spezistudyplatform-web-container
-          image: ghcr.io/stanfordspezi/spezistudyplatform-web:latest
+        - name: app-name-placeholder-web-container
+          image: ghcr.io/registry-org-placeholder/app-name-placeholder-web:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -48,7 +48,7 @@ spec:
                 - ALL
           envFrom:
             - configMapRef:
-                name: spezistudyplatform-web-config
+                name: app-name-placeholder-web-config
           startupProbe:
             httpGet:
               path: /

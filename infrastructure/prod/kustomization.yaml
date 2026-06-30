@@ -21,14 +21,14 @@ patches:
   - path: patches/keycloak-config-cli-job.yaml
   - target:
       kind: IngressRoute
-      name: spezistudyplatform-ingress
+      name: app-name-placeholder-ingress
     patch: |
       - op: replace
         path: /spec/routes/0/match
-        value: "Host(`platform.spezi.stanford.edu`)"
+        value: "Host(`domain-placeholder`)"
       - op: replace
         path: /spec/routes/1/match
-        value: "Host(`platform.spezi.stanford.edu`) && PathPrefix(`/api`)"
+        value: "Host(`domain-placeholder`) && PathPrefix(`/api`)"
       - op: replace
         path: /metadata/annotations/cert-manager.io~1cluster-issuer
         value: letsencrypt-prod
@@ -38,7 +38,7 @@ patches:
     patch: |
       - op: replace
         path: /spec/routes/0/match
-        value: "Host(`platform.spezi.stanford.edu`) && PathPrefix(`/auth`)"
+        value: "Host(`domain-placeholder`) && PathPrefix(`/auth`)"
       - op: replace
         path: /metadata/annotations/cert-manager.io~1cluster-issuer
         value: letsencrypt-prod

@@ -10,7 +10,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: keycloak
-  namespace: spezistudyplatform
+  namespace: app-name-placeholder
 spec:
   replicas: 1
   template:
@@ -19,6 +19,6 @@ spec:
         - name: keycloak
           env:
             - name: KC_HOSTNAME
-              value: https://platform.spezi.stanford.edu/auth
+              value: https://domain-placeholder/auth
             - name: KC_HOSTNAME_STRICT
               value: "false"
