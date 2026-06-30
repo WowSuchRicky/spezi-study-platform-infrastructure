@@ -101,6 +101,10 @@ kubectl port-forward -n spezistudyplatform svc/keycloak 8081:80
 - Client secrets are injected via ExternalSecrets from Vault into the Job's environment variables.
 - For prod config enforcement, a keycloak-config-cli Job with ArgoCD PreSync hook exists in `infrastructure/prod/keycloak-config-cli-job.yaml`.
 
+## Using as a Template
+
+This repo intentionally hardcodes `spezistudyplatform` / `SpeziStudyPlatform` naming throughout (namespace, ConfigMaps, Secrets, Keycloak realm/roles, GCP project/cluster names, image refs). Do not "genericize" it in place. If asked to fork this repo for a different study/app, use `tools/rename-project.sh <new-name>` (dry-run-able) rather than manual find-and-replace, then `make validate && make lint`. To scaffold an additional backend/frontend workload beyond the existing server + web pattern, follow `.claude/skills/spezi-new-app/SKILL.md` (base/dev/prod Kustomize wiring + NetworkPolicy + ingress).
+
 ## Prerequisites for Contributors
 
 Install: `kind`, `kubectl`, `helm`, and `python3`. Optional but useful: `k9s`, `direnv`, `kubeconform`.

@@ -61,6 +61,17 @@ All dev users share the password `password123`:
 
 For running backing services (PostgreSQL, Keycloak) without Kubernetes, see the [Docker setup guide](docker/README.md). This is the recommended approach when developing the [Server](https://github.com/StanfordSpezi/SpeziStudyPlatform-Server) or [Web](https://github.com/StanfordSpezi/SpeziStudyPlatform-Web) repositories locally.
 
+## Using This as a Starter Template
+
+This repo is also a working reference for standing up backend/infra (ArgoCD + Kustomize + Helm + OpenTofu, with Postgres, Keycloak, and Traefik wired together) for a new Spezi-based study platform.
+
+To fork it for a new app:
+
+1. Fork/copy the repo.
+2. Run `tools/rename-project.sh <new-app-name> [--registry-org <org>] [--repo-url <url>] [--domain <domain>]` to rewrite the ~240 hardcoded `spezistudyplatform` identifiers (namespace, ConfigMaps, Secrets, Keycloak realm, GCP project/cluster names, image refs) to your app name in one pass. It prints a dry-run-able file list and a list of manual follow-ups (README prose, CONTRIBUTORS.md, etc.) it intentionally leaves alone.
+3. Run `make validate && make lint` to confirm the renamed overlays still build.
+4. Use the `spezi-new-app` skill (`.claude/skills/spezi-new-app/`, for Claude Code users) to add additional backend/frontend workloads beyond the included server + web pattern.
+
 ## Contributing
 
 We welcome contributions! Please read our [contributing guidelines](https://github.com/StanfordSpezi/.github/blob/main/CONTRIBUTING.md) for more information on how to get started.
