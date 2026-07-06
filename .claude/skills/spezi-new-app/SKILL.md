@@ -1,3 +1,11 @@
+#
+# This source file is part of the Stanford Spezi open source project
+#
+# SPDX-FileCopyrightText: 2026 Stanford University and the project authors (see CONTRIBUTORS.md)
+#
+# SPDX-License-Identifier: MIT
+#
+
 ---
 name: spezi-new-app
 description: Scaffold a new workload (server-style or web-style) into this repo's apps/ Kustomize layout (base + dev/prod patches), wired into network policies and ArgoCD. Use when adding a new backend service or frontend to the platform, e.g. "add a new worker service" or "add an admin dashboard app".
