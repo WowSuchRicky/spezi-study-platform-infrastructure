@@ -12,7 +12,7 @@ SPDX-License-Identifier: MIT
 
 A GitOps infrastructure template for Spezi-based study platforms: ArgoCD, Kustomize, Helm, and OpenTofu, with a backend service, a frontend, PostgreSQL, Keycloak, and Traefik already wired together across local (KIND) and production (GKE) environments.
 
-**This repo does not work as checked in.** Every namespace, ConfigMap, Secret, Keycloak realm, GCP project/cluster name, and image reference is a `__PLACEHOLDER__` token (see [`infrastructure/base/namespace.yaml`](infrastructure/base/namespace.yaml) for an example). You render it into your own app before anything will deploy — `make dev` and `make prod-bootstrap` both refuse to run until you have.
+**This repo does not work as checked in.** Every namespace, ConfigMap, Secret, Keycloak realm, GCP project/cluster name, and image reference is one of the placeholder tokens (`app-name-placeholder`, `app-name-pascal-placeholder`, `app-name-kebab-placeholder`, `registry-org-placeholder`, `repo-url-placeholder`, `domain-placeholder` — see [`infrastructure/base/namespace.yaml`](infrastructure/base/namespace.yaml) for an example). You render it into your own app before anything will deploy — `make dev` and `make prod-bootstrap` both refuse to run until you have.
 
 ## Step 0: Render the Template
 

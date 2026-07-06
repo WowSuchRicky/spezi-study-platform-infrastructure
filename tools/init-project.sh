@@ -73,9 +73,15 @@ DRY_RUN=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --registry-org) REGISTRY_ORG="$2"; shift 2 ;;
-        --repo-url) REPO_URL="$2"; shift 2 ;;
-        --domain) DOMAIN="$2"; shift 2 ;;
+        --registry-org)
+            [[ $# -lt 2 ]] && { echo "Error: --registry-org requires a value" >&2; exit 1; }
+            REGISTRY_ORG="$2"; shift 2 ;;
+        --repo-url)
+            [[ $# -lt 2 ]] && { echo "Error: --repo-url requires a value" >&2; exit 1; }
+            REPO_URL="$2"; shift 2 ;;
+        --domain)
+            [[ $# -lt 2 ]] && { echo "Error: --domain requires a value" >&2; exit 1; }
+            DOMAIN="$2"; shift 2 ;;
         --dry-run) DRY_RUN=true; shift ;;
         *) echo "Unknown option: $1" >&2; usage ;;
     esac
@@ -86,7 +92,7 @@ cd "$ROOT"
 
 KEBAB="$NEW_NAME"
 LOWER="${NEW_NAME//-/}"
-PASCAL="$(echo "$NEW_NAME" | sed -E 's/(^|-)([a-z])/\U\2/g')"
+PASCAL="$(python3 -c "import sys; print(''.join(w.capitalize() for w in sys.argv[1].split('-')))" "$NEW_NAME")"
 
 echo "App name: $NEW_NAME"
 echo "  app-name-pascal-placeholder -> $PASCAL"
@@ -101,7 +107,10 @@ echo
 # tools/setup.py -- both reference the placeholder names literally as part
 # of their own implementation (usage text / the rendered-check regex), not
 # as unrendered template content.
-mapfile -t FILES < <(git -C "$ROOT" ls-files | grep -vE '^tools/(init-project\.sh|setup\.py)$')
+FILES=()
+while IFS= read -r line; do
+    FILES+=("$line")
+done < <(git -C "$ROOT" ls-files | grep -vE '^tools/(init-project\.sh|setup\.py)$')
 
 PLACEHOLDER_RE='app-name-pascal-placeholder|app-name-kebab-placeholder|app-name-placeholder|registry-org-placeholder|repo-url-placeholder|domain-placeholder'
 
@@ -122,14 +131,15 @@ if $DRY_RUN; then
 fi
 
 for f in "${MATCHED[@]}"; do
-    sed -i \
+    tmp="$(mktemp)"
+    sed \
         -e "s/app-name-pascal-placeholder/${PASCAL}/g" \
         -e "s/app-name-kebab-placeholder/${KEBAB}/g" \
         -e "s/app-name-placeholder/${LOWER}/g" \
         $([[ -n "$REGISTRY_ORG" ]] && echo "-e s#registry-org-placeholder#${REGISTRY_ORG}#g") \
         $([[ -n "$REPO_URL" ]] && echo "-e s#repo-url-placeholder#${REPO_URL}#g") \
         $([[ -n "$DOMAIN" ]] && echo "-e s#domain-placeholder#${DOMAIN}#g") \
-        "$f"
+        "$f" > "$tmp" && mv "$tmp" "$f"
 done
 
 echo "Done."

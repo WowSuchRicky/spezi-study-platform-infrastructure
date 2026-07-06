@@ -13,7 +13,9 @@ Installs ArgoCD via Helm, then hands off to ArgoCD's app-of-apps pattern.
 Works for both dev (KIND) and prod (real cluster).
 
 This repo is a placeholder template (see tools/init-project.sh) -- this
-script refuses to run until every __PLACEHOLDER__ token has been rendered.
+script refuses to run until every placeholder token (app-name-placeholder,
+registry-org-placeholder, repo-url-placeholder, domain-placeholder, etc.)
+has been rendered.
 
 Usage:
     python tools/setup.py                    # dev, current git branch
@@ -79,7 +81,7 @@ def header(msg: str):
 
 
 def check_rendered():
-    """Refuse to deploy a template that still has __PLACEHOLDER__ tokens.
+    """Refuse to deploy a template that still has unrendered placeholder tokens.
 
     This repo ships as a placeholder template (tools/init-project.sh renders
     it). Deploying it unrendered would create real-but-broken Kubernetes
@@ -241,7 +243,7 @@ def main():
     step_bootstrap_config(args.env)
     step_apply_applications(args.env, branch)
 
-    domain = "localhost" if args.env == "dev" else "your production domain"
+    domain = "localhost" if args.env == "dev" else "domain-placeholder"
     print(f"""
 =====================================
   Bootstrap complete!

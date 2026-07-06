@@ -56,9 +56,10 @@ jobs:
           kubectl get events -A --sort-by='.lastTimestamp' | tail -40
           echo ""
           echo "=== Crashing Pod Logs ==="
-          for pod in $(kubectl get pods -n app-name-placeholder --no-headers | grep -E 'CrashLoop|Error' | awk '{print $1}'); do
+          PLATFORM_NS=$(awk '/^kind: Namespace/{in_ns=1} in_ns && /^  name:/{print $2; exit}' infrastructure/base/namespace.yaml)
+          for pod in $(kubectl get pods -n "${PLATFORM_NS}" --no-headers | grep -E 'CrashLoop|Error' | awk '{print $1}'); do
             for flag in "" "--previous"; do
               echo "--- $pod $flag ---"
-              kubectl logs -n app-name-placeholder "$pod" --all-containers $flag --tail=40 2>&1 || true
+              kubectl logs -n "${PLATFORM_NS}" "$pod" --all-containers $flag --tail=40 2>&1 || true
             done
           done
