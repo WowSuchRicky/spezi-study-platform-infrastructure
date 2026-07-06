@@ -9,28 +9,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: spezistudyplatform-server
-  namespace: spezistudyplatform
+  name: app-name-placeholder-server
+  namespace: app-name-placeholder
   labels:
-    app: spezistudyplatform-server
+    app: app-name-placeholder-server
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: spezistudyplatform-server
+      app: app-name-placeholder-server
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: spezistudyplatform-server
+        app: app-name-placeholder-server
     spec:
-      serviceAccountName: spezistudyplatform-server
+      serviceAccountName: app-name-placeholder-server
       initContainers:
-        - name: spezistudyplatform-server-migrate
-          image: ghcr.io/stanfordspezi/spezistudyplatform-server:latest
+        - name: app-name-placeholder-server-migrate
+          image: ghcr.io/registry-org-placeholder/app-name-placeholder-server:latest
           imagePullPolicy: Always
-          command: ["./SpeziStudyPlatformServer", "migrate", "--yes"]
+          command: ["./app-name-pascal-placeholderServer", "migrate", "--yes"]
           resources:
             requests:
               memory: 256Mi
@@ -47,21 +47,21 @@ spec:
                 - ALL
           envFrom:
             - configMapRef:
-                name: spezistudyplatform-server-config
+                name: app-name-placeholder-server-config
           env:
             - name: DATABASE_USERNAME
               valueFrom:
                 secretKeyRef:
-                  name: spezistudyplatform-postgres-credentials
+                  name: app-name-placeholder-postgres-credentials
                   key: username
             - name: DATABASE_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: spezistudyplatform-postgres-credentials
+                  name: app-name-placeholder-postgres-credentials
                   key: password
       containers:
-        - name: spezistudyplatform-server-container
-          image: ghcr.io/stanfordspezi/spezistudyplatform-server:latest
+        - name: app-name-placeholder-server-container
+          image: ghcr.io/registry-org-placeholder/app-name-placeholder-server:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -81,22 +81,22 @@ spec:
                 - ALL
           envFrom:
             - configMapRef:
-                name: spezistudyplatform-server-config
+                name: app-name-placeholder-server-config
           env:
             - name: DATABASE_USERNAME
               valueFrom:
                 secretKeyRef:
-                  name: spezistudyplatform-postgres-credentials
+                  name: app-name-placeholder-postgres-credentials
                   key: username
             - name: DATABASE_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: spezistudyplatform-postgres-credentials
+                  name: app-name-placeholder-postgres-credentials
                   key: password
             - name: KEYCLOAK_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: spezistudyplatform-server-secret
+                  name: app-name-placeholder-server-secret
                   key: KEYCLOAK_CLIENT_SECRET
           startupProbe:
             httpGet:

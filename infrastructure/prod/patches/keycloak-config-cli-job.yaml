@@ -10,7 +10,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: keycloak-config-cli
-  namespace: spezistudyplatform
+  namespace: app-name-placeholder
 spec:
   template:
     metadata:
@@ -21,4 +21,4 @@ spec:
         - name: keycloak-config-cli
           env:
             - name: WEB_URL
-              value: https://platform.spezi.stanford.edu
+              value: https://domain-placeholder

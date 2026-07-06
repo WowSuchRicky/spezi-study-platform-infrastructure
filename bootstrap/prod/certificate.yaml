@@ -13,7 +13,7 @@ metadata:
   namespace: argocd
 spec:
   commonName: DOMAIN_PLACEHOLDER
-  secretName: spezistudyplatform-main-tls-secret
+  secretName: app-name-placeholder-main-tls-secret
   issuerRef:
     name: letsencrypt-prod
     kind: ClusterIssuer

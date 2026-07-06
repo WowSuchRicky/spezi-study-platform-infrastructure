@@ -16,7 +16,7 @@ resources:
   - keycloak-config-cli-job.yaml
 configMapGenerator:
   - name: keycloak-realm-config
-    namespace: spezistudyplatform
+    namespace: app-name-placeholder
     files:
       - 00-realm.json=realm/00-realm.json
 generatorOptions:

@@ -12,12 +12,12 @@ metadata:
   name: argocd-cm
   namespace: argocd
 data:
-  url: https://platform.spezi.stanford.edu/argo
+  url: https://domain-placeholder/argo
   oidc.config: |
     name: Keycloak
-    issuer: https://platform.spezi.stanford.edu/auth/realms/spezistudyplatform
+    issuer: https://domain-placeholder/auth/realms/app-name-placeholder
     clientId: argocd
-    redirectURI: https://platform.spezi.stanford.edu/argo/auth/callback
+    redirectURI: https://domain-placeholder/argo/auth/callback
     enablePKCEAuthentication: true
     insecure: false
     requestedScopes: ["openid", "profile", "email", "groups"]

@@ -6,23 +6,32 @@
 # SPDX-License-Identifier: MIT
 #
 
-.PHONY: help dev dev-down dev-status \
+.PHONY: help check-rendered dev dev-down dev-status \
        prod-plan prod-apply prod-down prod-destroy prod-bootstrap prod-status \
        prod-scale-down prod-scale-up \
        argocd-password validate lint test
 
 TOFU := tofu -chdir=terraform
-KIND_CLUSTER := spezi-study-platform
+KIND_CLUSTER := app-name-kebab-placeholder
 BRANCH ?=
+PLACEHOLDER_RE := app-name-pascal-placeholder|app-name-kebab-placeholder|app-name-placeholder|registry-org-placeholder|repo-url-placeholder|domain-placeholder
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+check-rendered: ## Fail if template placeholders haven't been rendered yet
+	@if git ls-files | grep -vE '^tools/(init-project\.sh|setup\.py)$$' \
+		| xargs grep -lE '$(PLACEHOLDER_RE)' 2>/dev/null | grep -q .; then \
+		echo "This repo is an unrendered template. Run: tools/init-project.sh <app-name>"; \
+		echo "See tools/init-project.sh --help for options."; \
+		exit 1; \
+	fi
 
 # ---------------------------------------------------------------------------
 # Local development (KIND)
 # ---------------------------------------------------------------------------
 
-dev: ## Create KIND cluster and bootstrap ArgoCD + apps
+dev: check-rendered ## Create KIND cluster and bootstrap ArgoCD + apps
 	@kind get clusters 2>/dev/null | grep -q '^$(KIND_CLUSTER)$$' || kind create cluster --name $(KIND_CLUSTER) --config tools/kind-config.yaml
 	python3 tools/setup.py $(if $(BRANCH),--branch $(BRANCH))
 
@@ -52,7 +61,7 @@ prod-destroy: ## Tear down all cloud infrastructure
 	@printf "Type 'destroy' to confirm: " && read ans && [ "$$ans" = "destroy" ] || (echo "Aborted."; exit 1)
 	$(TOFU) destroy
 
-prod-bootstrap: ## Bootstrap ArgoCD on prod GKE cluster
+prod-bootstrap: check-rendered ## Bootstrap ArgoCD on prod GKE cluster
 	python3 tools/setup.py --env prod
 
 prod-status: ## Show ArgoCD Application sync status (prod context)

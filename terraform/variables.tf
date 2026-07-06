@@ -9,7 +9,7 @@
 variable "project_id" {
   description = "GCP project ID"
   type        = string
-  default     = "spezistudyplatform-dev"
+  default     = "app-name-placeholder-dev"
 }
 
 variable "region" {
@@ -21,7 +21,7 @@ variable "region" {
 variable "cluster_name" {
   description = "Name of the GKE cluster"
   type        = string
-  default     = "spezistudyplatform-dev"
+  default     = "app-name-placeholder-dev"
 }
 
 variable "zone" {
@@ -33,7 +33,7 @@ variable "zone" {
 variable "domain" {
   description = "Domain for the platform (used in output instructions)"
   type        = string
-  default     = "platform.spezi.stanford.edu"
+  default     = "domain-placeholder"
 }
 
 variable "authorized_networks" {

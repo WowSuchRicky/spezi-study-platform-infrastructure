@@ -14,7 +14,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/StanfordSpezi/spezi-study-platform-infrastructure.git
+    repoURL: repo-url-placeholder
     path: argocd-apps/prod
     targetRevision: main
   destination:

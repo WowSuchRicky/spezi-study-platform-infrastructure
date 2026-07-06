@@ -56,7 +56,7 @@ spec:
             - |
               until vault status >/dev/null 2>&1; do echo "Waiting for Vault..."; sleep 2; done
               vault kv get secret/server-db-credentials >/dev/null 2>&1 || \
-                vault kv put secret/server-db-credentials username=spezistudyplatform password=spezistudyplatform
+                vault kv put secret/server-db-credentials username=app-name-placeholder password=app-name-placeholder
 ---
 apiVersion: batch/v1
 kind: Job

@@ -18,7 +18,7 @@ data:
   url: https://DOMAIN_PLACEHOLDER/argo
   oidc.config: |
     name: Keycloak
-    issuer: https://DOMAIN_PLACEHOLDER/auth/realms/spezistudyplatform
+    issuer: https://DOMAIN_PLACEHOLDER/auth/realms/app-name-placeholder
     clientId: argocd
     redirectURI: https://DOMAIN_PLACEHOLDER/argo/auth/callback
     enablePKCEAuthentication: true

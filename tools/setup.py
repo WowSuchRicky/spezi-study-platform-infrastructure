@@ -7,10 +7,15 @@
 #
 
 #!/usr/bin/env python3
-"""Bootstrap script for Spezi Study Platform.
+"""Bootstrap script for a Spezi-based study platform.
 
 Installs ArgoCD via Helm, then hands off to ArgoCD's app-of-apps pattern.
 Works for both dev (KIND) and prod (real cluster).
+
+This repo is a placeholder template (see tools/init-project.sh) -- this
+script refuses to run until every placeholder token (app-name-placeholder,
+registry-org-placeholder, repo-url-placeholder, domain-placeholder, etc.)
+has been rendered.
 
 Usage:
     python tools/setup.py                    # dev, current git branch
@@ -20,12 +25,17 @@ Usage:
 
 import argparse
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 ARGOCD_CHART_VERSION = "9.5.1"
+PLACEHOLDER_RE = re.compile(
+    r"app-name-pascal-placeholder|app-name-kebab-placeholder|app-name-placeholder"
+    r"|registry-org-placeholder|repo-url-placeholder|domain-placeholder"
+)
 
 
 # ---------------------------------------------------------------------------
@@ -68,6 +78,48 @@ def branch_exists_on_remote(branch: str) -> bool:
 
 def header(msg: str):
     print(f"\n{'=' * 60}\n  {msg}\n{'=' * 60}\n")
+
+
+def check_rendered():
+    """Refuse to deploy a template that still has unrendered placeholder tokens.
+
+    This repo ships as a placeholder template (tools/init-project.sh renders
+    it). Deploying it unrendered would create real-but-broken Kubernetes
+    resources (invalid names, dead ArgoCD repoURLs) -- fail fast instead.
+    """
+    tracked = subprocess.run(
+        ["git", "ls-files"], capture_output=True, text=True, check=True, cwd=ROOT,
+    ).stdout.splitlines()
+
+    # Both scripts necessarily contain the literal placeholder strings as
+    # part of their own implementation (usage text / this regex), not as
+    # unrendered template content -- exclude them from the scan.
+    self_referential = {"tools/init-project.sh", "tools/setup.py"}
+
+    unrendered = {}
+    for rel_path in tracked:
+        if rel_path in self_referential:
+            continue
+        path = ROOT / rel_path
+        try:
+            text = path.read_text()
+        except (UnicodeDecodeError, OSError):
+            continue
+        tokens = sorted(set(PLACEHOLDER_RE.findall(text)))
+        if tokens:
+            unrendered[rel_path] = tokens
+
+    if not unrendered:
+        return
+
+    print("\nThis repo still has unrendered template placeholders:\n")
+    for rel_path, tokens in sorted(unrendered.items()):
+        print(f"  {rel_path}: {', '.join(tokens)}")
+    print(
+        "\nRun tools/init-project.sh <app-name> [options] to render them, "
+        "then try again.\nSee tools/init-project.sh --help for details."
+    )
+    sys.exit(1)
 
 
 # ---------------------------------------------------------------------------
@@ -167,7 +219,7 @@ def step_apply_applications(env: str, branch: str):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Bootstrap Spezi Study Platform")
+        description="Bootstrap a Spezi-based study platform")
     parser.add_argument(
         "--env", choices=["dev", "prod"], default="dev",
         help="Target environment (default: dev)")
@@ -175,6 +227,8 @@ def main():
         "--branch",
         help="Git branch for ArgoCD to track (dev only, default: current branch)")
     args = parser.parse_args()
+
+    check_rendered()
 
     branch = args.branch or get_current_branch()
 
@@ -189,7 +243,7 @@ def main():
     step_bootstrap_config(args.env)
     step_apply_applications(args.env, branch)
 
-    domain = "localhost" if args.env == "dev" else "platform.spezi.stanford.edu"
+    domain = "localhost" if args.env == "dev" else "domain-placeholder"
     print(f"""
 =====================================
   Bootstrap complete!

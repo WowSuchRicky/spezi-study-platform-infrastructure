@@ -9,13 +9,13 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: spezistudyplatform-main-tls-cert
-  namespace: spezistudyplatform
+  name: app-name-placeholder-main-tls-cert
+  namespace: app-name-placeholder
 spec:
-  commonName: platform.spezi.stanford.edu
-  secretName: spezistudyplatform-main-tls-secret
+  commonName: domain-placeholder
+  secretName: app-name-placeholder-main-tls-secret
   issuerRef:
     name: letsencrypt-prod
     kind: ClusterIssuer
   dnsNames:
-    - platform.spezi.stanford.edu
+    - domain-placeholder

@@ -9,11 +9,11 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: spezistudyplatform-main-tls-cert
-  namespace: spezistudyplatform
+  name: app-name-placeholder-main-tls-cert
+  namespace: app-name-placeholder
 spec:
   commonName: localhost
-  secretName: spezistudyplatform-main-tls-secret
+  secretName: app-name-placeholder-main-tls-secret
   issuerRef:
     name: selfsigned-issuer
     kind: ClusterIssuer

@@ -10,7 +10,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: keycloak-config-cli
-  namespace: spezistudyplatform
+  namespace: app-name-placeholder
   annotations:
     argocd.argoproj.io/hook: PostSync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
@@ -27,7 +27,7 @@ spec:
           image: quay.io/adorsys/keycloak-config-cli:6.5.0-26
           env:
             - name: KEYCLOAK_URL
-              value: http://keycloak.spezistudyplatform.svc.cluster.local/auth
+              value: http://keycloak.app-name-placeholder.svc.cluster.local/auth
             - name: KEYCLOAK_USER
               valueFrom:
                 secretKeyRef:
@@ -49,7 +49,7 @@ spec:
             - name: SERVER_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: spezistudyplatform-server-secret
+                  name: app-name-placeholder-server-secret
                   key: KEYCLOAK_CLIENT_SECRET
           volumeMounts:
             - name: realm-config

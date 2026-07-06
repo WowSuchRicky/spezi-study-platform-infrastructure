@@ -9,8 +9,8 @@
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: spezistudyplatform-ingress
-  namespace: spezistudyplatform
+  name: app-name-placeholder-ingress
+  namespace: app-name-placeholder
   annotations:
     cert-manager.io/cluster-issuer: selfsigned-issuer
 spec:
@@ -19,7 +19,7 @@ spec:
       match: Host(`localhost`)
       priority: 1
       services:
-        - name: spezistudyplatform-web-service
+        - name: app-name-placeholder-web-service
           port: 80
       middlewares:
         - name: security-headers
@@ -27,7 +27,7 @@ spec:
       match: Host(`localhost`) && PathPrefix(`/api`)
       priority: 2
       services:
-        - name: spezistudyplatform-server-service
+        - name: app-name-placeholder-server-service
           port: 8080
       middlewares:
         - name: security-headers

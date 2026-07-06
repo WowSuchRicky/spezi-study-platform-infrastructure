@@ -9,8 +9,8 @@
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  name: spezistudyplatform-db
-  namespace: spezistudyplatform
+  name: app-name-placeholder-db
+  namespace: app-name-placeholder
 spec:
   instances: 1
   storage:
